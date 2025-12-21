@@ -1,132 +1,150 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
+import { useState, useEffect } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Mail, Lock, User, ArrowRight, Shield, ArrowLeft } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { Eye, EyeOff, ArrowLeft } from 'lucide-react';
-import { z } from 'zod';
+import { validateEmail, validatePasswordStrength } from '@/lib/validation';
+import { authRateLimiter } from '@/lib/rate-limiter';
 
-const loginSchema = z.object({
-  email: z.string().email('Ungültige E-Mail-Adresse'),
-  password: z.string().min(6, 'Passwort muss mindestens 6 Zeichen haben'),
-});
-
-const signupSchema = z.object({
-  firstName: z.string().min(1, 'Vorname ist erforderlich'),
-  lastName: z.string().min(1, 'Nachname ist erforderlich'),
-  email: z.string().email('Ungültige E-Mail-Adresse'),
-  password: z.string().min(6, 'Passwort muss mindestens 6 Zeichen haben'),
-  confirmPassword: z.string(),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: 'Passwörter stimmen nicht überein',
-  path: ['confirmPassword'],
-});
-
-export default function AuthPage() {
+export default function Auth() {
+  const { user, signIn, signUp, loading } = useAuth();
   const navigate = useNavigate();
-  const { signIn, signUp, user } = useAuth();
-  const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [activeTab, setActiveTab] = useState<'signin' | 'signup'>('signin');
 
-  // Redirect if already logged in
-  if (user) {
-    navigate('/');
-    return null;
+  // Form states
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (user) {
+      navigate('/', { replace: true });
+    }
+  }, [user, navigate]);
+
+  const handleSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Rate limiting
+    const clientId = `auth-signin-${email}`;
+    if (!authRateLimiter.isAllowed(clientId)) {
+      const remainingTime = Math.ceil(authRateLimiter.getBlockTimeRemaining(clientId) / 1000 / 60);
+      toast.error(`Zu viele Versuche. Bitte warten Sie ${remainingTime} Minuten.`);
+      return;
+    }
+
+    const emailValidation = validateEmail(email);
+    if (!emailValidation.isValid) {
+      toast.error(emailValidation.message || 'Ungültige E-Mail');
+      return;
+    }
+
+    if (!password) {
+      toast.error('Bitte geben Sie Ihr Passwort ein.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const { error } = await signIn(email, password);
+
+      if (error) {
+        if (error.message.includes('Invalid login credentials')) {
+          toast.error('Ungültige Anmeldedaten');
+        } else {
+          toast.error(error.message);
+        }
+      } else {
+        toast.success('Erfolgreich angemeldet');
+        navigate('/');
+      }
+    } catch (error) {
+      toast.error('Ein unerwarteter Fehler ist aufgetreten.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Rate limiting
+    const clientId = `auth-signup-${email}`;
+    if (!authRateLimiter.isAllowed(clientId)) {
+      const remainingTime = Math.ceil(authRateLimiter.getBlockTimeRemaining(clientId) / 1000 / 60);
+      toast.error(`Zu viele Versuche. Bitte warten Sie ${remainingTime} Minuten.`);
+      return;
+    }
+
+    const emailValidation = validateEmail(email);
+    if (!emailValidation.isValid) {
+      toast.error(emailValidation.message || 'Ungültige E-Mail');
+      return;
+    }
+
+    const passwordValidation = validatePasswordStrength(password);
+    if (!passwordValidation.isValid) {
+      toast.error(passwordValidation.message || 'Passwort zu schwach');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      toast.error('Passwörter stimmen nicht überein.');
+      return;
+    }
+
+    if (!fullName.trim()) {
+      toast.error('Bitte geben Sie Ihren Namen ein.');
+      return;
+    }
+
+    // Split full name into first and last name
+    const nameParts = fullName.trim().split(' ');
+    const firstName = nameParts[0];
+    const lastName = nameParts.slice(1).join(' ') || '';
+
+    setIsSubmitting(true);
+    try {
+      const { error } = await signUp(email, password, {
+        first_name: firstName,
+        last_name: lastName,
+      });
+
+      if (error) {
+        if (error.message.includes('already registered')) {
+          toast.error('Diese E-Mail ist bereits registriert');
+        } else {
+          toast.error(error.message);
+        }
+      } else {
+        toast.success('Registrierung erfolgreich! Willkommen bei ALDENAIR.');
+        navigate('/');
+      }
+    } catch (error) {
+      toast.error('Ein unerwarteter Fehler ist aufgetreten.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
   }
 
-  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setErrors({});
-    const formData = new FormData(e.currentTarget);
-    const data = {
-      email: formData.get('email') as string,
-      password: formData.get('password') as string,
-    };
-
-    try {
-      loginSchema.parse(data);
-    } catch (err) {
-      if (err instanceof z.ZodError) {
-        const newErrors: Record<string, string> = {};
-        err.errors.forEach((error) => {
-          if (error.path[0]) {
-            newErrors[error.path[0] as string] = error.message;
-          }
-        });
-        setErrors(newErrors);
-        return;
-      }
-    }
-
-    setLoading(true);
-    const { error } = await signIn(data.email, data.password);
-    setLoading(false);
-
-    if (error) {
-      if (error.message.includes('Invalid login credentials')) {
-        toast.error('Ungültige Anmeldedaten');
-      } else {
-        toast.error(error.message);
-      }
-    } else {
-      toast.success('Erfolgreich angemeldet');
-      navigate('/');
-    }
-  };
-
-  const handleSignup = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setErrors({});
-    const formData = new FormData(e.currentTarget);
-    const data = {
-      firstName: formData.get('firstName') as string,
-      lastName: formData.get('lastName') as string,
-      email: formData.get('email') as string,
-      password: formData.get('password') as string,
-      confirmPassword: formData.get('confirmPassword') as string,
-    };
-
-    try {
-      signupSchema.parse(data);
-    } catch (err) {
-      if (err instanceof z.ZodError) {
-        const newErrors: Record<string, string> = {};
-        err.errors.forEach((error) => {
-          if (error.path[0]) {
-            newErrors[error.path[0] as string] = error.message;
-          }
-        });
-        setErrors(newErrors);
-        return;
-      }
-    }
-
-    setLoading(true);
-    const { error } = await signUp(data.email, data.password, {
-      first_name: data.firstName,
-      last_name: data.lastName,
-    });
-    setLoading(false);
-
-    if (error) {
-      if (error.message.includes('already registered')) {
-        toast.error('Diese E-Mail ist bereits registriert');
-      } else {
-        toast.error(error.message);
-      }
-    } else {
-      toast.success('Konto erstellt! Bitte bestätige deine E-Mail.');
-      navigate('/');
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-background to-muted flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="mb-6">
           <Button variant="ghost" asChild>
@@ -137,134 +155,176 @@ export default function AuthPage() {
           </Button>
         </div>
 
-        <Card className="border-border/50 shadow-xl">
-          <CardHeader className="text-center pb-2">
-            <Link to="/" className="inline-block">
-              <span className="text-2xl font-bold text-foreground">ALDENAIR</span>
-            </Link>
-            <CardDescription className="mt-2">
-              Willkommen zurück
-            </CardDescription>
+        <Card className="shadow-xl border-border/50">
+          <CardHeader className="text-center">
+            <div className="mx-auto w-12 h-12 bg-primary rounded-full flex items-center justify-center mb-4">
+              <Shield className="w-6 h-6 text-primary-foreground" />
+            </div>
+            <CardTitle className="text-2xl font-bold">ALDENAIR</CardTitle>
+            <p className="text-muted-foreground">
+              Melden Sie sich an oder registrieren Sie sich
+            </p>
           </CardHeader>
 
-          <CardContent>
-            <Tabs defaultValue="login" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-6">
-                <TabsTrigger value="login">Anmelden</TabsTrigger>
+          <CardContent className="space-y-6">
+            <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'signin' | 'signup')}>
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="signin">Anmelden</TabsTrigger>
                 <TabsTrigger value="signup">Registrieren</TabsTrigger>
               </TabsList>
 
-              <TabsContent value="login">
-                <form onSubmit={handleLogin} className="space-y-4">
+              <TabsContent value="signin" className="space-y-4">
+                <form onSubmit={handleSignIn} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="login-email">E-Mail</Label>
-                    <Input
-                      id="login-email"
-                      name="email"
-                      type="email"
-                      placeholder="deine@email.de"
-                      required
-                    />
-                    {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="login-password">Passwort</Label>
+                    <Label htmlFor="signin-email">E-Mail-Adresse</Label>
                     <div className="relative">
+                      <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
-                        id="login-password"
-                        name="password"
-                        type={showPassword ? 'text' : 'password'}
-                        placeholder="••••••••"
+                        id="signin-email"
+                        type="email"
+                        placeholder="ihre@email.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="pl-10"
+                        disabled={isSubmitting}
                         required
                       />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
-                        onClick={() => setShowPassword(!showPassword)}
-                      >
-                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </Button>
                     </div>
-                    {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
                   </div>
 
-                  <Button type="submit" className="w-full" disabled={loading}>
-                    {loading ? 'Wird angemeldet...' : 'Anmelden'}
+                  <div className="space-y-2">
+                    <Label htmlFor="signin-password">Passwort</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="signin-password"
+                        type="password"
+                        placeholder="Ihr Passwort"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="pl-10"
+                        disabled={isSubmitting}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={isSubmitting || !email || !password}
+                  >
+                    {isSubmitting ? (
+                      "Anmelden..."
+                    ) : (
+                      <>
+                        Anmelden
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </>
+                    )}
                   </Button>
                 </form>
               </TabsContent>
 
-              <TabsContent value="signup">
-                <form onSubmit={handleSignup} className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="firstName">Vorname</Label>
-                      <Input id="firstName" name="firstName" placeholder="Max" required />
-                      {errors.firstName && <p className="text-sm text-destructive">{errors.firstName}</p>}
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="lastName">Nachname</Label>
-                      <Input id="lastName" name="lastName" placeholder="Mustermann" required />
-                      {errors.lastName && <p className="text-sm text-destructive">{errors.lastName}</p>}
+              <TabsContent value="signup" className="space-y-4">
+                <form onSubmit={handleSignUp} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-name">Vollständiger Name</Label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="signup-name"
+                        type="text"
+                        placeholder="Max Mustermann"
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                        className="pl-10"
+                        disabled={isSubmitting}
+                        required
+                      />
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="signup-email">E-Mail</Label>
-                    <Input
-                      id="signup-email"
-                      name="email"
-                      type="email"
-                      placeholder="deine@email.de"
-                      required
-                    />
-                    {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
+                    <Label htmlFor="signup-email">E-Mail-Adresse</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="signup-email"
+                        type="email"
+                        placeholder="ihre@email.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="pl-10"
+                        disabled={isSubmitting}
+                        required
+                      />
+                    </div>
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="signup-password">Passwort</Label>
                     <div className="relative">
+                      <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
                         id="signup-password"
-                        name="password"
-                        type={showPassword ? 'text' : 'password'}
-                        placeholder="••••••••"
+                        type="password"
+                        placeholder="Sicheres Passwort"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="pl-10"
+                        disabled={isSubmitting}
                         required
                       />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
-                        onClick={() => setShowPassword(!showPassword)}
-                      >
-                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </Button>
                     </div>
-                    {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="confirmPassword">Passwort bestätigen</Label>
-                    <Input
-                      id="confirmPassword"
-                      name="confirmPassword"
-                      type="password"
-                      placeholder="••••••••"
-                      required
-                    />
-                    {errors.confirmPassword && <p className="text-sm text-destructive">{errors.confirmPassword}</p>}
+                    <Label htmlFor="confirm-password">Passwort bestätigen</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="confirm-password"
+                        type="password"
+                        placeholder="Passwort wiederholen"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        className="pl-10"
+                        disabled={isSubmitting}
+                        required
+                      />
+                    </div>
                   </div>
 
-                  <Button type="submit" className="w-full" disabled={loading}>
-                    {loading ? 'Wird erstellt...' : 'Konto erstellen'}
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={isSubmitting || !email || !password || !confirmPassword || !fullName}
+                  >
+                    {isSubmitting ? (
+                      "Registrieren..."
+                    ) : (
+                      <>
+                        Konto erstellen
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </>
+                    )}
                   </Button>
                 </form>
               </TabsContent>
             </Tabs>
+
+            <p className="text-xs text-center text-muted-foreground">
+              Mit der Anmeldung stimmen Sie unseren{' '}
+              <Link to="/terms" className="text-primary hover:underline">
+                Nutzungsbedingungen
+              </Link>{' '}
+              und{' '}
+              <Link to="/privacy" className="text-primary hover:underline">
+                Datenschutzrichtlinien
+              </Link>{' '}
+              zu.
+            </p>
           </CardContent>
         </Card>
       </div>
