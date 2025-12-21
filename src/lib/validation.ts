@@ -39,6 +39,7 @@ export function validatePasswordStrength(password: string): {
   isValid: boolean; 
   message?: string;
   score: number;
+  strength: 'weak' | 'medium' | 'strong';
   suggestions: string[];
 } {
   const suggestions: string[] = [];
@@ -49,6 +50,7 @@ export function validatePasswordStrength(password: string): {
       isValid: false, 
       message: 'Passwort ist erforderlich.',
       score: 0,
+      strength: 'weak',
       suggestions: ['Geben Sie ein Passwort ein.']
     };
   }
@@ -111,6 +113,10 @@ export function validatePasswordStrength(password: string): {
 
   const isValid = score >= 4 && password.length >= 8;
   
+  let strength: 'weak' | 'medium' | 'strong' = 'weak';
+  if (score >= 5) strength = 'strong';
+  else if (score >= 3) strength = 'medium';
+  
   let message: string | undefined;
   if (!isValid) {
     if (score < 2) {
@@ -120,7 +126,7 @@ export function validatePasswordStrength(password: string): {
     }
   }
 
-  return { isValid, message, score, suggestions };
+  return { isValid, message, score, strength, suggestions };
 }
 
 // Name validation
