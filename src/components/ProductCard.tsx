@@ -64,14 +64,17 @@ export function ProductCard({
           <Heart className="w-4 h-4" />
         </Button>
 
-        {/* Quick Add Button */}
+        {/* Quick View Button */}
         <div className="absolute bottom-3 left-3 right-3 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0">
           <Button 
             className="w-full gap-2" 
             disabled={!inStock}
+            asChild
           >
-            <ShoppingCart className="w-4 h-4" />
-            In den Warenkorb
+            <Link to={`/products/${id}`}>
+              <ShoppingCart className="w-4 h-4" />
+              Details ansehen
+            </Link>
           </Button>
         </div>
       </div>
@@ -104,7 +107,7 @@ export function ProductCard({
           {/* Price */}
           <div className="flex items-center gap-2 pt-1">
             <span className="text-lg font-bold text-foreground">
-              {price.toFixed(2)} €
+              ab {price.toFixed(2)} €
             </span>
             {originalPrice && originalPrice > price && (
               <span className="text-sm text-muted-foreground line-through">

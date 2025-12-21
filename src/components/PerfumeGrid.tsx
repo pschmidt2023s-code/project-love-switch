@@ -1,80 +1,42 @@
+import { useProducts } from '@/hooks/useProducts';
 import { ProductCard } from './ProductCard';
-
-// Demo products data
-const demoProducts = [
-  {
-    id: '1',
-    name: 'Aventus - Inspiriert von Creed',
-    category: 'Herren',
-    price: 49.99,
-    originalPrice: 69.99,
-    image: 'https://images.unsplash.com/photo-1541643600914-78b084683601?w=400&h=400&fit=crop',
-    rating: 4.9,
-    reviewCount: 234,
-    inStock: true,
-  },
-  {
-    id: '2',
-    name: 'Sauvage - Inspiriert von Dior',
-    category: 'Herren',
-    price: 39.99,
-    originalPrice: 54.99,
-    image: 'https://images.unsplash.com/photo-1594035910387-fea47794261f?w=400&h=400&fit=crop',
-    rating: 4.8,
-    reviewCount: 189,
-    inStock: true,
-  },
-  {
-    id: '3',
-    name: 'Miss Dior - Inspiriert von Dior',
-    category: 'Damen',
-    price: 44.99,
-    originalPrice: 59.99,
-    image: 'https://images.unsplash.com/photo-1588405748880-12d1d2a59f75?w=400&h=400&fit=crop',
-    rating: 4.7,
-    reviewCount: 156,
-    inStock: true,
-  },
-  {
-    id: '4',
-    name: 'Black Orchid - Inspiriert von Tom Ford',
-    category: 'Unisex',
-    price: 54.99,
-    originalPrice: 79.99,
-    image: 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?w=400&h=400&fit=crop',
-    rating: 4.9,
-    reviewCount: 312,
-    inStock: true,
-  },
-  {
-    id: '5',
-    name: 'Bleu de Chanel - Inspiriert',
-    category: 'Herren',
-    price: 42.99,
-    originalPrice: 59.99,
-    image: 'https://images.unsplash.com/photo-1587017539504-67cfbddac569?w=400&h=400&fit=crop',
-    rating: 4.6,
-    reviewCount: 98,
-    inStock: true,
-  },
-  {
-    id: '6',
-    name: 'La Vie Est Belle - Inspiriert',
-    category: 'Damen',
-    price: 38.99,
-    originalPrice: 49.99,
-    image: 'https://images.unsplash.com/photo-1595425970377-c9703cf48b6d?w=400&h=400&fit=crop',
-    rating: 4.8,
-    reviewCount: 167,
-    inStock: false,
-  },
-];
+import { Skeleton } from '@/components/ui/skeleton';
 
 export function PerfumeGrid() {
+  const { products, loading } = useProducts();
+
+  if (loading) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {[...Array(6)].map((_, i) => (
+          <div key={i} className="space-y-4">
+            <Skeleton className="aspect-square w-full rounded-xl" />
+            <Skeleton className="h-4 w-3/4" />
+            <Skeleton className="h-4 w-1/2" />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  // Take only first 6 products for the homepage grid
+  const displayProducts = products.slice(0, 6);
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-      {demoProducts.map((product) => (
-        <ProductCard key={product.id} {...product} />
+      {displayProducts.map((product) => (
+        <ProductCard
+          key={product.id}
+          id={product.slug}
+          name={product.name}
+          category={(product as any).categories?.name || 'Parfüm'}
+          price={Number(product.base_price) * 0.25} // Show 5ml price as starting price
+          originalPrice={product.original_price ? Number(product.original_price) * 0.25 : undefined}
+          image={product.image_url || 'https://images.unsplash.com/photo-1541643600914-78b084683601?w=400&h=400&fit=crop'}
+          rating={product.rating ? Number(product.rating) : undefined}
+          reviewCount={product.review_count || undefined}
+          inStock={true}
+        />
       ))}
     </div>
   );
