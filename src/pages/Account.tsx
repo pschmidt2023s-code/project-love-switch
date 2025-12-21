@@ -60,7 +60,7 @@ interface Order {
 }
 
 export default function Account() {
-  const { user, signOut } = useAuth();
+  const { user, signOut, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -74,12 +74,15 @@ export default function Account() {
   });
 
   useEffect(() => {
+    if (authLoading) return;
+
     if (!user) {
       navigate('/auth');
       return;
     }
+
     loadAccountData();
-  }, [user, navigate]);
+  }, [user, authLoading, navigate]);
 
   async function loadAccountData() {
     if (!user) return;

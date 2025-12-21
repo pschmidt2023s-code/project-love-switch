@@ -114,7 +114,7 @@ const Navigation = () => {
                     <Link to="/orders">Meine Bestellungen</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link to="/profile">Profil</Link>
+                    <Link to="/account">Mein Konto</Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
