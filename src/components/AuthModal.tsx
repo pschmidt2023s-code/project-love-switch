@@ -1,0 +1,317 @@
+import { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
+import { User, UserPlus, AlertCircle, Mail, ArrowLeft } from 'lucide-react';
+import { validatePasswordStrength, validateEmail } from '@/lib/validation';
+import { authRateLimiter } from '@/lib/security';
+
+interface AuthModalProps {
+  children: React.ReactNode;
+}
+
+export function AuthModal({ children }: AuthModalProps) {
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [passwordStrength, setPasswordStrength] = useState<'weak' | 'medium' | 'strong'>('weak');
+  const [passwordError, setPasswordError] = useState('');
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [resetEmailSent, setResetEmailSent] = useState(false);
+  const { signIn, signUp } = useAuth();
+  const { toast } = useToast();
+
+  const handleSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const clientId = `auth-signin-${Date.now().toString(36)}`;
+    if (!authRateLimiter.isAllowed(clientId)) {
+      toast({
+        title: "Zu viele Anmeldeversuche",
+        description: "Bitte warten Sie 15 Minuten, bevor Sie es erneut versuchen.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const emailValidation = validateEmail(email.trim());
+    if (!emailValidation.isValid) {
+      toast({
+        title: "Ungültige E-Mail",
+        description: emailValidation.message || "Bitte geben Sie eine gültige E-Mail-Adresse ein.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!password || password.length < 6) {
+      toast({
+        title: "Passwort erforderlich",
+        description: "Bitte geben Sie Ihr Passwort ein (mindestens 6 Zeichen).",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+    const { error } = await signIn(email.trim(), password);
+
+    if (error) {
+      toast({
+        title: "Anmeldung fehlgeschlagen",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Erfolgreich angemeldet",
+        description: "Willkommen zurück!",
+      });
+      setOpen(false);
+      resetForm();
+    }
+    setLoading(false);
+  };
+
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const clientId = `auth-signup-${Date.now().toString(36)}`;
+    if (!authRateLimiter.isAllowed(clientId)) {
+      toast({
+        title: "Zu viele Registrierungsversuche",
+        description: "Bitte warten Sie 15 Minuten, bevor Sie es erneut versuchen.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const emailValidation = validateEmail(email.trim());
+    if (!emailValidation.isValid) {
+      toast({
+        title: "Ungültige E-Mail",
+        description: emailValidation.message || "Bitte geben Sie eine gültige E-Mail-Adresse ein.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!fullName.trim() || fullName.length < 2) {
+      toast({
+        title: "Name erforderlich",
+        description: "Bitte geben Sie Ihren vollständigen Namen ein (mindestens 2 Zeichen).",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const passwordValidation = validatePasswordStrength(password);
+    if (!passwordValidation.isValid) {
+      setPasswordError(passwordValidation.message || 'Passwort ist zu schwach');
+      return;
+    }
+
+    setLoading(true);
+    const nameParts = fullName.trim().split(' ');
+    const firstName = nameParts[0];
+    const lastName = nameParts.slice(1).join(' ') || '';
+
+    const { error } = await signUp(email.trim(), password, { first_name: firstName, last_name: lastName });
+
+    if (error) {
+      toast({
+        title: "Registrierung fehlgeschlagen",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Registrierung erfolgreich",
+        description: "Willkommen bei ALDENAIR!",
+      });
+      setOpen(false);
+      resetForm();
+    }
+    setLoading(false);
+  };
+
+  const resetForm = () => {
+    setEmail('');
+    setPassword('');
+    setFullName('');
+    setPasswordError('');
+    setPasswordStrength('weak');
+    setShowForgotPassword(false);
+    setResetEmailSent(false);
+  };
+
+  const handlePasswordChange = (value: string) => {
+    setPassword(value);
+    setPasswordError('');
+    const validation = validatePasswordStrength(value);
+    setPasswordStrength(validation.strength);
+    if (!validation.isValid && value.length > 0) {
+      setPasswordError(validation.message || '');
+    }
+  };
+
+  const getPasswordStrengthColor = () => {
+    switch (passwordStrength) {
+      case 'strong': return 'text-green-600';
+      case 'medium': return 'text-yellow-600';
+      default: return 'text-red-600';
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        {children}
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-md p-0 gap-0 overflow-hidden">
+        <div className="relative">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/5 pointer-events-none" />
+
+          <div className="relative p-6 pb-4">
+            <DialogHeader className="text-center space-y-2">
+              <div className="mx-auto w-12 h-12 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center mb-2">
+                <User className="w-6 h-6 text-primary" />
+              </div>
+              <DialogTitle className="text-xl font-semibold">Willkommen bei ALDENAIR</DialogTitle>
+              <p className="text-sm text-muted-foreground">Melden Sie sich an oder erstellen Sie ein Konto</p>
+            </DialogHeader>
+          </div>
+
+          <Tabs defaultValue="login" className="w-full">
+            <div className="px-6">
+              <TabsList className="grid w-full grid-cols-2 h-12 p-1 bg-muted/50">
+                <TabsTrigger value="login" className="flex items-center justify-center gap-2 h-10 text-sm font-medium">
+                  <User className="w-4 h-4" />
+                  <span>Anmelden</span>
+                </TabsTrigger>
+                <TabsTrigger value="register" className="flex items-center justify-center gap-2 h-10 text-sm font-medium">
+                  <UserPlus className="w-4 h-4" />
+                  <span>Registrieren</span>
+                </TabsTrigger>
+              </TabsList>
+            </div>
+
+            <TabsContent value="login" className="mt-0 p-6 pt-6">
+              <form onSubmit={handleSignIn} className="space-y-5">
+                <div className="space-y-2">
+                  <Label htmlFor="login-email" className="text-sm font-medium">E-Mail</Label>
+                  <Input
+                    id="login-email"
+                    type="email"
+                    placeholder="ihre@email.de"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    className="h-11"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="login-password" className="text-sm font-medium">Passwort</Label>
+                  <Input
+                    id="login-password"
+                    type="password"
+                    placeholder="Ihr Passwort"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    className="h-11"
+                  />
+                </div>
+                <Button type="submit" className="w-full h-11 text-base font-medium" disabled={loading}>
+                  {loading ? 'Anmelden...' : 'Anmelden'}
+                </Button>
+              </form>
+            </TabsContent>
+
+            <TabsContent value="register" className="mt-0 p-6 pt-6">
+              <form onSubmit={handleSignUp} className="space-y-5">
+                <div className="space-y-2">
+                  <Label htmlFor="register-name" className="text-sm font-medium">Vollständiger Name</Label>
+                  <Input
+                    id="register-name"
+                    type="text"
+                    placeholder="Max Mustermann"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    required
+                    className="h-11"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="register-email" className="text-sm font-medium">E-Mail</Label>
+                  <Input
+                    id="register-email"
+                    type="email"
+                    placeholder="ihre@email.de"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    className="h-11"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="register-password" className="text-sm font-medium">Passwort</Label>
+                  <Input
+                    id="register-password"
+                    type="password"
+                    placeholder="Mindestens 8 Zeichen"
+                    value={password}
+                    onChange={(e) => handlePasswordChange(e.target.value)}
+                    required
+                    minLength={8}
+                    className="h-11"
+                  />
+                  {password && (
+                    <div className="space-y-1.5 pt-1">
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                          <div
+                            className={`h-full transition-all duration-300 ${
+                              passwordStrength === 'strong' ? 'w-full bg-green-500' :
+                              passwordStrength === 'medium' ? 'w-2/3 bg-yellow-500' :
+                              'w-1/3 bg-red-500'
+                            }`}
+                          />
+                        </div>
+                        <span className={`text-xs font-medium ${getPasswordStrengthColor()}`}>
+                          {passwordStrength === 'strong' ? 'Stark' : passwordStrength === 'medium' ? 'Mittel' : 'Schwach'}
+                        </span>
+                      </div>
+                      {passwordError && (
+                        <div className="flex items-start gap-1.5 text-xs text-destructive">
+                          <AlertCircle className="w-3 h-3 mt-0.5 shrink-0" />
+                          <span>{passwordError}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+                <Button type="submit" className="w-full h-11 text-base font-medium" disabled={loading}>
+                  {loading ? 'Registrieren...' : 'Konto erstellen'}
+                </Button>
+                <p className="text-xs text-center text-muted-foreground pt-2">
+                  Mit der Registrierung stimmen Sie unseren{' '}
+                  <a href="/terms" className="text-primary hover:underline">AGB</a>
+                  {' '}und{' '}
+                  <a href="/privacy" className="text-primary hover:underline">Datenschutzrichtlinien</a>
+                  {' '}zu.
+                </p>
+              </form>
+            </TabsContent>
+          </Tabs>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}

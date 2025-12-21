@@ -1,23 +1,27 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { ShoppingCart, Search, Menu, X, Heart, User, LogOut } from "lucide-react";
-import { Button } from '@/components/ui/button';
+import { User, LogOut, ShoppingCart, Settings, Search, Menu, X, Heart } from "lucide-react";
 import { useAuth } from '@/contexts/AuthContext';
 import { useCart } from '@/contexts/CartContext';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
+import { AuthModal } from './AuthModal';
+import { CartSidebar } from './CartSidebar';
+import { DarkModeToggle } from './DarkModeToggle';
+import { NotificationCenter } from './notifications/NotificationCenter';
+import { SearchWithSuggestions } from './SearchWithSuggestions';
 
 const Navigation = () => {
-  const location = useLocation();
   const { user, signOut } = useAuth();
   const { itemCount } = useCart();
+  const location = useLocation();
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showCart, setShowCart] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -28,178 +32,240 @@ const Navigation = () => {
   }, []);
 
   useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowUserMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setShowSearch(false);
+        setShowMobileMenu(false);
+        setShowUserMenu(false);
+      }
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, []);
+
+  useEffect(() => {
     setShowMobileMenu(false);
   }, [location.pathname]);
 
+  // Check admin role
+  useEffect(() => {
+    const checkAdminRole = async () => {
+      if (!user) {
+        setIsAdmin(false);
+        return;
+      }
+      try {
+        const { supabase } = await import('@/integrations/supabase/client');
+        const { data } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .eq('role', 'admin')
+          .maybeSingle();
+        setIsAdmin(!!data);
+      } catch {
+        setIsAdmin(false);
+      }
+    };
+    checkAdminRole();
+  }, [user]);
+
   const navLinks = [
+    { to: '/', label: 'Home' },
     { to: '/products', label: 'Shop' },
-    { to: '/sparkits', label: 'Sparkits' },
     { to: '/about', label: 'Über uns' },
     { to: '/contact', label: 'Kontakt' },
   ];
 
-  const handleSignOut = async () => {
-    await signOut();
-  };
+  const isActive = (path: string) => location.pathname === path;
 
   return (
-    <header
-      className={`sticky top-0 z-50 transition-all duration-300 ${
-        isScrolled
-          ? 'bg-background/95 backdrop-blur-md shadow-sm border-b border-border'
-          : 'bg-background border-b border-border/50'
-      }`}
-    >
-      <nav className="max-w-7xl mx-auto px-4 lg:px-8">
-        <div className="flex items-center justify-between h-16 lg:h-20">
-          {/* Logo */}
-          <Link
-            to="/"
-            className="flex items-center gap-2 group"
-          >
-            <span className="text-xl lg:text-2xl font-bold tracking-tight text-foreground group-hover:text-primary transition-colors">
-              ALDENAIR
-            </span>
-          </Link>
+    <>
+      {/* Top Announcement Bar */}
+      <div className="bg-primary text-primary-foreground text-center py-2 text-xs sm:text-sm font-medium">
+        Kostenloser Versand ab 50 EUR | 14 Tage Rückgaberecht
+      </div>
 
-          {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center gap-8">
-            {navLinks.map((link) => (
-              <Link
-                key={link.to}
-                to={link.to}
-                className={`text-sm font-medium transition-colors hover:text-primary ${
-                  location.pathname === link.to
-                    ? 'text-primary'
-                    : 'text-muted-foreground'
-                }`}
+      {/* Main Navigation */}
+      <nav
+        className={`sticky top-0 z-50 transition-all duration-300 ${
+          isScrolled
+            ? 'bg-background/95 backdrop-blur-lg shadow-md border-b border-border'
+            : 'bg-background border-b border-border'
+        }`}
+      >
+        <div className="max-w-7xl mx-auto px-4 lg:px-8">
+          <div className="flex items-center justify-between h-16 lg:h-20">
+            {/* Left: Mobile Menu + Logo */}
+            <div className="flex items-center gap-3">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="lg:hidden"
+                onClick={() => {
+                  setShowMobileMenu(!showMobileMenu);
+                  if (!showMobileMenu) setShowSearch(false);
+                }}
               >
-                {link.label}
-              </Link>
-            ))}
-          </div>
-
-          {/* Desktop Actions */}
-          <div className="hidden lg:flex items-center gap-2">
-            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
-              <Search className="h-5 w-5" />
-            </Button>
-            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
-              <Heart className="h-5 w-5" />
-            </Button>
-            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground relative" asChild>
-              <Link to="/cart">
-                <ShoppingCart className="h-5 w-5" />
-                {itemCount > 0 && (
-                  <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center">
-                    {itemCount}
-                  </span>
-                )}
-              </Link>
-            </Button>
-
-            {user ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
-                    <User className="h-5 w-5" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuItem className="text-muted-foreground">
-                    {user.email}
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link to="/orders">Meine Bestellungen</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/account">Mein Konto</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
-                    <LogOut className="w-4 h-4 mr-2" />
-                    Abmelden
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              <Button variant="ghost" size="sm" asChild>
-                <Link to="/auth">Anmelden</Link>
+                {showMobileMenu ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
               </Button>
-            )}
-          </div>
 
-          {/* Mobile Menu Button */}
-          <div className="flex lg:hidden items-center gap-2">
-            <Button variant="ghost" size="icon" className="text-muted-foreground relative" asChild>
-              <Link to="/cart">
-                <ShoppingCart className="h-5 w-5" />
-                {itemCount > 0 && (
-                  <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center">
-                    {itemCount}
-                  </span>
-                )}
+              <Link to="/" className="flex items-center">
+                <span className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-wider text-foreground">
+                  ALDENAIR
+                </span>
               </Link>
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setShowMobileMenu(!showMobileMenu)}
-              className="text-muted-foreground"
-            >
-              {showMobileMenu ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-            </Button>
-          </div>
-        </div>
+            </div>
 
-        {/* Mobile Menu */}
-        {showMobileMenu && (
-          <div className="lg:hidden py-4 border-t border-border animate-fade-in">
-            <div className="flex flex-col gap-2">
+            {/* Center: Desktop Navigation */}
+            <div className="hidden lg:flex items-center gap-8">
               {navLinks.map((link) => (
                 <Link
                   key={link.to}
                   to={link.to}
-                  className={`px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
-                    location.pathname === link.to
-                      ? 'bg-primary/10 text-primary'
-                      : 'text-muted-foreground hover:bg-muted'
+                  className={`text-sm font-medium transition-colors relative py-2 ${
+                    isActive(link.to)
+                      ? 'text-primary'
+                      : 'text-muted-foreground hover:text-foreground'
                   }`}
+                >
+                  {link.label}
+                  {isActive(link.to) && (
+                    <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full" />
+                  )}
+                </Link>
+              ))}
+            </div>
+
+            {/* Right: Actions */}
+            <div className="flex items-center gap-1 sm:gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  setShowSearch(!showSearch);
+                  if (!showSearch) setShowMobileMenu(false);
+                }}
+              >
+                <Search className="w-5 h-5" />
+              </Button>
+
+              <DarkModeToggle />
+
+              {user && <NotificationCenter />}
+
+              <Button variant="ghost" size="icon" asChild className="hidden sm:flex">
+                <Link to="/favorites">
+                  <Heart className="w-5 h-5" />
+                </Link>
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowCart(true)}
+                className="relative"
+              >
+                <ShoppingCart className="w-5 h-5" />
+                {itemCount > 0 && (
+                  <span className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center bg-primary text-primary-foreground text-xs rounded-full font-bold">
+                    {itemCount > 99 ? '99+' : itemCount}
+                  </span>
+                )}
+              </Button>
+
+              {user ? (
+                <div className="relative" ref={dropdownRef}>
+                  <Button variant="ghost" size="icon" onClick={() => setShowUserMenu(!showUserMenu)}>
+                    <User className="w-5 h-5" />
+                  </Button>
+                  {showUserMenu && (
+                    <div className="absolute right-0 mt-2 w-56 bg-card border border-border rounded-lg shadow-xl py-2 z-50">
+                      <div className="px-4 py-3 border-b border-border">
+                        <p className="text-sm font-semibold text-foreground truncate">{user.email}</p>
+                      </div>
+                      <Link
+                        to="/profile"
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-muted transition-colors"
+                        onClick={() => setShowUserMenu(false)}
+                      >
+                        <User className="w-4 h-4" />
+                        Mein Profil
+                      </Link>
+                      {isAdmin && (
+                        <Link
+                          to="/admin"
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-muted transition-colors"
+                          onClick={() => setShowUserMenu(false)}
+                        >
+                          <Settings className="w-4 h-4" />
+                          Admin Dashboard
+                        </Link>
+                      )}
+                      <hr className="my-2 border-border" />
+                      <button
+                        onClick={() => {
+                          signOut();
+                          setShowUserMenu(false);
+                        }}
+                        className="flex items-center gap-3 w-full text-left px-4 py-2.5 text-sm text-destructive hover:bg-muted transition-colors"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        Abmelden
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <AuthModal>
+                  <Button size="sm">Anmelden</Button>
+                </AuthModal>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {showSearch && <SearchWithSuggestions onClose={() => setShowSearch(false)} />}
+
+        {showMobileMenu && (
+          <div className="lg:hidden absolute top-full left-0 right-0 bg-background border-b border-border shadow-xl animate-in slide-in-from-top-2 duration-200">
+            <div className="px-4 py-4 space-y-1">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.to}
+                  to={link.to}
+                  className={`block py-3 px-4 rounded-lg text-base font-medium transition-colors ${
+                    isActive(link.to) ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-muted'
+                  }`}
+                  onClick={() => setShowMobileMenu(false)}
                 >
                   {link.label}
                 </Link>
               ))}
-              <div className="border-t border-border my-2" />
-              {user ? (
-                <>
-                  <p className="px-4 py-2 text-sm text-muted-foreground">{user.email}</p>
-                  <Link
-                    to="/orders"
-                    className="px-4 py-3 rounded-lg text-sm font-medium text-muted-foreground hover:bg-muted"
-                  >
-                    Meine Bestellungen
-                  </Link>
-                  <button
-                    onClick={handleSignOut}
-                    className="px-4 py-3 rounded-lg text-sm font-medium text-destructive hover:bg-muted text-left"
-                  >
-                    Abmelden
-                  </button>
-                </>
-              ) : (
-                <Link
-                  to="/auth"
-                  className="px-4 py-3 rounded-lg text-sm font-medium text-primary hover:bg-primary/10"
-                >
-                  Anmelden / Registrieren
-                </Link>
+              {!user && (
+                <div className="pt-4 border-t border-border mt-4">
+                  <AuthModal>
+                    <Button className="w-full">Anmelden / Registrieren</Button>
+                  </AuthModal>
+                </div>
               )}
             </div>
           </div>
         )}
       </nav>
-    </header>
+
+      <CartSidebar open={showCart} onOpenChange={setShowCart} />
+    </>
   );
 };
 
