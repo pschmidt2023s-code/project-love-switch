@@ -13,6 +13,19 @@ interface Product {
   rating: number | null;
   review_count: number | null;
   is_active: boolean | null;
+  // Extended fields
+  brand: string | null;
+  size: string | null;
+  gender: string | null;
+  inspired_by: string | null;
+  ai_description: string | null;
+  scent_notes: string[] | null;
+  top_notes: string[] | null;
+  middle_notes: string[] | null;
+  base_notes: string[] | null;
+  ingredients: string[] | null;
+  seasons: string[] | null;
+  occasions: string[] | null;
 }
 
 interface ProductVariant {
