@@ -246,34 +246,64 @@ export type Database = {
       }
       product_variants: {
         Row: {
+          ai_description: string | null
+          base_notes: string[] | null
           created_at: string
+          description: string | null
           id: string
+          image: string | null
+          in_stock: boolean | null
+          ingredients: string[] | null
+          inspired_by_fragrance: string | null
+          middle_notes: string[] | null
+          name: string | null
           original_price: number | null
           price: number
           product_id: string
           size: string
           sku: string | null
           stock: number | null
+          top_notes: string[] | null
         }
         Insert: {
+          ai_description?: string | null
+          base_notes?: string[] | null
           created_at?: string
+          description?: string | null
           id?: string
+          image?: string | null
+          in_stock?: boolean | null
+          ingredients?: string[] | null
+          inspired_by_fragrance?: string | null
+          middle_notes?: string[] | null
+          name?: string | null
           original_price?: number | null
           price: number
           product_id: string
           size: string
           sku?: string | null
           stock?: number | null
+          top_notes?: string[] | null
         }
         Update: {
+          ai_description?: string | null
+          base_notes?: string[] | null
           created_at?: string
+          description?: string | null
           id?: string
+          image?: string | null
+          in_stock?: boolean | null
+          ingredients?: string[] | null
+          inspired_by_fragrance?: string | null
+          middle_notes?: string[] | null
+          name?: string | null
           original_price?: number | null
           price?: number
           product_id?: string
           size?: string
           sku?: string | null
           stock?: number | null
+          top_notes?: string[] | null
         }
         Relationships: [
           {
@@ -287,48 +317,84 @@ export type Database = {
       }
       products: {
         Row: {
+          ai_description: string | null
+          base_notes: string[] | null
           base_price: number
+          brand: string | null
           category_id: string | null
           created_at: string
           description: string | null
+          gender: string | null
           id: string
           image_url: string | null
+          ingredients: string[] | null
+          inspired_by: string | null
           is_active: boolean | null
+          middle_notes: string[] | null
           name: string
+          occasions: string[] | null
           original_price: number | null
           rating: number | null
           review_count: number | null
+          scent_notes: string[] | null
+          seasons: string[] | null
+          size: string | null
           slug: string
+          top_notes: string[] | null
           updated_at: string
         }
         Insert: {
+          ai_description?: string | null
+          base_notes?: string[] | null
           base_price: number
+          brand?: string | null
           category_id?: string | null
           created_at?: string
           description?: string | null
+          gender?: string | null
           id?: string
           image_url?: string | null
+          ingredients?: string[] | null
+          inspired_by?: string | null
           is_active?: boolean | null
+          middle_notes?: string[] | null
           name: string
+          occasions?: string[] | null
           original_price?: number | null
           rating?: number | null
           review_count?: number | null
+          scent_notes?: string[] | null
+          seasons?: string[] | null
+          size?: string | null
           slug: string
+          top_notes?: string[] | null
           updated_at?: string
         }
         Update: {
+          ai_description?: string | null
+          base_notes?: string[] | null
           base_price?: number
+          brand?: string | null
           category_id?: string | null
           created_at?: string
           description?: string | null
+          gender?: string | null
           id?: string
           image_url?: string | null
+          ingredients?: string[] | null
+          inspired_by?: string | null
           is_active?: boolean | null
+          middle_notes?: string[] | null
           name?: string
+          occasions?: string[] | null
           original_price?: number | null
           rating?: number | null
           review_count?: number | null
+          scent_notes?: string[] | null
+          seasons?: string[] | null
+          size?: string | null
           slug?: string
+          top_notes?: string[] | null
           updated_at?: string
         }
         Relationships: [
