@@ -58,7 +58,7 @@ interface Address {
 
 export default function Orders() {
   const { id } = useParams<{ id: string }>();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [order, setOrder] = useState<Order | null>(null);
@@ -66,16 +66,19 @@ export default function Orders() {
   const [shippingAddress, setShippingAddress] = useState<Address | null>(null);
 
   useEffect(() => {
+    if (authLoading) return;
+
     if (!user) {
       navigate('/auth');
       return;
     }
+
     if (id) {
       loadOrderDetails();
     } else {
-      navigate('/account');
+      navigate('/orders');
     }
-  }, [user, id, navigate]);
+  }, [user, authLoading, id, navigate]);
 
   async function loadOrderDetails() {
     if (!id || !user) return;

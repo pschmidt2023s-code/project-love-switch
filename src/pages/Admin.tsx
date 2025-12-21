@@ -29,7 +29,7 @@ interface Order {
 }
 
 export default function Admin() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -42,9 +42,11 @@ export default function Admin() {
   });
 
   useEffect(() => {
+    if (authLoading) return;
+
     async function checkAdminRole() {
       console.log('[Admin] Checking admin role, user:', user?.id, user?.email);
-      
+
       if (!user) {
         console.log('[Admin] No user found, redirecting to auth');
         navigate('/auth');
@@ -86,7 +88,7 @@ export default function Admin() {
     }
 
     checkAdminRole();
-  }, [user, navigate]);
+  }, [user, authLoading, navigate]);
 
   async function loadData() {
     const [productsRes, ordersRes] = await Promise.all([
