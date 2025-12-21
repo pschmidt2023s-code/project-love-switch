@@ -43,28 +43,42 @@ export default function Admin() {
 
   useEffect(() => {
     async function checkAdminRole() {
+      console.log('[Admin] Checking admin role, user:', user?.id, user?.email);
+      
       if (!user) {
+        console.log('[Admin] No user found, redirecting to auth');
         navigate('/auth');
         return;
       }
 
       try {
-        const { data: roleData } = await supabase
+        console.log('[Admin] Querying user_roles for user_id:', user.id);
+        const { data: roleData, error } = await supabase
           .from('user_roles')
           .select('role')
           .eq('user_id', user.id)
           .eq('role', 'admin')
           .maybeSingle();
 
-        if (!roleData) {
+        console.log('[Admin] Role query result:', { roleData, error });
+
+        if (error) {
+          console.error('[Admin] Error querying roles:', error);
           navigate('/');
           return;
         }
 
+        if (!roleData) {
+          console.log('[Admin] No admin role found for user, redirecting to home');
+          navigate('/');
+          return;
+        }
+
+        console.log('[Admin] Admin role confirmed, loading data');
         setIsAdmin(true);
         await loadData();
       } catch (error) {
-        console.error('Error checking admin role:', error);
+        console.error('[Admin] Error checking admin role:', error);
         navigate('/');
       } finally {
         setLoading(false);
