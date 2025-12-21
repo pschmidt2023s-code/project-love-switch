@@ -7,67 +7,62 @@ import { Heart, ShoppingCart, Trash2, ArrowLeft } from 'lucide-react';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { perfumes } from '@/data/perfumes';
-import { Perfume, PerfumeVariant } from '@/types/perfume';
+import { useProducts } from '@/hooks/useProducts';
 import Navigation from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
 import { MobileBottomNav } from '@/components/MobileBottomNav';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { AuthModal } from '@/components/AuthModal';
 
-interface FavoriteWithDetails {
+interface FavoriteWithProduct {
   id: string;
-  perfume: Perfume;
-  variant: PerfumeVariant;
+  product_id: string;
+  productName: string;
+  productImage: string;
+  productPrice: number;
   created_at: string;
 }
 
 export default function Favorites() {
-  const { favorites, loading, removeFromFavorites } = useFavorites();
+  const { favorites, isLoading, removeFromFavorites } = useFavorites();
   const { addItem } = useCart();
   const { user } = useAuth();
-  const [favoritesWithDetails, setFavoritesWithDetails] = useState<FavoriteWithDetails[]>([]);
+  const { products } = useProducts();
+  const [favoritesWithDetails, setFavoritesWithDetails] = useState<FavoriteWithProduct[]>([]);
 
   useEffect(() => {
-    const detailed: FavoriteWithDetails[] = [];
-
-    favorites.forEach(favorite => {
-      const perfume = perfumes.find(p => p.id === favorite.perfume_id);
-      if (perfume) {
-        if (favorite.variant_id) {
-          const variant = perfume.variants.find(v => v.id === favorite.variant_id);
-          if (variant) {
-            detailed.push({
-              id: favorite.id,
-              perfume,
-              variant,
-              created_at: favorite.created_at
-            });
-          }
-        } else {
-          perfume.variants.forEach(variant => {
-            detailed.push({
-              id: `${favorite.id}-${variant.id}`,
-              perfume,
-              variant,
-              created_at: favorite.created_at
-            });
-          });
-        }
-      }
-    });
+    if (products.length === 0) return;
+    
+    const detailed: FavoriteWithProduct[] = favorites
+      .map(favorite => {
+        const product = products.find(p => p.id === favorite.product_id);
+        if (!product) return null;
+        return {
+          id: favorite.id,
+          product_id: favorite.product_id,
+          productName: product.name,
+          productImage: product.image_url || '/placeholder.svg',
+          productPrice: product.base_price,
+          created_at: favorite.created_at
+        };
+      })
+      .filter((item): item is FavoriteWithProduct => item !== null);
 
     setFavoritesWithDetails(detailed);
-  }, [favorites]);
+  }, [favorites, products]);
 
-  const handleAddToCart = (favorite: FavoriteWithDetails) => {
-    addItem({
-      id: favorite.variant.id,
-      name: favorite.variant.name,
-      price: favorite.variant.price,
+  const handleAddToCart = async (favorite: FavoriteWithProduct) => {
+    const product = products.find(p => p.id === favorite.product_id);
+    if (!product) return;
+    
+    await addItem({
+      variantId: favorite.product_id,
+      productId: favorite.product_id,
+      productName: favorite.productName,
+      variantSize: product.size || 'Standard',
+      price: favorite.productPrice,
       quantity: 1,
-      image: favorite.perfume.image,
-      size: favorite.variant.size || favorite.perfume.size,
+      image: favorite.productImage,
     });
   };
 
@@ -118,7 +113,7 @@ export default function Favorites() {
               </div>
             </div>
 
-            {loading ? (
+            {isLoading ? (
               <div className="flex justify-center py-16">
                 <LoadingSpinner size="lg" />
               </div>
@@ -141,38 +136,30 @@ export default function Favorites() {
                   <Card key={favorite.id} className="overflow-hidden group">
                     <div className="aspect-square relative bg-muted">
                       <img
-                        src={favorite.perfume.image}
-                        alt={favorite.variant.name}
+                        src={favorite.productImage}
+                        alt={favorite.productName}
                         className="w-full h-full object-cover"
                       />
                       <Button
                         variant="destructive"
                         size="icon"
                         className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() => removeFromFavorites(favorite.id)}
+                        onClick={() => removeFromFavorites(favorite.product_id)}
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>
                     <CardContent className="p-4">
-                      <h3 className="font-semibold text-lg mb-1">{favorite.variant.name}</h3>
-                      <p className="text-sm text-muted-foreground mb-2">
-                        {favorite.perfume.brand}
-                      </p>
+                      <h3 className="font-semibold text-lg mb-1">{favorite.productName}</h3>
                       <div className="flex items-center justify-between">
                         <span className="text-lg font-bold text-primary">
-                          {favorite.variant.price.toFixed(2)} €
+                          {favorite.productPrice.toFixed(2)} €
                         </span>
-                        {favorite.variant.inStock ? (
-                          <Badge variant="secondary">Auf Lager</Badge>
-                        ) : (
-                          <Badge variant="outline">Ausverkauft</Badge>
-                        )}
+                        <Badge variant="secondary">Auf Lager</Badge>
                       </div>
                       <Button
                         className="w-full mt-4"
                         onClick={() => handleAddToCart(favorite)}
-                        disabled={!favorite.variant.inStock}
                       >
                         <ShoppingCart className="w-4 h-4 mr-2" />
                         In den Warenkorb
