@@ -50,6 +50,11 @@ export function Footer() {
                 </Link>
               </li>
               <li>
+                <Link to="/faq" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  FAQ
+                </Link>
+              </li>
+              <li>
                 <Link to="/shipping" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                   Versand
                 </Link>

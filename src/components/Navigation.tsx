@@ -33,6 +33,7 @@ const Navigation = () => {
 
   const navLinks = [
     { to: '/products', label: 'Shop' },
+    { to: '/sparkits', label: 'Sparkits' },
     { to: '/about', label: 'Über uns' },
     { to: '/contact', label: 'Kontakt' },
   ];
