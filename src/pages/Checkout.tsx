@@ -6,29 +6,93 @@ import { supabase } from '@/integrations/supabase/client';
 import Navigation from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
 import { Button } from '@/components/ui/button';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
-import { CreditCard, Loader2 } from 'lucide-react';
+import { Loader2, ArrowLeft, ShoppingBag, CheckCircle } from 'lucide-react';
+import { AddressForm } from '@/components/checkout/AddressForm';
+import { OrderSummary } from '@/components/checkout/OrderSummary';
+import { PaymentMethodSelector } from '@/components/checkout/PaymentMethodSelector';
+
+interface Address {
+  id?: string;
+  first_name: string;
+  last_name: string;
+  street: string;
+  street2?: string;
+  postal_code: string;
+  city: string;
+  country: string;
+  type: 'shipping' | 'billing';
+}
 
 const Checkout = () => {
-  const { items, total } = useCart();
+  const { items, total, clearCart } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
+  
   const [paymentMethod, setPaymentMethod] = useState<'stripe' | 'paypal'>('stripe');
   const [loading, setLoading] = useState(false);
+  const [shippingAddress, setShippingAddress] = useState<Address | null>(null);
+  const [billingAddress, setBillingAddress] = useState<Address | null>(null);
+  const [useSameAsShipping, setUseSameAsShipping] = useState(true);
+  const [step, setStep] = useState<'address' | 'payment'>('address');
 
   const shippingCost = total >= 50 ? 0 : 4.95;
   const grandTotal = total + shippingCost;
 
   if (items.length === 0) {
-    navigate('/cart');
-    return null;
+    return (
+      <div className="min-h-screen bg-background">
+        <Navigation />
+        <main className="container mx-auto px-4 py-24 text-center">
+          <ShoppingBag className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
+          <h1 className="text-2xl font-bold mb-4">Dein Warenkorb ist leer</h1>
+          <p className="text-muted-foreground mb-8">
+            Füge Produkte hinzu, um zur Kasse zu gehen.
+          </p>
+          <Button onClick={() => navigate('/products')}>
+            Jetzt einkaufen
+          </Button>
+        </main>
+        <Footer />
+      </div>
+    );
   }
 
+  const isAddressValid = (address: Address | null): boolean => {
+    if (!address) return false;
+    return (
+      address.first_name.trim() !== '' &&
+      address.last_name.trim() !== '' &&
+      address.street.trim() !== '' &&
+      address.postal_code.trim() !== '' &&
+      address.city.trim() !== '' &&
+      address.country !== ''
+    );
+  };
+
+  const canProceedToPayment = isAddressValid(shippingAddress) && 
+    (useSameAsShipping || isAddressValid(billingAddress));
+
+  const handleProceedToPayment = () => {
+    if (!canProceedToPayment) {
+      toast.error('Bitte fülle alle Pflichtfelder aus');
+      return;
+    }
+    setStep('payment');
+  };
+
   const handleCheckout = async () => {
+    if (!isAddressValid(shippingAddress)) {
+      toast.error('Bitte gib eine gültige Lieferadresse ein');
+      setStep('address');
+      return;
+    }
+
     setLoading(true);
     try {
+      const finalBillingAddress = useSameAsShipping ? shippingAddress : billingAddress;
+
       const checkoutItems = items.map(item => ({
         name: `${item.productName} - ${item.variantSize}`,
         price: item.price,
@@ -50,6 +114,9 @@ const Checkout = () => {
         body: {
           items: checkoutItems,
           payment_method: paymentMethod,
+          shipping_address: shippingAddress,
+          billing_address: finalBillingAddress,
+          user_id: user?.id,
         },
       });
 
@@ -60,7 +127,7 @@ const Checkout = () => {
       }
     } catch (error) {
       console.error('Checkout error:', error);
-      toast.error('Fehler beim Erstellen der Bestellung');
+      toast.error('Fehler beim Erstellen der Bestellung. Bitte versuche es erneut.');
     } finally {
       setLoading(false);
     }
@@ -70,101 +137,168 @@ const Checkout = () => {
     <div className="min-h-screen bg-background">
       <Navigation />
       
-      <main className="container mx-auto px-4 py-24">
-        <h1 className="text-3xl font-bold mb-8">Checkout</h1>
+      <main className="container mx-auto px-4 py-8 lg:py-12">
+        {/* Header */}
+        <div className="max-w-6xl mx-auto">
+          <Button
+            variant="ghost"
+            onClick={() => step === 'payment' ? setStep('address') : navigate('/cart')}
+            className="mb-6 gap-2"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            {step === 'payment' ? 'Zurück zur Adresse' : 'Zurück zum Warenkorb'}
+          </Button>
 
-        <div className="grid md:grid-cols-2 gap-8">
-          {/* Order Summary */}
-          <div className="bg-card rounded-lg p-6 border border-border">
-            <h2 className="text-xl font-semibold mb-4">Bestellübersicht</h2>
-            
-            <div className="space-y-4 mb-6">
-              {items.map((item) => (
-                <div key={item.id} className="flex justify-between items-center">
-                  <div className="flex items-center gap-3">
-                    <img 
-                      src={item.image || '/placeholder.svg'} 
-                      alt={item.productName}
-                      className="w-12 h-12 object-cover rounded"
-                    />
-                    <div>
-                      <p className="font-medium">{item.productName}</p>
-                      <p className="text-sm text-muted-foreground">{item.variantSize} × {item.quantity}</p>
-                    </div>
-                  </div>
-                  <p className="font-medium">{(item.price * item.quantity).toFixed(2)} €</p>
-                </div>
-              ))}
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold mb-2">Checkout</h1>
+            <p className="text-muted-foreground">
+              {step === 'address' ? 'Schritt 1: Adresse eingeben' : 'Schritt 2: Zahlung'}
+            </p>
+          </div>
+
+          {/* Progress Steps */}
+          <div className="flex items-center gap-4 mb-8">
+            <div className="flex items-center gap-2">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                step === 'address' ? 'bg-primary text-primary-foreground' : 'bg-success text-success-foreground'
+              }`}>
+                {step === 'payment' ? <CheckCircle className="w-5 h-5" /> : '1'}
+              </div>
+              <span className={step === 'address' ? 'font-medium' : 'text-muted-foreground'}>
+                Adresse
+              </span>
             </div>
-
-            <div className="border-t border-border pt-4 space-y-2">
-              <div className="flex justify-between">
-                <span>Zwischensumme</span>
-                <span>{total.toFixed(2)} €</span>
+            <div className="flex-1 h-px bg-border" />
+            <div className="flex items-center gap-2">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                step === 'payment' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+              }`}>
+                2
               </div>
-              <div className="flex justify-between">
-                <span>Versand</span>
-                <span>{shippingCost === 0 ? 'Kostenlos' : `${shippingCost.toFixed(2)} €`}</span>
-              </div>
-              <div className="flex justify-between font-bold text-lg pt-2 border-t border-border">
-                <span>Gesamt</span>
-                <span>{grandTotal.toFixed(2)} €</span>
-              </div>
+              <span className={step === 'payment' ? 'font-medium' : 'text-muted-foreground'}>
+                Zahlung
+              </span>
             </div>
           </div>
 
-          {/* Payment Method */}
-          <div className="bg-card rounded-lg p-6 border border-border">
-            <h2 className="text-xl font-semibold mb-4">Zahlungsmethode</h2>
-
-            <RadioGroup value={paymentMethod} onValueChange={(v) => setPaymentMethod(v as 'stripe' | 'paypal')}>
-              <div className="flex items-center space-x-3 p-4 border border-border rounded-lg cursor-pointer hover:bg-accent/50 transition-colors">
-                <RadioGroupItem value="stripe" id="stripe" />
-                <Label htmlFor="stripe" className="flex items-center gap-2 cursor-pointer flex-1">
-                  <CreditCard className="w-5 h-5" />
-                  <div>
-                    <p className="font-medium">Kreditkarte / Debitkarte</p>
-                    <p className="text-sm text-muted-foreground">Visa, Mastercard, American Express</p>
-                  </div>
-                </Label>
-              </div>
-
-              <div className="flex items-center space-x-3 p-4 border border-border rounded-lg cursor-pointer hover:bg-accent/50 transition-colors mt-3">
-                <RadioGroupItem value="paypal" id="paypal" />
-                <Label htmlFor="paypal" className="flex items-center gap-2 cursor-pointer flex-1">
-                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944 3.72a.77.77 0 0 1 .756-.654h6.86c2.325 0 4.085.663 5.122 1.92.472.576.773 1.218.892 1.903.127.737.09 1.62-.107 2.624-.026.134-.053.269-.082.404l-.007.029v.097c-.413 2.158-1.358 3.665-2.806 4.478-1.39.78-3.16 1.176-5.262 1.176H8.43a.977.977 0 0 0-.966.824l-.71 4.502-.215 1.365a.507.507 0 0 1-.501.43h-.962z"/>
-                  </svg>
-                  <div>
-                    <p className="font-medium">PayPal</p>
-                    <p className="text-sm text-muted-foreground">Sicher bezahlen mit PayPal</p>
-                  </div>
-                </Label>
-              </div>
-            </RadioGroup>
-
-            {!user && (
-              <p className="text-sm text-muted-foreground mt-4">
-                Als Gast bestellen oder{' '}
-                <a href="/auth" className="text-primary underline">einloggen</a>
-              </p>
-            )}
-
-            <Button 
-              className="w-full mt-6" 
-              size="lg"
-              onClick={handleCheckout}
-              disabled={loading}
-            >
-              {loading ? (
+          <div className="grid lg:grid-cols-3 gap-8">
+            {/* Left Column - Forms */}
+            <div className="lg:col-span-2 space-y-6">
+              {step === 'address' ? (
                 <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Wird verarbeitet...
+                  {/* Shipping Address */}
+                  <AddressForm
+                    type="shipping"
+                    onAddressChange={setShippingAddress}
+                    initialAddress={shippingAddress}
+                  />
+
+                  {/* Billing Address */}
+                  <AddressForm
+                    type="billing"
+                    onAddressChange={setBillingAddress}
+                    initialAddress={billingAddress}
+                    useSameAsShipping={useSameAsShipping}
+                    onUseSameAsShippingChange={setUseSameAsShipping}
+                    shippingAddress={shippingAddress}
+                  />
+
+                  {/* Continue Button */}
+                  <Button
+                    className="w-full"
+                    size="lg"
+                    onClick={handleProceedToPayment}
+                    disabled={!canProceedToPayment}
+                  >
+                    Weiter zur Zahlung
+                  </Button>
+
+                  {!user && (
+                    <p className="text-sm text-center text-muted-foreground">
+                      Als Gast bestellen oder{' '}
+                      <a href="/auth" className="text-primary underline hover:no-underline">
+                        einloggen
+                      </a>{' '}
+                      für schnelleren Checkout
+                    </p>
+                  )}
                 </>
               ) : (
-                `Jetzt bezahlen - ${grandTotal.toFixed(2)} €`
+                <>
+                  {/* Payment Method Selection */}
+                  <PaymentMethodSelector
+                    value={paymentMethod}
+                    onChange={setPaymentMethod}
+                  />
+
+                  {/* Address Summary */}
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="p-4 bg-muted/50 rounded-lg">
+                      <h3 className="font-medium mb-2 text-sm text-muted-foreground">Lieferadresse</h3>
+                      {shippingAddress && (
+                        <div className="text-sm">
+                          <p className="font-medium">{shippingAddress.first_name} {shippingAddress.last_name}</p>
+                          <p>{shippingAddress.street}</p>
+                          {shippingAddress.street2 && <p>{shippingAddress.street2}</p>}
+                          <p>{shippingAddress.postal_code} {shippingAddress.city}</p>
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-4 bg-muted/50 rounded-lg">
+                      <h3 className="font-medium mb-2 text-sm text-muted-foreground">Rechnungsadresse</h3>
+                      {(useSameAsShipping ? shippingAddress : billingAddress) && (
+                        <div className="text-sm">
+                          {useSameAsShipping && <p className="text-xs text-muted-foreground mb-1">Gleich wie Lieferadresse</p>}
+                          <p className="font-medium">
+                            {(useSameAsShipping ? shippingAddress : billingAddress)?.first_name}{' '}
+                            {(useSameAsShipping ? shippingAddress : billingAddress)?.last_name}
+                          </p>
+                          <p>{(useSameAsShipping ? shippingAddress : billingAddress)?.street}</p>
+                          <p>
+                            {(useSameAsShipping ? shippingAddress : billingAddress)?.postal_code}{' '}
+                            {(useSameAsShipping ? shippingAddress : billingAddress)?.city}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Pay Button */}
+                  <Button
+                    className="w-full"
+                    size="lg"
+                    onClick={handleCheckout}
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Wird verarbeitet...
+                      </>
+                    ) : (
+                      `Jetzt bezahlen - ${grandTotal.toFixed(2)} €`
+                    )}
+                  </Button>
+
+                  <p className="text-xs text-center text-muted-foreground">
+                    Mit dem Klick auf "Jetzt bezahlen" akzeptierst du unsere{' '}
+                    <a href="/terms" className="underline hover:no-underline">AGB</a> und{' '}
+                    <a href="/privacy" className="underline hover:no-underline">Datenschutzerklärung</a>.
+                  </p>
+                </>
               )}
-            </Button>
+            </div>
+
+            {/* Right Column - Order Summary */}
+            <div className="lg:col-span-1">
+              <div className="lg:sticky lg:top-24">
+                <OrderSummary
+                  items={items}
+                  subtotal={total}
+                  shippingCost={shippingCost}
+                />
+              </div>
+            </div>
           </div>
         </div>
       </main>

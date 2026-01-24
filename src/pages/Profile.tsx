@@ -210,7 +210,10 @@ export default function Profile() {
               <Card>
                 <CardContent className="p-6">
                   <h2 className="text-xl font-bold mb-6">Adressen</h2>
-                  <p className="text-muted-foreground">Adressverwaltung wird geladen...</p>
+                  <p className="text-muted-foreground mb-4">Verwalte deine Liefer- und Rechnungsadressen.</p>
+                  <Button onClick={() => navigate('/profile?section=addresses')}>
+                    Adressen verwalten
+                  </Button>
                 </CardContent>
               </Card>
             )}
@@ -219,7 +222,10 @@ export default function Profile() {
               <Card>
                 <CardContent className="p-6">
                   <h2 className="text-xl font-bold mb-6">Bestellungen</h2>
-                  <p className="text-muted-foreground">Bestellverlauf wird geladen...</p>
+                  <p className="text-muted-foreground mb-4">Sieh dir deine Bestellhistorie an.</p>
+                  <Button onClick={() => navigate('/orders')}>
+                    Bestellungen ansehen
+                  </Button>
                 </CardContent>
               </Card>
             )}
