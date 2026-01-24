@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import Navigation from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
@@ -6,10 +6,13 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Heart, ShoppingCart, Loader2, Filter, Sparkles, Star } from 'lucide-react';
+import { Heart, ShoppingCart, Loader2, Sparkles, Star, Grid3X3, LayoutList } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useCart } from '@/contexts/CartContext';
+import { useFavorites } from '@/hooks/useFavorites';
+import { ProductFilters, FilterState } from '@/components/products/ProductFilters';
+import { toast } from 'sonner';
 
 interface ProductVariant {
   id: string;
@@ -32,36 +35,63 @@ interface Product {
   rating: number | null;
   review_count: number | null;
   inspired_by: string | null;
+  gender: string | null;
+  seasons: string[] | null;
+  occasions: string[] | null;
   categories: { name: string; slug: string } | null;
   product_variants: ProductVariant[];
 }
 
+interface Category {
+  id: string;
+  name: string;
+  slug: string;
+}
+
 function ProductCard({ product }: { product: Product }) {
   const { addItem } = useCart();
+  const { toggleFavorite, isFavorite } = useFavorites();
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
+  
   const variant = product.product_variants?.[0];
   const price = variant?.price || product.base_price;
   const originalPrice = variant?.original_price || product.original_price;
   const inStock = variant?.in_stock ?? true;
   const image = variant?.image || product.image_url || '/placeholder.svg';
+  const productIsFavorite = isFavorite(product.id);
 
   const handleQuickAdd = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!inStock) return;
+    if (!inStock || isAddingToCart) return;
     
-    await addItem({
-      variantId: variant?.id || product.id,
-      productId: product.id,
-      productName: product.name,
-      variantSize: variant?.size || '50ml',
-      price: price,
-      quantity: 1,
-      image: image,
-    });
+    setIsAddingToCart(true);
+    try {
+      await addItem({
+        variantId: variant?.id || product.id,
+        productId: product.id,
+        productName: product.name,
+        variantSize: variant?.size || '50ml',
+        price: price,
+        quantity: 1,
+        image: image,
+      });
+      toast.success('Zum Warenkorb hinzugefügt');
+    } catch (error) {
+      toast.error('Fehler beim Hinzufügen');
+    } finally {
+      setIsAddingToCart(false);
+    }
+  };
+
+  const handleToggleFavorite = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    toggleFavorite(product.id);
   };
 
   return (
-    <Card className="group glass-card transition-shadow duration-200 overflow-hidden hover:shadow-glow">
+    <Card className="group glass-card transition-all duration-200 overflow-hidden hover:shadow-glow">
       <CardContent className="p-0">
         <div className="relative">
           <Link to={`/product/${product.slug}`}>
@@ -69,14 +99,20 @@ function ProductCard({ product }: { product: Product }) {
               src={image}
               alt={product.name}
               className="w-full h-40 sm:h-52 object-cover transition-transform duration-300 group-hover:scale-105"
+              loading="lazy"
             />
           </Link>
 
-          <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-            <Button size="icon" variant="secondary" className="h-8 w-8">
-              <Heart className="w-4 h-4" />
-            </Button>
-          </div>
+          <Button
+            size="icon"
+            variant="secondary"
+            className={`absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity ${
+              productIsFavorite ? 'opacity-100 bg-primary text-primary-foreground' : ''
+            }`}
+            onClick={handleToggleFavorite}
+          >
+            <Heart className={`w-4 h-4 ${productIsFavorite ? 'fill-current' : ''}`} />
+          </Button>
 
           <div className="absolute top-2 left-2 flex flex-col gap-1">
             {inStock ? (
@@ -138,9 +174,13 @@ function ProductCard({ product }: { product: Product }) {
               size="icon"
               variant="default"
               onClick={handleQuickAdd}
-              disabled={!inStock}
+              disabled={!inStock || isAddingToCart}
             >
-              <ShoppingCart className="w-4 h-4" />
+              {isAddingToCart ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <ShoppingCart className="w-4 h-4" />
+              )}
             </Button>
           </div>
         </div>
@@ -150,21 +190,57 @@ function ProductCard({ product }: { product: Product }) {
 }
 
 export default function Products() {
-  const [searchParams] = useSearchParams();
-  const categoryFilter = searchParams.get('category');
-  const [sortBy, setSortBy] = useState('name');
+  const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sortBy, setSortBy] = useState('name');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
+  // Initialize filters from URL
+  const [filters, setFilters] = useState<FilterState>(() => ({
+    categories: searchParams.get('category')?.split(',').filter(Boolean) || [],
+    priceRange: [
+      Number(searchParams.get('minPrice')) || 0,
+      Number(searchParams.get('maxPrice')) || 200,
+    ] as [number, number],
+    genders: searchParams.get('gender')?.split(',').filter(Boolean) || [],
+    seasons: searchParams.get('season')?.split(',').filter(Boolean) || [],
+    occasions: searchParams.get('occasion')?.split(',').filter(Boolean) || [],
+  }));
+
+  // Sync filters to URL
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (filters.categories.length) params.set('category', filters.categories.join(','));
+    if (filters.genders.length) params.set('gender', filters.genders.join(','));
+    if (filters.seasons.length) params.set('season', filters.seasons.join(','));
+    if (filters.occasions.length) params.set('occasion', filters.occasions.join(','));
+    if (filters.priceRange[0] > 0) params.set('minPrice', filters.priceRange[0].toString());
+    if (filters.priceRange[1] < 200) params.set('maxPrice', filters.priceRange[1].toString());
+    
+    setSearchParams(params, { replace: true });
+  }, [filters, setSearchParams]);
+
+  // Load categories
+  useEffect(() => {
+    async function loadCategories() {
+      const { data } = await supabase.from('categories').select('*').order('name');
+      if (data) setCategories(data);
+    }
+    loadCategories();
+  }, []);
+
+  // Load products
   useEffect(() => {
     loadProducts();
-  }, [categoryFilter]);
+  }, []);
 
   const loadProducts = async () => {
     try {
       setLoading(true);
       
-      let query = supabase
+      const { data, error } = await supabase
         .from('products')
         .select(`
           *,
@@ -173,20 +249,6 @@ export default function Products() {
         `)
         .eq('is_active', true)
         .order('created_at', { ascending: false });
-
-      if (categoryFilter) {
-        const { data: category } = await supabase
-          .from('categories')
-          .select('id')
-          .eq('slug', categoryFilter)
-          .maybeSingle();
-        
-        if (category) {
-          query = query.eq('category_id', category.id);
-        }
-      }
-
-      const { data, error } = await query;
 
       if (error) throw error;
       setProducts(data || []);
@@ -197,95 +259,194 @@ export default function Products() {
     }
   };
 
-  const getCategoryTitle = () => {
-    switch (categoryFilter) {
-      case '50ml':
-        return { title: 'ALDENAIR Prestige Edition', description: 'Exklusive 50ml Parfüm-Flakons der Premium-Kollektion' };
-      case 'proben':
-        return { title: 'ALDENAIR Proben Kollektion', description: 'Entdecke alle Düfte in praktischen 5ml Proben' };
-      case 'testerkits':
-        return { title: 'ALDENAIR Testerkits', description: 'Komplette Sets zum Kennenlernen' };
-      default:
-        return { title: 'ALDENAIR Parfüm-Kollektion', description: 'Entdecke unsere komplette Parfüm-Kollektion' };
-    }
-  };
+  // Filter and sort products
+  const filteredProducts = useMemo(() => {
+    let result = [...products];
 
-  const { title: pageTitle, description: pageDescription } = getCategoryTitle();
-
-  const sortedProducts = [...products].sort((a, b) => {
-    const priceA = a.product_variants?.[0]?.price || a.base_price;
-    const priceB = b.product_variants?.[0]?.price || b.base_price;
-    
-    switch (sortBy) {
-      case 'price-low':
-        return priceA - priceB;
-      case 'price-high':
-        return priceB - priceA;
-      case 'name':
-      default:
-        return a.name.localeCompare(b.name);
+    // Filter by category
+    if (filters.categories.length > 0) {
+      result = result.filter((p) => 
+        p.categories && filters.categories.includes(p.categories.slug)
+      );
     }
-  });
+
+    // Filter by price
+    result = result.filter((p) => {
+      const price = p.product_variants?.[0]?.price || p.base_price;
+      return price >= filters.priceRange[0] && price <= filters.priceRange[1];
+    });
+
+    // Filter by gender
+    if (filters.genders.length > 0) {
+      result = result.filter((p) => 
+        p.gender && filters.genders.includes(p.gender.toLowerCase())
+      );
+    }
+
+    // Filter by seasons
+    if (filters.seasons.length > 0) {
+      result = result.filter((p) => 
+        p.seasons && p.seasons.some((s) => filters.seasons.includes(s))
+      );
+    }
+
+    // Filter by occasions
+    if (filters.occasions.length > 0) {
+      result = result.filter((p) => 
+        p.occasions && p.occasions.some((o) => filters.occasions.includes(o))
+      );
+    }
+
+    // Sort
+    result.sort((a, b) => {
+      const priceA = a.product_variants?.[0]?.price || a.base_price;
+      const priceB = b.product_variants?.[0]?.price || b.base_price;
+      
+      switch (sortBy) {
+        case 'price-low':
+          return priceA - priceB;
+        case 'price-high':
+          return priceB - priceA;
+        case 'rating':
+          return (b.rating || 0) - (a.rating || 0);
+        case 'name':
+        default:
+          return a.name.localeCompare(b.name);
+      }
+    });
+
+    return result;
+  }, [products, filters, sortBy]);
+
+  const maxPrice = useMemo(() => {
+    if (products.length === 0) return 200;
+    return Math.max(...products.map((p) => p.product_variants?.[0]?.price || p.base_price));
+  }, [products]);
 
   return (
     <div className="min-h-screen pb-20 md:pb-0">
       <Navigation />
 
       <main>
+        {/* Hero */}
         <section className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground py-12 sm:py-16">
           <div className="container mx-auto px-4">
             <div className="max-w-4xl mx-auto text-center">
-              <div className="animate-slide-up">
-                <h1 className="text-3xl sm:text-5xl md:text-6xl font-bold mb-3">
-                  {pageTitle}
-                </h1>
-                <p className="text-base sm:text-xl text-primary-foreground/80 max-w-2xl mx-auto mb-4">
-                  {pageDescription}
-                </p>
-                <p className="text-sm sm:text-lg text-primary-foreground/90">
-                  {products.length} Produkte verfügbar
-                </p>
-              </div>
+              <h1 className="text-3xl sm:text-5xl md:text-6xl font-bold mb-3">
+                ALDENAIR Parfüm-Kollektion
+              </h1>
+              <p className="text-base sm:text-xl text-primary-foreground/80 max-w-2xl mx-auto mb-4">
+                Entdecke unsere komplette Parfüm-Kollektion mit Premium-Düften
+              </p>
+              <p className="text-sm sm:text-lg text-primary-foreground/90">
+                {filteredProducts.length} Produkte gefunden
+              </p>
             </div>
           </div>
         </section>
 
         <section className="py-8 sm:py-12">
           <div className="container mx-auto px-4">
-            <div className="max-w-7xl mx-auto">
-              <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-                <div className="flex items-center gap-2">
-                  <Filter className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">{products.length} Produkte</span>
-                </div>
-
-                <Select value={sortBy} onValueChange={setSortBy}>
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Sortieren" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="name">Name A-Z</SelectItem>
-                    <SelectItem value="price-low">Preis aufsteigend</SelectItem>
-                    <SelectItem value="price-high">Preis absteigend</SelectItem>
-                  </SelectContent>
-                </Select>
+            <div className="flex flex-col lg:flex-row gap-8">
+              {/* Filters Sidebar */}
+              <div className="lg:w-64 flex-shrink-0">
+                <ProductFilters
+                  filters={filters}
+                  onFiltersChange={setFilters}
+                  categories={categories}
+                  maxPrice={maxPrice}
+                />
               </div>
 
-              {loading ? (
-                <div className="flex items-center justify-center py-20">
-                  <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+              {/* Products Grid */}
+              <div className="flex-1">
+                {/* Toolbar */}
+                <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+                  <p className="text-sm text-muted-foreground">
+                    {filteredProducts.length} Produkte
+                  </p>
+
+                  <div className="flex items-center gap-2">
+                    {/* View Mode Toggle */}
+                    <div className="hidden sm:flex border rounded-lg overflow-hidden">
+                      <Button
+                        variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                        size="sm"
+                        onClick={() => setViewMode('grid')}
+                        className="rounded-none"
+                      >
+                        <Grid3X3 className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant={viewMode === 'list' ? 'default' : 'ghost'}
+                        size="sm"
+                        onClick={() => setViewMode('list')}
+                        className="rounded-none"
+                      >
+                        <LayoutList className="w-4 h-4" />
+                      </Button>
+                    </div>
+
+                    {/* Sort Dropdown */}
+                    <Select value={sortBy} onValueChange={setSortBy}>
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Sortieren" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="name">Name A-Z</SelectItem>
+                        <SelectItem value="price-low">Preis aufsteigend</SelectItem>
+                        <SelectItem value="price-high">Preis absteigend</SelectItem>
+                        <SelectItem value="rating">Bewertung</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-              ) : sortedProducts.length === 0 ? (
-                <div className="text-center py-20">
-                  <p className="text-lg text-muted-foreground">Keine Produkte gefunden</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
-                  {sortedProducts.map((product) => (
-                    <ProductCard key={product.id} product={product} />
-                  ))}
-                </div>
-              )}
+
+                {/* Products */}
+                {loading ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
+                    {[...Array(6)].map((_, i) => (
+                      <div key={i} className="space-y-3">
+                        <Skeleton className="aspect-square w-full rounded-xl" />
+                        <Skeleton className="h-4 w-3/4" />
+                        <Skeleton className="h-4 w-1/2" />
+                      </div>
+                    ))}
+                  </div>
+                ) : filteredProducts.length === 0 ? (
+                  <div className="text-center py-20">
+                    <p className="text-lg text-muted-foreground mb-4">
+                      Keine Produkte gefunden
+                    </p>
+                    <Button
+                      variant="outline"
+                      onClick={() =>
+                        setFilters({
+                          categories: [],
+                          priceRange: [0, maxPrice],
+                          genders: [],
+                          seasons: [],
+                          occasions: [],
+                        })
+                      }
+                    >
+                      Filter zurücksetzen
+                    </Button>
+                  </div>
+                ) : (
+                  <div
+                    className={
+                      viewMode === 'grid'
+                        ? 'grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 md:gap-6'
+                        : 'space-y-4'
+                    }
+                  >
+                    {filteredProducts.map((product) => (
+                      <ProductCard key={product.id} product={product} />
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </section>
