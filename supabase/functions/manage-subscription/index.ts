@@ -155,14 +155,37 @@ serve(async (req) => {
         const resend = new Resend(resendKey);
         const html = generateManageLinkEmail(subscription.guest_name || 'Kunde', manageUrl);
         
-        await resend.emails.send({
-          from: "ALDENAIR <noreply@aldenairperfumes.de>",
-          to: [email],
-          subject: "Dein Abo-Verwaltungslink",
-          html,
-        });
+        try {
+          const emailResult = await resend.emails.send({
+            from: "ALDENAIR <noreply@aldenairperfumes.de>",
+            to: [email],
+            subject: "Dein Abo-Verwaltungslink",
+            html,
+          });
 
-        console.log(`[MANAGE-SUBSCRIPTION] Magic link sent to ${email}`);
+          // Log the email
+          await supabase.from('email_logs').insert({
+            type: 'subscription_manage_link',
+            recipient_email: email,
+            recipient_name: subscription.guest_name,
+            subject: 'Dein Abo-Verwaltungslink',
+            status: 'sent',
+            resend_id: emailResult.data?.id,
+            metadata: { subscriptionId: subscription.id }
+          });
+
+          console.log(`[MANAGE-SUBSCRIPTION] Magic link sent to ${email}`);
+        } catch (emailErr) {
+          console.error(`[MANAGE-SUBSCRIPTION] Failed to send email:`, emailErr);
+          await supabase.from('email_logs').insert({
+            type: 'subscription_manage_link',
+            recipient_email: email,
+            recipient_name: subscription.guest_name,
+            subject: 'Dein Abo-Verwaltungslink',
+            status: 'failed',
+            error_message: emailErr instanceof Error ? emailErr.message : 'Unknown error'
+          });
+        }
       }
 
       return new Response(JSON.stringify({ success: true, message: "Link sent to email" }), {
