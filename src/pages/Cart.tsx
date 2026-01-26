@@ -1,11 +1,12 @@
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { useCart } from '@/contexts/CartContext';
 import Navigation from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Minus, Plus, Trash2, ShoppingBag, ArrowRight } from 'lucide-react';
+import { Minus, Plus, Trash2, ShoppingBag, ArrowRight, Zap, Shield, Truck } from 'lucide-react';
 
 export default function CartPage() {
   const { items, itemCount, total, updateQuantity, removeItem, loading } = useCart();
@@ -114,12 +115,13 @@ export default function CartPage() {
 
           {/* Order Summary */}
           <div>
-            <Card className="sticky top-24">
-              <CardContent className="p-6">
-                <h2 className="text-lg font-semibold text-foreground mb-4">
+            <Card className="sticky top-24 overflow-hidden">
+              <div className="bg-gradient-to-r from-primary/10 to-transparent p-4 border-b">
+                <h2 className="text-lg font-semibold text-foreground">
                   Bestellübersicht
                 </h2>
-
+              </div>
+              <CardContent className="p-6">
                 <div className="space-y-3">
                   <div className="flex justify-between text-muted-foreground">
                     <span>Zwischensumme</span>
@@ -129,16 +131,28 @@ export default function CartPage() {
                     <span>Versand</span>
                     <span>
                       {shippingCost === 0 ? (
-                        <span className="text-success">Kostenlos</span>
+                        <span className="text-success font-medium">Kostenlos</span>
                       ) : (
                         `${shippingCost.toFixed(2)} €`
                       )}
                     </span>
                   </div>
                   {total < 50 && (
-                    <p className="text-xs text-muted-foreground">
-                      Noch {(50 - total).toFixed(2)} € bis zum kostenlosen Versand
-                    </p>
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="p-3 bg-primary/5 rounded-lg"
+                    >
+                      <p className="text-xs text-muted-foreground">
+                        🚚 Noch <strong>{(50 - total).toFixed(2)} €</strong> bis zum kostenlosen Versand
+                      </p>
+                      <div className="mt-2 h-1.5 bg-muted rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-primary transition-all duration-500"
+                          style={{ width: `${Math.min((total / 50) * 100, 100)}%` }}
+                        />
+                      </div>
+                    </motion.div>
                   )}
                 </div>
 
@@ -146,17 +160,38 @@ export default function CartPage() {
 
                 <div className="flex justify-between font-bold text-lg mb-6">
                   <span>Gesamt</span>
-                  <span>{grandTotal.toFixed(2)} €</span>
+                  <span className="text-primary">{grandTotal.toFixed(2)} €</span>
                 </div>
 
-                <Button className="w-full" size="lg" asChild>
+                {/* Express Checkout Button */}
+                <Button className="w-full gap-2 mb-3" size="lg" asChild>
+                  <Link to="/express-checkout">
+                    <Zap className="w-4 h-4" />
+                    Express Checkout
+                  </Link>
+                </Button>
+
+                {/* Standard Checkout Button */}
+                <Button variant="outline" className="w-full" size="lg" asChild>
                   <Link to="/checkout">
                     Zur Kasse
                     <ArrowRight className="ml-2 w-4 h-4" />
                   </Link>
                 </Button>
 
-                <p className="text-xs text-muted-foreground text-center mt-4">
+                {/* Trust Badges */}
+                <div className="flex flex-wrap items-center justify-center gap-3 mt-4 pt-4 border-t">
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <Shield className="w-3 h-3" />
+                    Sicher
+                  </div>
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <Truck className="w-3 h-3" />
+                    Schnell
+                  </div>
+                </div>
+
+                <p className="text-xs text-muted-foreground text-center mt-3">
                   inkl. MwSt., zzgl. Versand
                 </p>
               </CardContent>
