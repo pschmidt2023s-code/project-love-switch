@@ -52,7 +52,7 @@ export default function Contact() {
 
     try {
       // Create ticket in database
-      const { error } = await supabase.from('tickets').insert({
+      const { data, error } = await supabase.from('tickets').insert({
         user_id: user?.id || null,
         customer_name: formData.name,
         customer_email: formData.email,
@@ -61,9 +61,24 @@ export default function Contact() {
         category: 'contact',
         priority: 'medium',
         status: 'open',
-      });
+      }).select().single();
 
       if (error) throw error;
+
+      // Send email notification
+      try {
+        await supabase.functions.invoke('send-ticket-notification', {
+          body: {
+            type: 'new_ticket',
+            ticketId: data.id,
+            customerEmail: formData.email,
+            customerName: formData.name,
+            subject: formData.subject,
+          }
+        });
+      } catch (emailError) {
+        console.error('Email notification failed:', emailError);
+      }
 
       toast({
         title: 'Nachricht gesendet',

@@ -8,3 +8,9 @@ verify_jwt = false
 
 [functions.ai-recommendations]
 verify_jwt = false
+
+[functions.send-ticket-notification]
+verify_jwt = false
+
+[functions.send-return-notification]
+verify_jwt = false

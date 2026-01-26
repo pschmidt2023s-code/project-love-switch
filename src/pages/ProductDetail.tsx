@@ -5,6 +5,8 @@ import { useCart } from '@/contexts/CartContext';
 import { useProduct } from '@/hooks/useProducts';
 import { PremiumPageLayout } from '@/components/premium/PremiumPageLayout';
 import { ProductReviews } from '@/components/products/ProductReviews';
+import { SubscriptionCard } from '@/components/subscription/SubscriptionCard';
+import { ProductRecommendations } from '@/components/ai/ProductRecommendations';
 import { Breadcrumb } from '@/components/Breadcrumb';
 import { Seo } from '@/components/Seo';
 import { toast } from 'sonner';
@@ -343,6 +345,33 @@ export default function ProductDetail() {
         </div>
       </div>
 
+      {/* Subscription Option */}
+      {selectedVariant && (
+        <section className="py-8 lg:py-12 border-t border-border">
+          <div className="container-premium">
+            <div className="text-center mb-8">
+              <span className="inline-block text-[10px] tracking-[0.3em] uppercase text-accent mb-2">
+                Spar-Abo
+              </span>
+              <h2 className="font-display text-2xl lg:text-3xl text-foreground mb-2">
+                Regelmäßig liefern lassen
+              </h2>
+              <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                Spare bis zu 15% mit unserem flexiblen Abo-Modell
+              </p>
+            </div>
+            <div className="max-w-2xl mx-auto">
+              <SubscriptionCard
+                productId={product.id}
+                variantId={selectedVariant.id}
+                productName={product.name}
+                basePrice={Number(selectedVariant.price)}
+              />
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Reviews Section */}
       <ProductReviews 
         productId={product.id}
@@ -350,6 +379,13 @@ export default function ProductDetail() {
         averageRating={rating || 4.5}
         reviewCount={product.review_count || 0}
       />
+
+      {/* AI Recommendations */}
+      <section className="py-8 lg:py-12 border-t border-border">
+        <div className="container-premium">
+          <ProductRecommendations />
+        </div>
+      </section>
     </PremiumPageLayout>
   );
 }

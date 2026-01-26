@@ -41,6 +41,7 @@ const ScentFinder = React.lazy(() => import('@/pages/ScentFinder'));
 const Account = React.lazy(() => import('@/pages/Account'));
 const Orders = React.lazy(() => import('@/pages/Orders'));
 const OrdersList = React.lazy(() => import('@/pages/OrdersList'));
+const MyReturns = React.lazy(() => import('@/pages/MyReturns'));
 const NotFound = React.lazy(() => import('@/pages/NotFound'));
 
 const queryClient = new QueryClient({
@@ -100,6 +101,7 @@ function App() {
                         <Route path="/account" element={<Suspense fallback={<LoadingSpinner />}><Account /></Suspense>} />
                         <Route path="/orders" element={<Suspense fallback={<LoadingSpinner />}><OrdersList /></Suspense>} />
                         <Route path="/orders/:id" element={<Suspense fallback={<LoadingSpinner />}><Orders /></Suspense>} />
+                        <Route path="/my-returns" element={<Suspense fallback={<LoadingSpinner />}><MyReturns /></Suspense>} />
                         <Route path="*" element={<Suspense fallback={<LoadingSpinner />}><NotFound /></Suspense>} />
                       </Routes>
                     </div>
