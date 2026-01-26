@@ -159,6 +159,23 @@ export function TicketingSystem() {
         await updateTicketStatus(selectedTicket.id, 'in_progress');
       }
 
+      // Send email notification to customer
+      try {
+        await supabase.functions.invoke('send-ticket-notification', {
+          body: {
+            type: 'ticket_reply',
+            ticketId: selectedTicket.id,
+            customerEmail: selectedTicket.customer_email,
+            customerName: selectedTicket.customer_name,
+            subject: selectedTicket.subject,
+            message: replyMessage.trim(),
+          }
+        });
+      } catch (emailError) {
+        console.error('Email notification failed:', emailError);
+        // Don't fail the whole operation if email fails
+      }
+
       toast.success('Antwort gesendet');
       setReplyMessage('');
       fetchReplies(selectedTicket.id);
