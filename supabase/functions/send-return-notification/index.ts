@@ -124,6 +124,17 @@ serve(async (req) => {
 
     if (error) {
       console.error("Email send error:", error);
+      // Handle Resend test mode limitation gracefully
+      if (error.message?.includes("testing emails") || error.message?.includes("verify a domain")) {
+        console.log("Resend test mode: Email not sent to external recipient. Domain verification required.");
+        return new Response(JSON.stringify({ 
+          success: true, 
+          warning: "Email notification skipped - domain verification required for production emails" 
+        }), {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
       throw error;
     }
 
