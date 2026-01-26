@@ -1,3 +1,6 @@
+# https://www.robotstxt.org/robotstxt.html
+# ALDENAIR Perfumes - Robots.txt
+
 User-agent: Googlebot
 Allow: /
 
@@ -12,3 +15,26 @@ Allow: /
 
 User-agent: *
 Allow: /
+
+# Sitemap location
+Sitemap: https://aldenairperfumes.de/sitemap.xml
+
+# Disallow admin and account pages
+Disallow: /admin
+Disallow: /admin/*
+Disallow: /account
+Disallow: /account/*
+Disallow: /orders
+Disallow: /orders/*
+Disallow: /checkout
+Disallow: /checkout/*
+Disallow: /cart
+Disallow: /profile
+
+# Allow CSS and JS for rendering
+Allow: /*.css$
+Allow: /*.js$
+Allow: /images/
+
+# Crawl-delay for politeness
+Crawl-delay: 1
