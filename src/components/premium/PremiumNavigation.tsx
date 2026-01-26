@@ -19,98 +19,32 @@ export function PremiumNavigation() {
   const [isAdmin, setIsAdmin] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLElement>(null);
-  const [isInverted, setIsInverted] = useState(false);
+  const [isInverted, setIsInverted] = useState(true); // Start inverted for dark hero
   
-  // Simple and reliable background detection
+  // Very simple scroll-based inversion - dark hero is first 70vh
   useEffect(() => {
-    const checkBackground = () => {
-      // Sample multiple points just below the header
-      const headerHeight = headerRef.current?.getBoundingClientRect().height || 80;
-      const sampleY = headerHeight + 5;
-      
-      // Temporarily make header non-interactive for element sampling
-      if (headerRef.current) {
-        headerRef.current.style.pointerEvents = 'none';
-      }
-      
-      const centerElement = document.elementFromPoint(window.innerWidth / 2, sampleY);
-      
-      // Restore pointer events
-      if (headerRef.current) {
-        headerRef.current.style.pointerEvents = '';
-      }
-      
-      if (!centerElement) {
-        setIsInverted(false);
-        return;
-      }
-      
-      // Walk up the DOM tree to find background
-      let el: Element | null = centerElement;
-      let shouldInvert = false;
-      
-      while (el && el !== document.documentElement) {
-        // Check for explicit data attributes first (most reliable)
-        if (el.hasAttribute('data-header-dark')) {
-          shouldInvert = true;
-          break;
-        }
-        if (el.hasAttribute('data-header-light')) {
-          shouldInvert = false;
-          break;
-        }
-        
-        const styles = getComputedStyle(el);
-        const bgImage = styles.backgroundImage;
-        const bgColor = styles.backgroundColor;
-        
-        // Background images (photos, gradients to dark) = assume dark
-        if (bgImage && bgImage !== 'none' && bgImage.includes('url')) {
-          shouldInvert = true;
-          break;
-        }
-        
-        // Check for dark gradients
-        if (bgImage && bgImage !== 'none' && (bgImage.includes('rgb(0') || bgImage.includes('rgba(0'))) {
-          shouldInvert = true;
-          break;
-        }
-        
-        // Check background color luminance
-        if (bgColor && bgColor !== 'rgba(0, 0, 0, 0)' && bgColor !== 'transparent') {
-          const match = bgColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
-          if (match) {
-            const r = parseInt(match[1]);
-            const g = parseInt(match[2]);
-            const b = parseInt(match[3]);
-            const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-            
-            if (luminance < 0.5) {
-              shouldInvert = true;
-              break;
-            } else if (luminance > 0.5) {
-              shouldInvert = false;
-              break;
-            }
-          }
-        }
-        
-        el = el.parentElement;
-      }
-      
+    const checkInversion = () => {
+      const heroHeight = window.innerHeight * 0.7;
+      const shouldInvert = window.scrollY < heroHeight;
       setIsInverted(shouldInvert);
     };
     
-    // Check immediately and after short delay for page load
-    checkBackground();
-    const timer = setTimeout(checkBackground, 200);
+    // Check route - only invert on pages with dark heroes
+    const darkHeroRoutes = ['/', '/products'];
+    const hasDarkHero = darkHeroRoutes.includes(location.pathname);
     
-    // Check on scroll with throttling
+    if (!hasDarkHero) {
+      setIsInverted(false);
+      return;
+    }
+    
+    checkInversion();
+    
     let ticking = false;
     const handleScroll = () => {
       if (!ticking) {
         requestAnimationFrame(() => {
-          checkBackground();
+          checkInversion();
           ticking = false;
         });
         ticking = true;
@@ -118,14 +52,8 @@ export function PremiumNavigation() {
     };
     
     window.addEventListener('scroll', handleScroll, { passive: true });
-    window.addEventListener('resize', checkBackground, { passive: true });
-    
-    return () => {
-      clearTimeout(timer);
-      window.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('resize', checkBackground);
-    };
-  }, []);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [location.pathname]);
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
