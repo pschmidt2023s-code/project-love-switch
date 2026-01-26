@@ -148,7 +148,7 @@ serve(async (req) => {
     }
 
     const { data: emailData, error } = await resend.emails.send({
-      from: "ALDENAIR <noreply@resend.dev>",
+      from: "ALDENAIR <noreply@aldenairperfumes.de>",
       to: [customerEmail],
       subject: emailSubject,
       html: emailHtml,
