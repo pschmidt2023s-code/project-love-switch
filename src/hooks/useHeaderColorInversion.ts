@@ -87,10 +87,11 @@ export function useHeaderColorInversion(
             const b = parseInt(rgbMatch[3], 10);
             const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
             
-            if (luminance < 0.3) {
+            // Threshold at 0.55 to catch gray backgrounds (like #888 = 0.53)
+            if (luminance < 0.55) {
               foundDarkSection = true;
               break;
-            } else if (luminance > 0.7) {
+            } else if (luminance > 0.75) {
               // Light background found, stop searching
               break;
             }
