@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useCart } from '@/contexts/CartContext';
 import { useFavorites } from '@/hooks/useFavorites';
 import { PremiumPageLayout } from '@/components/premium/PremiumPageLayout';
+import { Breadcrumb } from '@/components/Breadcrumb';
 import { Seo } from '@/components/Seo';
 import { toast } from 'sonner';
 
@@ -308,14 +309,16 @@ export default function Products() {
 
       {/* Page Header */}
       <section className="border-b border-border">
-        <div className="container-premium py-12 lg:py-16">
-          <span className="inline-block text-[10px] tracking-[0.3em] uppercase text-accent mb-4">
+        <div className="container-premium py-8 lg:py-12">
+          <Breadcrumb className="mb-6" />
+          
+          <span className="inline-block text-[10px] tracking-[0.3em] uppercase text-accent mb-3">
             Entdecken
           </span>
-          <h1 className="font-display text-4xl lg:text-5xl text-foreground mb-4">
+          <h1 className="font-display text-3xl lg:text-4xl text-foreground mb-3">
             Unsere Kollektion
           </h1>
-          <p className="text-muted-foreground max-w-lg">
+          <p className="text-muted-foreground max-w-lg text-sm">
             Premium-Düfte inspiriert von weltbekannten Luxusmarken, 
             gefertigt mit höchsten Qualitätsansprüchen.
           </p>

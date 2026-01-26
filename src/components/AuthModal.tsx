@@ -203,35 +203,137 @@ export function AuthModal({ children }: AuthModalProps) {
             </div>
 
             <TabsContent value="login" className="mt-0 p-6 pt-6">
-              <form onSubmit={handleSignIn} className="space-y-5">
-                <div className="space-y-2">
-                  <Label htmlFor="login-email" className="text-sm font-medium">E-Mail</Label>
-                  <Input
-                    id="login-email"
-                    type="email"
-                    placeholder="ihre@email.de"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    className="h-11"
-                  />
+              {showForgotPassword ? (
+                <div className="space-y-5">
+                  {resetEmailSent ? (
+                    <div className="text-center space-y-4">
+                      <div className="w-12 h-12 mx-auto rounded-full bg-primary/10 flex items-center justify-center">
+                        <Mail className="w-6 h-6 text-primary" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-foreground mb-2">E-Mail gesendet!</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Wir haben Ihnen eine E-Mail mit einem Link zum Zurücksetzen Ihres Passworts gesendet.
+                        </p>
+                      </div>
+                      <Button 
+                        variant="outline" 
+                        className="w-full"
+                        onClick={() => {
+                          setShowForgotPassword(false);
+                          setResetEmailSent(false);
+                        }}
+                      >
+                        Zurück zur Anmeldung
+                      </Button>
+                    </div>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setShowForgotPassword(false)}
+                        className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+                      >
+                        <ArrowLeft className="w-4 h-4" />
+                        Zurück
+                      </button>
+                      <div className="text-center">
+                        <h3 className="font-semibold text-foreground mb-2">Passwort vergessen?</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Geben Sie Ihre E-Mail-Adresse ein und wir senden Ihnen einen Link zum Zurücksetzen.
+                        </p>
+                      </div>
+                      <form 
+                        onSubmit={async (e) => {
+                          e.preventDefault();
+                          const emailValidation = validateEmail(email.trim());
+                          if (!emailValidation.isValid) {
+                            toast({
+                              title: "Ungültige E-Mail",
+                              description: "Bitte geben Sie eine gültige E-Mail-Adresse ein.",
+                              variant: "destructive",
+                            });
+                            return;
+                          }
+                          setLoading(true);
+                          try {
+                            const { supabase } = await import('@/integrations/supabase/client');
+                            const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+                              redirectTo: `${window.location.origin}/auth?type=recovery`,
+                            });
+                            if (error) throw error;
+                            setResetEmailSent(true);
+                          } catch (error: any) {
+                            toast({
+                              title: "Fehler",
+                              description: error.message || "E-Mail konnte nicht gesendet werden.",
+                              variant: "destructive",
+                            });
+                          } finally {
+                            setLoading(false);
+                          }
+                        }}
+                        className="space-y-4"
+                      >
+                        <div className="space-y-2">
+                          <Label htmlFor="reset-email" className="text-sm font-medium">E-Mail</Label>
+                          <Input
+                            id="reset-email"
+                            type="email"
+                            placeholder="ihre@email.de"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            required
+                            className="h-11"
+                          />
+                        </div>
+                        <Button type="submit" className="w-full h-11" disabled={loading}>
+                          {loading ? 'Senden...' : 'Link senden'}
+                        </Button>
+                      </form>
+                    </>
+                  )}
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="login-password" className="text-sm font-medium">Passwort</Label>
-                  <Input
-                    id="login-password"
-                    type="password"
-                    placeholder="Ihr Passwort"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    className="h-11"
-                  />
-                </div>
-                <Button type="submit" className="w-full h-11 text-base font-medium" disabled={loading}>
-                  {loading ? 'Anmelden...' : 'Anmelden'}
-                </Button>
-              </form>
+              ) : (
+                <form onSubmit={handleSignIn} className="space-y-5">
+                  <div className="space-y-2">
+                    <Label htmlFor="login-email" className="text-sm font-medium">E-Mail</Label>
+                    <Input
+                      id="login-email"
+                      type="email"
+                      placeholder="ihre@email.de"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      className="h-11"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="login-password" className="text-sm font-medium">Passwort</Label>
+                      <button
+                        type="button"
+                        onClick={() => setShowForgotPassword(true)}
+                        className="text-xs text-primary hover:underline"
+                      >
+                        Passwort vergessen?
+                      </button>
+                    </div>
+                    <Input
+                      id="login-password"
+                      type="password"
+                      placeholder="Ihr Passwort"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      className="h-11"
+                    />
+                  </div>
+                  <Button type="submit" className="w-full h-11 text-base font-medium" disabled={loading}>
+                    {loading ? 'Anmelden...' : 'Anmelden'}
+                  </Button>
+                </form>
+              )}
             </TabsContent>
 
             <TabsContent value="register" className="mt-0 p-6 pt-6">
