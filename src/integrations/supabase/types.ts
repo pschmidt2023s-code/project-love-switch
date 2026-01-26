@@ -878,13 +878,15 @@ export type Database = {
           delivery_count: number | null
           discount_percent: number | null
           frequency: string
+          guest_email: string | null
+          guest_name: string | null
           id: string
           last_delivery: string | null
           next_delivery: string | null
           product_id: string | null
           status: string
           updated_at: string
-          user_id: string
+          user_id: string | null
           variant_id: string | null
         }
         Insert: {
@@ -892,13 +894,15 @@ export type Database = {
           delivery_count?: number | null
           discount_percent?: number | null
           frequency?: string
+          guest_email?: string | null
+          guest_name?: string | null
           id?: string
           last_delivery?: string | null
           next_delivery?: string | null
           product_id?: string | null
           status?: string
           updated_at?: string
-          user_id: string
+          user_id?: string | null
           variant_id?: string | null
         }
         Update: {
@@ -906,13 +910,15 @@ export type Database = {
           delivery_count?: number | null
           discount_percent?: number | null
           frequency?: string
+          guest_email?: string | null
+          guest_name?: string | null
           id?: string
           last_delivery?: string | null
           next_delivery?: string | null
           product_id?: string | null
           status?: string
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
           variant_id?: string | null
         }
         Relationships: [

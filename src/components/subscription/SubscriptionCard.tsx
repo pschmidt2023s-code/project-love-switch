@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Package, Check, ChevronDown, Loader2 } from 'lucide-react';
+import { Package, Check, ChevronDown, Loader2, Mail, User as UserIcon } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 interface SubscriptionPlan {
   id: string;
@@ -62,13 +64,28 @@ export function SubscriptionCard({
   const [selectedPlan, setSelectedPlan] = useState<string>('monthly');
   const [loading, setLoading] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  
+  // Guest subscription fields
+  const [guestEmail, setGuestEmail] = useState('');
+  const [guestName, setGuestName] = useState('');
 
   const currentPlan = plans.find(p => p.id === selectedPlan);
   const discountedPrice = currentPlan ? basePrice * (1 - currentPlan.discount / 100) : basePrice;
 
+  const isValidEmail = (email: string) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
+
+  const canSubscribe = user || (guestEmail && guestName && isValidEmail(guestEmail));
+
   const handleSubscribe = async () => {
-    if (!user) {
-      toast.error('Bitte melden Sie sich an, um ein Abo abzuschließen');
+    if (!user && (!guestEmail || !guestName)) {
+      toast.error('Bitte geben Sie Ihren Namen und E-Mail-Adresse ein');
+      return;
+    }
+
+    if (!user && !isValidEmail(guestEmail)) {
+      toast.error('Bitte geben Sie eine gültige E-Mail-Adresse ein');
       return;
     }
 
@@ -90,16 +107,24 @@ export function SubscriptionCard({
         nextDelivery.setMonth(nextDelivery.getMonth() + 3);
       }
 
-      // Create subscription record first
-      const { data: subscription, error: subError } = await supabase.from('subscriptions').insert({
-        user_id: user.id,
+      // Create subscription record - for guests or authenticated users
+      const subscriptionData = {
+        user_id: user?.id || null,
+        guest_email: user ? null : guestEmail,
+        guest_name: user ? null : guestName,
         product_id: productId,
         variant_id: variantId,
         frequency: currentPlan?.frequency || 'monthly',
         discount_percent: currentPlan?.discount || 15,
         next_delivery: nextDelivery.toISOString().split('T')[0],
-        status: 'pending', // Will be activated after payment
-      }).select().single();
+        status: 'pending',
+      };
+
+      const { data: subscription, error: subError } = await supabase
+        .from('subscriptions')
+        .insert(subscriptionData)
+        .select()
+        .single();
 
       if (subError) throw subError;
 
@@ -113,6 +138,7 @@ export function SubscriptionCard({
             subscriptionId: subscription.id,
             discountPercent: currentPlan?.discount || 15,
           }],
+          guestEmail: user ? undefined : guestEmail,
           successUrl: `${window.location.origin}/checkout/success?subscription=${subscription.id}`,
           cancelUrl: `${window.location.origin}/checkout/cancel`,
         },
@@ -121,7 +147,6 @@ export function SubscriptionCard({
       if (checkoutError) throw checkoutError;
 
       if (checkoutData?.url) {
-        // Redirect to Stripe checkout
         window.location.href = checkoutData.url;
       } else {
         throw new Error('Keine Checkout-URL erhalten');
@@ -147,7 +172,7 @@ export function SubscriptionCard({
           </div>
           <div className="text-left">
             <h3 className="font-display text-sm text-foreground">Parfüm-Abo</h3>
-            <p className="text-xs text-muted-foreground">Bis zu 15% sparen</p>
+            <p className="text-xs text-muted-foreground">Bis zu 15% sparen • Auch als Gast</p>
           </div>
         </div>
         <ChevronDown
@@ -204,6 +229,37 @@ export function SubscriptionCard({
             </div>
           )}
 
+          {/* Guest Subscription Form - Only show if not logged in */}
+          {!user && (
+            <div className="space-y-3 p-3 bg-muted/30 border border-border">
+              <p className="text-[10px] tracking-[0.15em] uppercase text-muted-foreground">
+                Gast-Abo abschließen
+              </p>
+              <div className="space-y-2">
+                <div className="relative">
+                  <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" strokeWidth={1.5} />
+                  <Input
+                    type="text"
+                    placeholder="Ihr Name"
+                    value={guestName}
+                    onChange={(e) => setGuestName(e.target.value)}
+                    className="pl-10 h-10 text-sm"
+                  />
+                </div>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" strokeWidth={1.5} />
+                  <Input
+                    type="email"
+                    placeholder="ihre@email.de"
+                    value={guestEmail}
+                    onChange={(e) => setGuestEmail(e.target.value)}
+                    className="pl-10 h-10 text-sm"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Price */}
           <div className="flex items-baseline gap-2 py-2">
             <span className="text-2xl font-display text-foreground">
@@ -220,7 +276,7 @@ export function SubscriptionCard({
           {/* Subscribe Button */}
           <button
             onClick={handleSubscribe}
-            disabled={loading || !user}
+            disabled={loading || !canSubscribe}
             className="w-full py-3 bg-foreground text-background text-[11px] tracking-[0.15em] uppercase font-medium hover:bg-foreground/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {loading ? (
@@ -228,14 +284,17 @@ export function SubscriptionCard({
                 <Loader2 className="w-4 h-4 animate-spin" />
                 Wird weitergeleitet...
               </>
-            ) : (
+            ) : user ? (
               'Abo starten & bezahlen'
+            ) : (
+              'Als Gast Abo starten'
             )}
           </button>
 
-          {!user && (
-            <p className="text-xs text-muted-foreground text-center">
-              Bitte melden Sie sich an, um ein Abo abzuschließen
+          {user && (
+            <p className="text-xs text-accent text-center flex items-center justify-center gap-1">
+              <Check className="w-3 h-3" />
+              Angemeldet als {user.email}
             </p>
           )}
 
