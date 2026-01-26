@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { z } from 'zod';
+import { EnhancedInput, EnhancedTextarea } from '@/components/forms/EnhancedInput';
 
 const contactSchema = z.object({
   name: z.string().trim().min(2, 'Name muss mindestens 2 Zeichen haben').max(100),
@@ -167,97 +168,49 @@ export default function Contact() {
             <div className="lg:col-span-2">
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label 
-                      htmlFor="name" 
-                      className="block text-[10px] tracking-[0.15em] uppercase text-muted-foreground"
-                    >
-                      Name
-                    </label>
-                    <input
-                      id="name"
-                      type="text"
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      placeholder="Ihr Name"
-                      className={`w-full px-4 py-3 bg-background border ${
-                        errors.name ? 'border-destructive' : 'border-border'
-                      } text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-accent transition-colors`}
-                      required
-                    />
-                    {errors.name && (
-                      <p className="text-xs text-destructive">{errors.name}</p>
-                    )}
-                  </div>
-                  <div className="space-y-2">
-                    <label 
-                      htmlFor="email" 
-                      className="block text-[10px] tracking-[0.15em] uppercase text-muted-foreground"
-                    >
-                      E-Mail
-                    </label>
-                    <input
-                      id="email"
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      placeholder="ihre@email.de"
-                      className={`w-full px-4 py-3 bg-background border ${
-                        errors.email ? 'border-destructive' : 'border-border'
-                      } text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-accent transition-colors`}
-                      required
-                    />
-                    {errors.email && (
-                      <p className="text-xs text-destructive">{errors.email}</p>
-                    )}
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <label 
-                    htmlFor="subject" 
-                    className="block text-[10px] tracking-[0.15em] uppercase text-muted-foreground"
-                  >
-                    Betreff
-                  </label>
-                  <input
-                    id="subject"
+                  <EnhancedInput
+                    label="Name"
                     type="text"
-                    value={formData.subject}
-                    onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                    placeholder="Worum geht es?"
-                    className={`w-full px-4 py-3 bg-background border ${
-                      errors.subject ? 'border-destructive' : 'border-border'
-                    } text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-accent transition-colors`}
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    placeholder="Ihr Name"
+                    error={errors.name}
                     required
+                    autoComplete="name"
+                    autoCapitalize="words"
                   />
-                  {errors.subject && (
-                    <p className="text-xs text-destructive">{errors.subject}</p>
-                  )}
+                  <EnhancedInput
+                    label="E-Mail"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    placeholder="ihre@email.de"
+                    error={errors.email}
+                    required
+                    autoComplete="email"
+                    inputMode="email"
+                  />
                 </div>
                 
-                <div className="space-y-2">
-                  <label 
-                    htmlFor="message" 
-                    className="block text-[10px] tracking-[0.15em] uppercase text-muted-foreground"
-                  >
-                    Nachricht
-                  </label>
-                  <textarea
-                    id="message"
-                    value={formData.message}
-                    onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                    placeholder="Ihre Nachricht..."
-                    rows={6}
-                    className={`w-full px-4 py-3 bg-background border ${
-                      errors.message ? 'border-destructive' : 'border-border'
-                    } text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-accent transition-colors resize-none`}
-                    required
-                  />
-                  {errors.message && (
-                    <p className="text-xs text-destructive">{errors.message}</p>
-                  )}
-                </div>
+                <EnhancedInput
+                  label="Betreff"
+                  type="text"
+                  value={formData.subject}
+                  onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
+                  placeholder="Worum geht es?"
+                  error={errors.subject}
+                  required
+                />
+                
+                <EnhancedTextarea
+                  label="Nachricht"
+                  value={formData.message}
+                  onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                  placeholder="Ihre Nachricht..."
+                  rows={6}
+                  error={errors.message}
+                  required
+                />
                 
                 <button 
                   type="submit" 
