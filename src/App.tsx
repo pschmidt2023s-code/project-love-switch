@@ -17,7 +17,7 @@ import { TouchOptimizations } from '@/components/mobile/TouchOptimizations';
 import { CookieConsent } from '@/components/CookieConsent';
 import { InstallPrompt } from '@/components/pwa/InstallPrompt';
 import { OfflineIndicator } from '@/components/pwa/OfflineIndicator';
-import { LiveIndicators } from '@/components/live/LiveIndicators';
+
 import { PushNotificationPrompt } from '@/components/PushNotificationPrompt';
 
 const ProductDetail = React.lazy(() => import('@/pages/ProductDetail'));
@@ -115,7 +115,7 @@ function App() {
                     <CookieConsent />
                     <InstallPrompt />
                     <OfflineIndicator />
-                    <LiveIndicators />
+                    
                     <PushNotificationPrompt />
                     <Toaster />
                     <Sonner />

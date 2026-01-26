@@ -21,88 +21,70 @@ export function PremiumNavigation() {
   const headerRef = useRef<HTMLElement>(null);
   const [isInverted, setIsInverted] = useState(false);
   
-  // Detect background color beneath header
+  // Simple background detection: light = black text, dark = white text
   useEffect(() => {
     const checkBackground = () => {
       if (!headerRef.current) return;
       
       const headerRect = headerRef.current.getBoundingClientRect();
-      const sampleY = headerRect.bottom + 20;
-      const samplePoints = [
-        { x: window.innerWidth * 0.25, y: sampleY },
-        { x: window.innerWidth * 0.5, y: sampleY },
-        { x: window.innerWidth * 0.75, y: sampleY },
-      ];
+      const sampleY = headerRect.bottom + 10;
       
-      let darkCount = 0;
-      
-      // Temporarily hide header for sampling
-      const originalPointerEvents = headerRef.current.style.pointerEvents;
-      headerRef.current.style.pointerEvents = 'none';
-      
-      for (const point of samplePoints) {
-        const element = document.elementFromPoint(point.x, point.y);
-        if (!element) continue;
-        
-        let currentElement: Element | null = element;
-        let isDark = false;
-        
-        while (currentElement && currentElement !== document.body) {
-          // Check for data attribute
-          if (currentElement.hasAttribute('data-header-dark')) {
-            isDark = true;
-            break;
-          }
-          
-          const computed = window.getComputedStyle(currentElement);
-          const bg = computed.backgroundColor;
-          const bgImage = computed.backgroundImage;
-          
-          // Images are usually dark
-          if (bgImage && bgImage !== 'none' && bgImage.includes('url')) {
-            isDark = true;
-            break;
-          }
-          
-          // Check background color luminance
-          if (bg && bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent') {
-            const rgbMatch = bg.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
-            if (rgbMatch) {
-              const r = parseInt(rgbMatch[1], 10);
-              const g = parseInt(rgbMatch[2], 10);
-              const b = parseInt(rgbMatch[3], 10);
-              const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-              
-              // Dark if luminance < 0.5
-              if (luminance < 0.5) {
-                isDark = true;
-                break;
-              } else if (luminance > 0.7) {
-                // Definitely light
-                isDark = false;
-                break;
-              }
-            }
-          }
-          
-          currentElement = currentElement.parentElement;
-        }
-        
-        if (isDark) darkCount++;
+      // Sample center point
+      const element = document.elementFromPoint(window.innerWidth / 2, sampleY);
+      if (!element) {
+        setIsInverted(false);
+        return;
       }
       
-      // Restore pointer events
-      headerRef.current.style.pointerEvents = originalPointerEvents;
+      // Walk up to find first element with background
+      let currentElement: Element | null = element;
+      let isDark = false;
       
-      // If majority of samples are dark, invert (use white text)
-      const shouldInvert = darkCount >= 2;
-      setIsInverted(shouldInvert);
+      while (currentElement && currentElement !== document.body) {
+        // Check for explicit data attribute
+        if (currentElement.hasAttribute('data-header-dark')) {
+          isDark = true;
+          break;
+        }
+        if (currentElement.hasAttribute('data-header-light')) {
+          isDark = false;
+          break;
+        }
+        
+        const computed = window.getComputedStyle(currentElement);
+        const bg = computed.backgroundColor;
+        const bgImage = computed.backgroundImage;
+        
+        // Background images = assume dark (photos etc)
+        if (bgImage && bgImage !== 'none' && bgImage.includes('url')) {
+          isDark = true;
+          break;
+        }
+        
+        // Check background color
+        if (bg && bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent') {
+          const rgbMatch = bg.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+          if (rgbMatch) {
+            const r = parseInt(rgbMatch[1], 10);
+            const g = parseInt(rgbMatch[2], 10);
+            const b = parseInt(rgbMatch[3], 10);
+            // Standard luminance formula
+            const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+            isDark = luminance < 0.5;
+            break;
+          }
+        }
+        
+        currentElement = currentElement.parentElement;
+      }
+      
+      setIsInverted(isDark);
     };
     
-    // Initial check
-    const initialTimer = setTimeout(checkBackground, 100);
+    // Initial check after render
+    const timer = setTimeout(checkBackground, 50);
     
-    // Throttled scroll handler
+    // Check on scroll
     let rafId: number;
     const handleScroll = () => {
       if (rafId) cancelAnimationFrame(rafId);
@@ -110,12 +92,10 @@ export function PremiumNavigation() {
     };
     
     window.addEventListener('scroll', handleScroll, { passive: true });
-    window.addEventListener('resize', handleScroll, { passive: true });
     
     return () => {
-      clearTimeout(initialTimer);
+      clearTimeout(timer);
       window.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('resize', handleScroll);
       if (rafId) cancelAnimationFrame(rafId);
     };
   }, []);
