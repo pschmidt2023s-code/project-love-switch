@@ -6,6 +6,7 @@ import { useCart } from '@/contexts/CartContext';
 import { AuthModal } from '@/components/AuthModal';
 import { CartSidebar } from '@/components/CartSidebar';
 import { DarkModeToggle } from '@/components/DarkModeToggle';
+import { useHeaderColorInversion } from '@/hooks/useHeaderColorInversion';
 
 export function PremiumNavigation() {
   const { user, signOut } = useAuth();
@@ -18,6 +19,10 @@ export function PremiumNavigation() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const headerRef = useRef<HTMLElement>(null);
+  
+  // Auto-detect background color and invert header colors
+  const { isInverted } = useHeaderColorInversion(headerRef, location.pathname);
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
@@ -83,6 +88,11 @@ export function PremiumNavigation() {
   ];
 
   const isActive = (path: string) => location.pathname === path;
+  
+  // Dynamic color classes based on background detection
+  const headerColorClasses = isInverted
+    ? 'text-white [&_button]:text-white [&_a]:text-white [&_.logo-text]:text-white'
+    : 'text-foreground [&_button]:text-foreground [&_a]:text-foreground [&_.logo-text]:text-foreground';
 
   return (
     <>
@@ -97,11 +107,19 @@ export function PremiumNavigation() {
 
       {/* Main Navigation */}
       <header
-        className={`sticky top-0 z-50 transition-all duration-500 ${
+        ref={headerRef}
+        data-inverted={isInverted ? 'true' : 'false'}
+        className={`nav-header sticky top-0 z-50 transition-all duration-500 ${
           isScrolled
-            ? 'bg-background/98 backdrop-blur-xl border-b border-border shadow-sm'
-            : 'bg-background border-b border-border'
+            ? isInverted 
+              ? 'bg-black/95 backdrop-blur-xl border-b border-white/10 shadow-lg' 
+              : 'bg-background/98 backdrop-blur-xl border-b border-border shadow-sm'
+            : 'bg-transparent'
         }`}
+        style={{
+          '--nav-text': isInverted ? '255, 255, 255' : undefined,
+          '--nav-text-muted': isInverted ? '255, 255, 255, 0.7' : undefined,
+        } as React.CSSProperties}
       >
         <nav className="container-premium">
           <div className="flex items-center justify-between h-14 sm:h-16 md:h-20">
@@ -109,7 +127,7 @@ export function PremiumNavigation() {
             <div className="flex items-center w-10 lg:hidden">
               <button
                 onClick={() => setShowMobileMenu(!showMobileMenu)}
-                className="flex items-center justify-center w-10 h-10 text-foreground hover:text-muted-foreground transition-colors"
+                className="nav-icon flex items-center justify-center w-10 h-10 transition-colors duration-300 hover:opacity-70"
                 aria-label={showMobileMenu ? 'Menü schließen' : 'Menü öffnen'}
               >
                 {showMobileMenu ? (
@@ -126,15 +144,15 @@ export function PremiumNavigation() {
                 <Link
                   key={link.to}
                   to={link.to}
-                  className={`relative text-[11px] tracking-[0.15em] uppercase font-medium transition-colors duration-300 ${
+                  className={`nav-link relative text-[11px] tracking-[0.15em] uppercase font-medium transition-all duration-300 ${
                     isActive(link.to)
-                      ? 'text-foreground'
-                      : 'text-muted-foreground hover:text-foreground'
+                      ? 'nav-link-active'
+                      : 'nav-link-muted'
                   }`}
                 >
                   {link.label}
                   {isActive(link.to) && (
-                    <span className="absolute -bottom-1 left-0 w-full h-px bg-accent" />
+                    <span className="nav-underline absolute -bottom-1 left-0 w-full h-px bg-accent" />
                   )}
                 </Link>
               ))}
@@ -143,9 +161,9 @@ export function PremiumNavigation() {
             {/* Center: Logo - truly centered */}
             <Link
               to="/"
-              className="absolute left-1/2 -translate-x-1/2 flex items-center justify-center"
+              className="absolute left-1/2 -translate-x-1/2 flex items-center justify-center transition-colors duration-300"
             >
-              <h1 className="font-display text-lg sm:text-xl md:text-2xl tracking-[0.2em] sm:tracking-[0.25em] text-foreground font-medium whitespace-nowrap">
+              <h1 className="nav-logo font-display text-lg sm:text-xl md:text-2xl tracking-[0.2em] sm:tracking-[0.25em] font-medium whitespace-nowrap transition-colors duration-300">
                 ALDENAIR
               </h1>
             </Link>
@@ -155,21 +173,21 @@ export function PremiumNavigation() {
               {/* Search */}
               <button
                 onClick={() => setShowSearch(!showSearch)}
-                className="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 text-foreground hover:text-muted-foreground transition-colors"
+                className="nav-icon flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 transition-all duration-300 hover:opacity-70"
                 aria-label="Suche"
               >
                 <Search className="w-[18px] h-[18px]" strokeWidth={1.5} />
               </button>
 
               {/* Dark Mode - hidden on small mobile */}
-              <div className="hidden sm:flex">
+              <div className="hidden sm:flex dark-mode-btn">
                 <DarkModeToggle />
               </div>
 
               {/* Favorites - hidden on mobile */}
               <Link
                 to="/favorites"
-                className="hidden md:flex items-center justify-center w-10 h-10 text-foreground hover:text-muted-foreground transition-colors"
+                className="nav-icon hidden md:flex items-center justify-center w-10 h-10 transition-all duration-300 hover:opacity-70"
                 aria-label="Favoriten"
               >
                 <Heart className="w-[18px] h-[18px]" strokeWidth={1.5} />
@@ -178,12 +196,12 @@ export function PremiumNavigation() {
               {/* Cart */}
               <button
                 onClick={() => setShowCart(true)}
-                className="relative flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 text-foreground hover:text-muted-foreground transition-colors"
+                className="nav-icon relative flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 transition-all duration-300 hover:opacity-70"
                 aria-label="Warenkorb"
               >
                 <ShoppingBag className="w-[18px] h-[18px]" strokeWidth={1.5} />
                 {itemCount > 0 && (
-                  <span className="absolute top-0.5 right-0.5 sm:top-1 sm:right-1 min-w-[14px] sm:min-w-[16px] h-3.5 sm:h-4 flex items-center justify-center bg-accent text-accent-foreground text-[8px] sm:text-[9px] font-semibold px-0.5 sm:px-1">
+                  <span className="nav-badge absolute top-0.5 right-0.5 sm:top-1 sm:right-1 min-w-[14px] sm:min-w-[16px] h-3.5 sm:h-4 flex items-center justify-center text-[8px] sm:text-[9px] font-semibold px-0.5 sm:px-1 bg-accent text-accent-foreground">
                     {itemCount > 99 ? '99+' : itemCount}
                   </span>
                 )}
@@ -194,7 +212,7 @@ export function PremiumNavigation() {
                 <div className="relative" ref={dropdownRef}>
                   <button
                     onClick={() => setShowUserMenu(!showUserMenu)}
-                    className="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 text-foreground hover:text-muted-foreground transition-colors"
+                    className="nav-icon flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 transition-all duration-300 hover:opacity-70"
                     aria-label="Konto"
                   >
                     <User className="w-[18px] h-[18px]" strokeWidth={1.5} />
@@ -250,7 +268,11 @@ export function PremiumNavigation() {
                 </div>
               ) : (
                 <AuthModal>
-                  <button className="hidden sm:flex items-center px-5 py-2 text-[11px] tracking-[0.1em] uppercase font-medium text-foreground border border-foreground hover:bg-foreground hover:text-background transition-all duration-300">
+                  <button className={`hidden sm:flex items-center px-5 py-2 text-[11px] tracking-[0.1em] uppercase font-medium border transition-all duration-300 ${
+                    isInverted 
+                      ? 'text-white border-white hover:bg-white hover:text-black' 
+                      : 'text-foreground border-foreground hover:bg-foreground hover:text-background'
+                  }`}>
                     Anmelden
                   </button>
                 </AuthModal>
