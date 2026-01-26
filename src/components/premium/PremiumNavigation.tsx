@@ -89,10 +89,10 @@ export function PremiumNavigation() {
 
   const isActive = (path: string) => location.pathname === path;
   
-  // Dynamic color classes based on background detection
-  const headerColorClasses = isInverted
-    ? 'text-white [&_button]:text-white [&_a]:text-white [&_.logo-text]:text-white'
-    : 'text-foreground [&_button]:text-foreground [&_a]:text-foreground [&_.logo-text]:text-foreground';
+  // Inline styles for maximum specificity (overrides all CSS classes)
+  const invertedTextStyle = isInverted ? { color: '#ffffff' } : {};
+  const invertedIconStyle = isInverted ? { color: '#ffffff', borderColor: '#ffffff' } : {};
+  const invertedBorderStyle = isInverted ? { borderColor: '#ffffff' } : {};
 
   return (
     <>
@@ -128,6 +128,7 @@ export function PremiumNavigation() {
               <button
                 onClick={() => setShowMobileMenu(!showMobileMenu)}
                 className="nav-icon flex items-center justify-center w-10 h-10 transition-colors duration-300 hover:opacity-70"
+                style={invertedIconStyle}
                 aria-label={showMobileMenu ? 'Menü schließen' : 'Menü öffnen'}
               >
                 {showMobileMenu ? (
@@ -144,6 +145,7 @@ export function PremiumNavigation() {
                 <Link
                   key={link.to}
                   to={link.to}
+                style={invertedTextStyle}
                   className={`nav-link relative text-[11px] tracking-[0.15em] uppercase font-medium transition-all duration-300 ${
                     isActive(link.to)
                       ? 'nav-link-active'
@@ -162,6 +164,7 @@ export function PremiumNavigation() {
             <Link
               to="/"
               className="absolute left-1/2 -translate-x-1/2 flex items-center justify-center transition-colors duration-300"
+              style={invertedTextStyle}
             >
               <h1 className="nav-logo font-display text-lg sm:text-xl md:text-2xl tracking-[0.2em] sm:tracking-[0.25em] font-medium whitespace-nowrap transition-colors duration-300">
                 ALDENAIR
@@ -174,6 +177,7 @@ export function PremiumNavigation() {
               <button
                 onClick={() => setShowSearch(!showSearch)}
                 className="nav-icon flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 transition-all duration-300 hover:opacity-70"
+                style={invertedIconStyle}
                 aria-label="Suche"
               >
                 <Search className="w-[18px] h-[18px]" strokeWidth={1.5} />
@@ -188,6 +192,7 @@ export function PremiumNavigation() {
               <Link
                 to="/favorites"
                 className="nav-icon hidden md:flex items-center justify-center w-10 h-10 transition-all duration-300 hover:opacity-70"
+                style={invertedIconStyle}
                 aria-label="Favoriten"
               >
                 <Heart className="w-[18px] h-[18px]" strokeWidth={1.5} />
@@ -197,6 +202,7 @@ export function PremiumNavigation() {
               <button
                 onClick={() => setShowCart(true)}
                 className="nav-icon relative flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 transition-all duration-300 hover:opacity-70"
+                style={invertedIconStyle}
                 aria-label="Warenkorb"
               >
                 <ShoppingBag className="w-[18px] h-[18px]" strokeWidth={1.5} />
@@ -213,6 +219,7 @@ export function PremiumNavigation() {
                   <button
                     onClick={() => setShowUserMenu(!showUserMenu)}
                     className="nav-icon flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 transition-all duration-300 hover:opacity-70"
+                    style={invertedIconStyle}
                     aria-label="Konto"
                   >
                     <User className="w-[18px] h-[18px]" strokeWidth={1.5} />
@@ -268,11 +275,14 @@ export function PremiumNavigation() {
                 </div>
               ) : (
                 <AuthModal>
-                  <button className={`hidden sm:flex items-center px-5 py-2 text-[11px] tracking-[0.1em] uppercase font-medium border transition-all duration-300 ${
-                    isInverted 
-                      ? 'text-white border-white hover:bg-white hover:text-black' 
-                      : 'text-foreground border-foreground hover:bg-foreground hover:text-background'
-                  }`}>
+                  <button 
+                    style={invertedBorderStyle}
+                    className={`hidden sm:flex items-center px-5 py-2 text-[11px] tracking-[0.1em] uppercase font-medium border transition-all duration-300 ${
+                      isInverted 
+                        ? 'text-white border-white hover:bg-white hover:text-black' 
+                        : 'text-foreground border-foreground hover:bg-foreground hover:text-background'
+                    }`}
+                  >
                     Anmelden
                   </button>
                 </AuthModal>
