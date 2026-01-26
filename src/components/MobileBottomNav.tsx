@@ -1,9 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { Home, ShoppingBag, User, Heart } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/contexts/CartContext';
-import { useAuth } from '@/contexts/AuthContext';
 import { useFavorites } from '@/hooks/useFavorites';
 import { cn } from '@/lib/utils';
 import { CartSidebar } from './CartSidebar';
@@ -36,14 +34,13 @@ const NAV_ITEMS = [
     label: 'Profil',
     href: '/profile',
     activeHref: '/profile',
-    requiresAuth: true
+    requiresAuth: false  // Allow navigation to profile page (shows login prompt if not authenticated)
   }
 ];
 
 export function MobileBottomNav() {
   const location = useLocation();
   const { itemCount } = useCart();
-  const { user } = useAuth();
   const { count: favoritesCount } = useFavorites();
   const [showCart, setShowCart] = useState(false);
 
@@ -62,7 +59,7 @@ export function MobileBottomNav() {
 
   return (
     <>
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-lg border-t border-border safe-area-inset-bottom">
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-background/98 backdrop-blur-xl border-t border-border safe-area-inset-bottom">
         <div className="flex items-center justify-around h-16 px-2">
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon;
@@ -70,45 +67,29 @@ export function MobileBottomNav() {
             const showBadge = item.showBadge && itemCount > 0;
             const showFavoritesBadge = item.label === 'Favoriten' && favoritesCount > 0;
 
-            if (item.requiresAuth && !user) {
-              return (
-                <Link
-                  key={item.label}
-                  to="/auth"
-                  className={cn(
-                    'flex flex-col items-center justify-center flex-1 py-2 px-1 transition-colors',
-                    'text-muted-foreground hover:text-primary'
-                  )}
-                >
-                  <Icon className="w-5 h-5" />
-                  <span className="text-[10px] mt-1 font-medium">{item.label}</span>
-                </Link>
-              );
-            }
-
             if (item.isAction) {
               return (
                 <Button
                   key={item.label}
                   variant="ghost"
                   className={cn(
-                    'flex flex-col items-center justify-center flex-1 h-auto py-2 px-1 relative',
-                    isActive ? 'text-primary' : 'text-muted-foreground hover:text-primary'
+                    'flex flex-col items-center justify-center flex-1 h-auto py-2 px-1 relative gap-1',
+                    isActive ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
                   )}
                   onClick={() => handleItemClick(item)}
                 >
                   <div className="relative">
-                    <Icon className="w-5 h-5" />
+                    <Icon className="w-5 h-5" strokeWidth={1.5} />
                     {showBadge && (
-                      <Badge
-                        variant="destructive"
-                        className="absolute -top-2 -right-2 h-4 min-w-4 px-1 text-[10px] flex items-center justify-center"
-                      >
+                      <span className="absolute -top-1.5 -right-1.5 h-4 min-w-4 px-1 text-[9px] font-semibold flex items-center justify-center bg-accent text-accent-foreground rounded-full">
                         {itemCount > 99 ? '99+' : itemCount}
-                      </Badge>
+                      </span>
                     )}
                   </div>
-                  <span className="text-[10px] mt-1 font-medium">{item.label}</span>
+                  <span className="text-[10px] font-medium">{item.label}</span>
+                  {isActive && (
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-foreground rounded-full" />
+                  )}
                 </Button>
               );
             }
@@ -118,24 +99,21 @@ export function MobileBottomNav() {
                 key={item.label}
                 to={item.href}
                 className={cn(
-                  'flex flex-col items-center justify-center flex-1 py-2 px-1 transition-colors relative',
-                  isActive ? 'text-primary' : 'text-muted-foreground hover:text-primary'
+                  'flex flex-col items-center justify-center flex-1 py-2 px-1 transition-colors relative gap-1',
+                  isActive ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
                 )}
               >
                 <div className="relative">
-                  <Icon className="w-5 h-5" />
+                  <Icon className="w-5 h-5" strokeWidth={1.5} />
                   {showFavoritesBadge && (
-                    <Badge
-                      variant="secondary"
-                      className="absolute -top-2 -right-2 h-4 min-w-4 px-1 text-[10px] flex items-center justify-center"
-                    >
+                    <span className="absolute -top-1.5 -right-1.5 h-4 min-w-4 px-1 text-[9px] font-semibold flex items-center justify-center bg-accent text-accent-foreground rounded-full">
                       {favoritesCount}
-                    </Badge>
+                    </span>
                   )}
                 </div>
-                <span className="text-[10px] mt-1 font-medium">{item.label}</span>
+                <span className="text-[10px] font-medium">{item.label}</span>
                 {isActive && (
-                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-primary rounded-full" />
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-foreground rounded-full" />
                 )}
               </Link>
             );

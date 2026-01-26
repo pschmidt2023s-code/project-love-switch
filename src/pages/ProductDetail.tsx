@@ -10,6 +10,7 @@ import { ProductRecommendations } from '@/components/ai/ProductRecommendations';
 import { Breadcrumb } from '@/components/Breadcrumb';
 import { Seo } from '@/components/Seo';
 import { ProductSchema, BreadcrumbSchema } from '@/components/seo';
+import { ScentNotesVisualization } from '@/components/features/ScentNotesVisualization';
 import { toast } from 'sonner';
 
 export default function ProductDetail() {
@@ -318,51 +319,18 @@ export default function ProductDetail() {
               </div>
             )}
 
-            {/* Notes */}
+            {/* Interactive Scent Notes Visualization */}
             {(product.top_notes?.length || product.middle_notes?.length || product.base_notes?.length) && (
               <div className="pt-6 border-t border-border">
-                <h3 className="text-[10px] tracking-[0.15em] uppercase text-muted-foreground mb-4 flex items-center gap-2">
+                <h3 className="text-[10px] tracking-[0.15em] uppercase text-muted-foreground mb-6 flex items-center gap-2">
                   <Leaf className="w-4 h-4" strokeWidth={1.5} />
-                  Duftnoten
+                  Duftpyramide
                 </h3>
-                <div className="space-y-4">
-                  {product.top_notes && product.top_notes.length > 0 && (
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-2">Kopfnote</p>
-                      <div className="flex flex-wrap gap-2">
-                        {product.top_notes.map((note) => (
-                          <span key={note} className="px-3 py-1.5 bg-secondary text-sm">
-                            {note}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {product.middle_notes && product.middle_notes.length > 0 && (
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-2">Herznote</p>
-                      <div className="flex flex-wrap gap-2">
-                        {product.middle_notes.map((note) => (
-                          <span key={note} className="px-3 py-1.5 bg-secondary text-sm">
-                            {note}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {product.base_notes && product.base_notes.length > 0 && (
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-2">Basisnote</p>
-                      <div className="flex flex-wrap gap-2">
-                        {product.base_notes.map((note) => (
-                          <span key={note} className="px-3 py-1.5 bg-secondary text-sm">
-                            {note}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
+                <ScentNotesVisualization
+                  topNotes={product.top_notes || []}
+                  middleNotes={product.middle_notes || []}
+                  baseNotes={product.base_notes || []}
+                />
               </div>
             )}
           </div>
