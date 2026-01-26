@@ -2,13 +2,12 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Skeleton } from '@/components/ui/skeleton';
-import AdminSidebar from '@/components/admin/AdminSidebar';
-import AdminDashboard from '@/components/admin/AdminDashboard';
-import ProductManagement from '@/components/admin/ProductManagement';
-import OrderManagement from '@/components/admin/OrderManagement';
-import CustomerManagement from '@/components/admin/CustomerManagement';
-import AdminAnalytics from '@/components/admin/AdminAnalytics';
+import { AdminLayout } from '@/components/admin/AdminLayout';
+import { AdminDashboardContent } from '@/components/admin/AdminDashboardContent';
+import { AdminOrdersContent } from '@/components/admin/AdminOrdersContent';
+import { AdminProductsContent } from '@/components/admin/AdminProductsContent';
+import { AdminCustomersContent } from '@/components/admin/AdminCustomersContent';
+import { AdminAnalyticsContent } from '@/components/admin/AdminAnalyticsContent';
 import CouponManagement from '@/components/admin/CouponManagement';
 import NewsletterManagement from '@/components/admin/NewsletterManagement';
 import ContestManagement from '@/components/admin/ContestManagement';
@@ -67,15 +66,15 @@ export default function Admin() {
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
-        return <AdminDashboard />;
-      case 'products':
-        return <ProductManagement />;
+        return <AdminDashboardContent />;
       case 'orders':
-        return <OrderManagement />;
+        return <AdminOrdersContent />;
+      case 'products':
+        return <AdminProductsContent />;
       case 'customers':
-        return <CustomerManagement />;
+        return <AdminCustomersContent />;
       case 'analytics':
-        return <AdminAnalytics />;
+        return <AdminAnalyticsContent />;
       case 'coupons':
         return <CouponManagement />;
       case 'newsletter':
@@ -91,23 +90,16 @@ export default function Admin() {
       case 'settings':
         return <SettingsManagement />;
       default:
-        return <AdminDashboard />;
+        return <AdminDashboardContent />;
     }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex">
-        <div className="w-[260px] border-r border-border">
-          <Skeleton className="h-full" />
-        </div>
-        <div className="flex-1 p-8">
-          <Skeleton className="h-10 w-48 mb-8" />
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            {[...Array(4)].map((_, i) => (
-              <Skeleton key={i} className="h-32" />
-            ))}
-          </div>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-accent border-t-transparent animate-spin mx-auto mb-4" />
+          <p className="text-sm text-muted-foreground">Laden...</p>
         </div>
       </div>
     );
@@ -118,14 +110,8 @@ export default function Admin() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex w-full">
-      <AdminSidebar activeTab={activeTab} onTabChange={setActiveTab} />
-      
-      <main className="flex-1 overflow-auto">
-        <div className="p-6 lg:p-8">
-          {renderContent()}
-        </div>
-      </main>
-    </div>
+    <AdminLayout activeTab={activeTab} onTabChange={setActiveTab}>
+      {renderContent()}
+    </AdminLayout>
   );
 }

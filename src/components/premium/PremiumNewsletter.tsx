@@ -1,0 +1,92 @@
+import { Link } from 'react-router-dom';
+import { ArrowRight } from 'lucide-react';
+import { useState } from 'react';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+
+export function PremiumNewsletter() {
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!email) {
+      toast.error('Bitte gib deine E-Mail-Adresse ein');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('newsletter_subscribers')
+        .insert({ email });
+
+      if (error) {
+        if (error.code === '23505') {
+          toast.error('Diese E-Mail ist bereits registriert');
+        } else {
+          throw error;
+        }
+      } else {
+        toast.success('Erfolgreich angemeldet!');
+        setEmail('');
+      }
+    } catch (error) {
+      toast.error('Ein Fehler ist aufgetreten');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <section className="bg-foreground text-background py-16 lg:py-24">
+      <div className="container-premium">
+        <div className="max-w-2xl mx-auto text-center">
+          {/* Eyebrow */}
+          <span className="inline-block text-[10px] tracking-[0.3em] uppercase text-background/50 mb-4">
+            Newsletter
+          </span>
+          
+          {/* Headline */}
+          <h2 className="font-display text-3xl lg:text-4xl text-background mb-4">
+            Bleibe auf dem Laufenden
+          </h2>
+          
+          {/* Description */}
+          <p className="text-background/70 mb-8 max-w-md mx-auto">
+            Melde dich für unseren Newsletter an und erhalte exklusive Angebote 
+            und Neuigkeiten direkt in dein Postfach.
+          </p>
+          
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-4 max-w-lg mx-auto">
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Deine E-Mail-Adresse"
+              className="flex-1 px-5 py-4 bg-background/10 border border-background/20 text-background placeholder:text-background/50 text-sm focus:outline-none focus:border-background/50 transition-colors"
+            />
+            <button
+              type="submit"
+              disabled={loading}
+              className="inline-flex items-center justify-center px-8 py-4 bg-accent text-accent-foreground text-[11px] tracking-[0.1em] uppercase font-medium hover:bg-accent/90 transition-colors disabled:opacity-50 whitespace-nowrap"
+            >
+              {loading ? 'Wird gesendet...' : 'Anmelden'}
+              {!loading && <ArrowRight className="ml-2 w-4 h-4" strokeWidth={1.5} />}
+            </button>
+          </form>
+          
+          {/* Privacy Note */}
+          <p className="text-[11px] text-background/40 mt-4">
+            Mit der Anmeldung akzeptierst du unsere{' '}
+            <Link to="/privacy" className="underline hover:text-background/60">
+              Datenschutzerklärung
+            </Link>
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
