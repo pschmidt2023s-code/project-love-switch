@@ -31,6 +31,17 @@ export function useHeaderColorInversion(
     if (!headerRef.current) return;
     
     const headerRect = headerRef.current.getBoundingClientRect();
+    const scrollY = window.scrollY;
+    
+    // Simple heuristic: If we're near the top of a dark hero route, invert
+    if (DARK_HERO_ROUTES.includes(pathname) && scrollY < 500) {
+      if (!lastValueRef.current) {
+        lastValueRef.current = true;
+        setState({ isInverted: true, isTransitioning: true });
+        setTimeout(() => setState(prev => ({ ...prev, isTransitioning: false })), 300);
+      }
+      return;
+    }
     
     // Sample multiple points below the header
     const sampleY = headerRect.bottom + 20;

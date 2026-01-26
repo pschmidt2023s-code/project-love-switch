@@ -286,6 +286,31 @@
   background-color: white !important;
 }
 
+/* Force white color for all child elements */
+.nav-header[data-inverted="true"] * {
+  color: #ffffff !important;
+  fill: #ffffff !important;
+}
+
+/* SVG icons must use stroke */
+.nav-header[data-inverted="true"] svg {
+  stroke: #ffffff !important;
+  color: #ffffff !important;
+  fill: #ffffff !important;
+}
+
+/* Button borders */
+.nav-header[data-inverted="true"] button {
+  color: #ffffff !important;
+  border-color: #ffffff !important;
+}
+
+/* Links and headings */
+.nav-header[data-inverted="true"] a,
+.nav-header[data-inverted="true"] h1 {
+  color: #ffffff !important;
+}
+
 /* ─────────────────────────────────────────────────────────────────────────────
    COMPONENT CLASSES
    ───────────────────────────────────────────────────────────────────────────── */

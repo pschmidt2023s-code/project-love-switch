@@ -19,10 +19,30 @@ export function PremiumNavigation() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [isInverted, setIsInverted] = useState(false);
   const headerRef = useRef<HTMLElement>(null);
   
-  // Auto-detect background color and invert header colors
-  const { isInverted } = useHeaderColorInversion(headerRef, location.pathname);
+  // Simple scroll-based inversion for dark hero routes
+  useEffect(() => {
+    const isDarkHeroRoute = ['/', '/products'].includes(location.pathname);
+    
+    const handleScroll = () => {
+      if (!isDarkHeroRoute) {
+        setIsInverted(false);
+        return;
+      }
+      
+      const scrollY = window.scrollY;
+      // Invert when near top (first 600px) on dark hero pages
+      setIsInverted(scrollY < 600);
+    };
+    
+    // Set initial state
+    handleScroll();
+    
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [location.pathname]);
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
@@ -90,9 +110,9 @@ export function PremiumNavigation() {
   const isActive = (path: string) => location.pathname === path;
   
   // Inline styles for maximum specificity (overrides all CSS classes)
-  const invertedTextStyle = isInverted ? { color: '#ffffff' } : {};
-  const invertedIconStyle = isInverted ? { color: '#ffffff', borderColor: '#ffffff' } : {};
-  const invertedBorderStyle = isInverted ? { borderColor: '#ffffff' } : {};
+  const invertedTextStyle: React.CSSProperties = isInverted ? { color: '#ffffff' } : { color: 'inherit' };
+  const invertedIconStyle: React.CSSProperties = isInverted ? { color: '#ffffff', stroke: '#ffffff' } : { color: 'inherit', stroke: 'inherit' };
+  const invertedBorderStyle: React.CSSProperties = isInverted ? { borderColor: '#ffffff', color: '#ffffff' } : { borderColor: 'inherit', color: 'inherit' };
 
   return (
     <>
@@ -104,11 +124,25 @@ export function PremiumNavigation() {
           </p>
         </div>
       </div>
+      
+      {/* DEBUG INDICATOR */}
+      <div className="fixed bottom-4 right-4 z-[999] bg-red-500 text-white p-4 text-xs font-mono">
+        isInverted: {isInverted ? 'TRUE' : 'FALSE'}
+        <br/>
+        Path: {location.pathname}
+        <br/>
+        Scroll: {typeof window !== 'undefined' ? window.scrollY : 0}
+      </div>
 
       {/* Main Navigation */}
       <header
         ref={headerRef}
-        data-inverted={isInverted ? 'true' : 'false'}
+        data-inverted={isInverted ? "true" : "false"}
+        style={{
+          '--nav-text': isInverted ? '255, 255, 255' : undefined,
+          '--nav-text-muted': isInverted ? '255, 255, 255, 0.7' : undefined,
+          '--header-text-color': isInverted ? '#ffffff' : undefined,
+        } as React.CSSProperties}
         className={`nav-header sticky top-0 z-50 transition-all duration-500 ${
           isScrolled
             ? isInverted 
@@ -116,10 +150,6 @@ export function PremiumNavigation() {
               : 'bg-background/98 backdrop-blur-xl border-b border-border shadow-sm'
             : 'bg-transparent'
         }`}
-        style={{
-          '--nav-text': isInverted ? '255, 255, 255' : undefined,
-          '--nav-text-muted': isInverted ? '255, 255, 255, 0.7' : undefined,
-        } as React.CSSProperties}
       >
         <nav className="container-premium">
           <div className="flex items-center justify-between h-14 sm:h-16 md:h-20">
