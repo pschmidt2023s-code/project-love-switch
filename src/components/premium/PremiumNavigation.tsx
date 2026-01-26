@@ -19,34 +19,106 @@ export function PremiumNavigation() {
   const [isAdmin, setIsAdmin] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLElement>(null);
+  const [isInverted, setIsInverted] = useState(false);
   
-  // Check if current route has dark hero - set initial state immediately
-  const isDarkHeroRoute = ['/', '/products'].includes(location.pathname);
-  
-  // Initialize with correct value based on route
-  const [isInverted, setIsInverted] = useState(() => {
-    return isDarkHeroRoute; // Start inverted on dark hero pages
-  });
-  
-  // Simple scroll-based inversion for dark hero routes
+  // Detect background color beneath header
   useEffect(() => {
-    const handleScroll = () => {
-      if (!isDarkHeroRoute) {
-        setIsInverted(false);
-        return;
+    const checkBackground = () => {
+      if (!headerRef.current) return;
+      
+      const headerRect = headerRef.current.getBoundingClientRect();
+      const sampleY = headerRect.bottom + 20;
+      const samplePoints = [
+        { x: window.innerWidth * 0.25, y: sampleY },
+        { x: window.innerWidth * 0.5, y: sampleY },
+        { x: window.innerWidth * 0.75, y: sampleY },
+      ];
+      
+      let darkCount = 0;
+      
+      // Temporarily hide header for sampling
+      const originalPointerEvents = headerRef.current.style.pointerEvents;
+      headerRef.current.style.pointerEvents = 'none';
+      
+      for (const point of samplePoints) {
+        const element = document.elementFromPoint(point.x, point.y);
+        if (!element) continue;
+        
+        let currentElement: Element | null = element;
+        let isDark = false;
+        
+        while (currentElement && currentElement !== document.body) {
+          // Check for data attribute
+          if (currentElement.hasAttribute('data-header-dark')) {
+            isDark = true;
+            break;
+          }
+          
+          const computed = window.getComputedStyle(currentElement);
+          const bg = computed.backgroundColor;
+          const bgImage = computed.backgroundImage;
+          
+          // Images are usually dark
+          if (bgImage && bgImage !== 'none' && bgImage.includes('url')) {
+            isDark = true;
+            break;
+          }
+          
+          // Check background color luminance
+          if (bg && bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent') {
+            const rgbMatch = bg.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+            if (rgbMatch) {
+              const r = parseInt(rgbMatch[1], 10);
+              const g = parseInt(rgbMatch[2], 10);
+              const b = parseInt(rgbMatch[3], 10);
+              const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+              
+              // Dark if luminance < 0.5
+              if (luminance < 0.5) {
+                isDark = true;
+                break;
+              } else if (luminance > 0.7) {
+                // Definitely light
+                isDark = false;
+                break;
+              }
+            }
+          }
+          
+          currentElement = currentElement.parentElement;
+        }
+        
+        if (isDark) darkCount++;
       }
       
-      const scrollY = window.scrollY;
-      // Invert when near top (first 600px) on dark hero pages
-      setIsInverted(scrollY < 600);
+      // Restore pointer events
+      headerRef.current.style.pointerEvents = originalPointerEvents;
+      
+      // If majority of samples are dark, invert (use white text)
+      const shouldInvert = darkCount >= 2;
+      setIsInverted(shouldInvert);
     };
     
-    // Set initial state immediately
-    setIsInverted(isDarkHeroRoute && window.scrollY < 600);
+    // Initial check
+    const initialTimer = setTimeout(checkBackground, 100);
+    
+    // Throttled scroll handler
+    let rafId: number;
+    const handleScroll = () => {
+      if (rafId) cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(checkBackground);
+    };
     
     window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [isDarkHeroRoute]);
+    window.addEventListener('resize', handleScroll, { passive: true });
+    
+    return () => {
+      clearTimeout(initialTimer);
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', handleScroll);
+      if (rafId) cancelAnimationFrame(rafId);
+    };
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
