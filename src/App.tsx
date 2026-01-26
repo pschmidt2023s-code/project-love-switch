@@ -15,6 +15,10 @@ import { MobileBottomNav } from '@/components/MobileBottomNav';
 import { GlobalGestures } from '@/components/GlobalGestures';
 import { TouchOptimizations } from '@/components/mobile/TouchOptimizations';
 import { CookieConsent } from '@/components/CookieConsent';
+import { InstallPrompt } from '@/components/pwa/InstallPrompt';
+import { OfflineIndicator } from '@/components/pwa/OfflineIndicator';
+import { LiveIndicators } from '@/components/live/LiveIndicators';
+import { PushNotificationPrompt } from '@/components/PushNotificationPrompt';
 
 const ProductDetail = React.lazy(() => import('@/pages/ProductDetail'));
 const Products = React.lazy(() => import('@/pages/Products'));
@@ -42,6 +46,7 @@ const Account = React.lazy(() => import('@/pages/Account'));
 const Orders = React.lazy(() => import('@/pages/Orders'));
 const OrdersList = React.lazy(() => import('@/pages/OrdersList'));
 const MyReturns = React.lazy(() => import('@/pages/MyReturns'));
+const ExpressCheckout = React.lazy(() => import('@/pages/ExpressCheckout'));
 const NotFound = React.lazy(() => import('@/pages/NotFound'));
 
 const queryClient = new QueryClient({
@@ -94,6 +99,7 @@ function App() {
                         <Route path="/auth" element={<Suspense fallback={<LoadingSpinner />}><Auth /></Suspense>} />
                         <Route path="/cart" element={<Suspense fallback={<LoadingSpinner />}><Cart /></Suspense>} />
                         <Route path="/checkout" element={<Suspense fallback={<LoadingSpinner />}><Checkout /></Suspense>} />
+                        <Route path="/express-checkout" element={<Suspense fallback={<LoadingSpinner />}><ExpressCheckout /></Suspense>} />
                         <Route path="/checkout/success" element={<Suspense fallback={<LoadingSpinner />}><CheckoutSuccess /></Suspense>} />
                         <Route path="/checkout/cancel" element={<Suspense fallback={<LoadingSpinner />}><CheckoutCancel /></Suspense>} />
                         <Route path="/sparkits" element={<Suspense fallback={<LoadingSpinner />}><Sparkits /></Suspense>} />
@@ -107,6 +113,10 @@ function App() {
                     </div>
                     <MobileBottomNav />
                     <CookieConsent />
+                    <InstallPrompt />
+                    <OfflineIndicator />
+                    <LiveIndicators />
+                    <PushNotificationPrompt />
                     <Toaster />
                     <Sonner />
                   </BrowserRouter>
