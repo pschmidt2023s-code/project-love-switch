@@ -21,82 +21,109 @@ export function PremiumNavigation() {
   const headerRef = useRef<HTMLElement>(null);
   const [isInverted, setIsInverted] = useState(false);
   
-  // Simple background detection: light = black text, dark = white text
+  // Simple and reliable background detection
   useEffect(() => {
     const checkBackground = () => {
-      if (!headerRef.current) return;
+      // Sample multiple points just below the header
+      const headerHeight = headerRef.current?.getBoundingClientRect().height || 80;
+      const sampleY = headerHeight + 5;
       
-      const headerRect = headerRef.current.getBoundingClientRect();
-      const sampleY = headerRect.bottom + 10;
+      // Temporarily make header non-interactive for element sampling
+      if (headerRef.current) {
+        headerRef.current.style.pointerEvents = 'none';
+      }
       
-      // Sample center point
-      const element = document.elementFromPoint(window.innerWidth / 2, sampleY);
-      if (!element) {
+      const centerElement = document.elementFromPoint(window.innerWidth / 2, sampleY);
+      
+      // Restore pointer events
+      if (headerRef.current) {
+        headerRef.current.style.pointerEvents = '';
+      }
+      
+      if (!centerElement) {
         setIsInverted(false);
         return;
       }
       
-      // Walk up to find first element with background
-      let currentElement: Element | null = element;
-      let isDark = false;
+      // Walk up the DOM tree to find background
+      let el: Element | null = centerElement;
+      let shouldInvert = false;
       
-      while (currentElement && currentElement !== document.body) {
-        // Check for explicit data attribute
-        if (currentElement.hasAttribute('data-header-dark')) {
-          isDark = true;
+      while (el && el !== document.documentElement) {
+        // Check for explicit data attributes first (most reliable)
+        if (el.hasAttribute('data-header-dark')) {
+          shouldInvert = true;
           break;
         }
-        if (currentElement.hasAttribute('data-header-light')) {
-          isDark = false;
+        if (el.hasAttribute('data-header-light')) {
+          shouldInvert = false;
           break;
         }
         
-        const computed = window.getComputedStyle(currentElement);
-        const bg = computed.backgroundColor;
-        const bgImage = computed.backgroundImage;
+        const styles = getComputedStyle(el);
+        const bgImage = styles.backgroundImage;
+        const bgColor = styles.backgroundColor;
         
-        // Background images = assume dark (photos etc)
+        // Background images (photos, gradients to dark) = assume dark
         if (bgImage && bgImage !== 'none' && bgImage.includes('url')) {
-          isDark = true;
+          shouldInvert = true;
           break;
         }
         
-        // Check background color
-        if (bg && bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent') {
-          const rgbMatch = bg.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
-          if (rgbMatch) {
-            const r = parseInt(rgbMatch[1], 10);
-            const g = parseInt(rgbMatch[2], 10);
-            const b = parseInt(rgbMatch[3], 10);
-            // Standard luminance formula
+        // Check for dark gradients
+        if (bgImage && bgImage !== 'none' && (bgImage.includes('rgb(0') || bgImage.includes('rgba(0'))) {
+          shouldInvert = true;
+          break;
+        }
+        
+        // Check background color luminance
+        if (bgColor && bgColor !== 'rgba(0, 0, 0, 0)' && bgColor !== 'transparent') {
+          const match = bgColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+          if (match) {
+            const r = parseInt(match[1]);
+            const g = parseInt(match[2]);
+            const b = parseInt(match[3]);
             const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-            isDark = luminance < 0.5;
-            break;
+            
+            if (luminance < 0.5) {
+              shouldInvert = true;
+              break;
+            } else if (luminance > 0.5) {
+              shouldInvert = false;
+              break;
+            }
           }
         }
         
-        currentElement = currentElement.parentElement;
+        el = el.parentElement;
       }
       
-      setIsInverted(isDark);
+      setIsInverted(shouldInvert);
     };
     
-    // Initial check after render
-    const timer = setTimeout(checkBackground, 50);
+    // Check immediately and after short delay for page load
+    checkBackground();
+    const timer = setTimeout(checkBackground, 200);
     
-    // Check on scroll
-    let rafId: number;
+    // Check on scroll with throttling
+    let ticking = false;
     const handleScroll = () => {
-      if (rafId) cancelAnimationFrame(rafId);
-      rafId = requestAnimationFrame(checkBackground);
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          checkBackground();
+          ticking = false;
+        });
+        ticking = true;
+      }
     };
     
     window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('resize', checkBackground, { passive: true });
     
     return () => {
       clearTimeout(timer);
       window.removeEventListener('scroll', handleScroll);
-      if (rafId) cancelAnimationFrame(rafId);
+      window.removeEventListener('resize', checkBackground);
     };
   }, []);
 
