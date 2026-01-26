@@ -237,7 +237,9 @@ export function SubscriptionCard({
               </p>
               <div className="space-y-2">
                 <div className="relative">
-                  <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" strokeWidth={1.5} />
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center justify-center w-4 h-4 text-muted-foreground pointer-events-none z-10">
+                    <UserIcon className="w-4 h-4" strokeWidth={1.5} />
+                  </span>
                   <Input
                     type="text"
                     placeholder="Ihr Name"
@@ -247,7 +249,9 @@ export function SubscriptionCard({
                   />
                 </div>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" strokeWidth={1.5} />
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center justify-center w-4 h-4 text-muted-foreground pointer-events-none z-10">
+                    <Mail className="w-4 h-4" strokeWidth={1.5} />
+                  </span>
                   <Input
                     type="email"
                     placeholder="ihre@email.de"
