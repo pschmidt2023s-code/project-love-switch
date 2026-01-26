@@ -1,7 +1,7 @@
-import Navigation from '@/components/Navigation';
-import { Footer } from '@/components/Footer';
-import { Card, CardContent } from '@/components/ui/card';
 import { Sparkles, Users, Heart, Award } from 'lucide-react';
+import { PremiumPageLayout } from '@/components/premium/PremiumPageLayout';
+import { Breadcrumb } from '@/components/Breadcrumb';
+import { Seo } from '@/components/Seo';
 
 const features = [
   {
@@ -28,99 +28,131 @@ const features = [
 
 const stats = [
   { value: '2020', label: 'Gegründet' },
-  { value: '500+', label: 'Düfte im Sortiment' },
-  { value: '10.000+', label: 'Zufriedene Kunden' },
-  { value: '4.8 / 5', label: 'Kundenbewertung' },
+  { value: '500+', label: 'Düfte' },
+  { value: '10.000+', label: 'Kunden' },
+  { value: '4.8', label: 'Bewertung' },
 ];
 
 export default function About() {
   return (
-    <div className="min-h-screen bg-background">
-      <Navigation />
+    <PremiumPageLayout>
+      <Seo
+        title="Über Uns | ALDENAIR"
+        description="Erfahren Sie mehr über ALDENAIR - Ihre Premium-Destination für exquisite Parfüms. Qualität, Leidenschaft und Erfahrung seit 2020."
+        canonicalPath="/about"
+      />
 
-      <main>
-        {/* Hero Section */}
-        <section className="py-16 lg:py-24 text-center">
-          <div className="max-w-4xl mx-auto px-4 lg:px-8">
-            <h1 className="text-4xl lg:text-5xl font-bold text-foreground mb-6">
-              Über ALDENAIR
-            </h1>
-            <p className="text-lg text-muted-foreground leading-relaxed">
-              Wir sind Ihr Partner für exklusive Düfte - mit Leidenschaft für Qualität und dem Ziel,
-              Luxusparfüms für jeden zugänglich zu machen.
-            </p>
+      {/* Hero Section */}
+      <section className="border-b border-border">
+        <div className="container-premium py-8 lg:py-12">
+          <Breadcrumb className="mb-6" />
+          
+          <span className="inline-block text-[10px] tracking-[0.3em] uppercase text-accent mb-3">
+            Über Uns
+          </span>
+          <h1 className="font-display text-3xl lg:text-4xl text-foreground mb-4">
+            Die ALDENAIR Geschichte
+          </h1>
+          <p className="text-muted-foreground max-w-xl text-sm lg:text-base leading-relaxed">
+            Wir sind Ihr Partner für exklusive Düfte - mit Leidenschaft für Qualität 
+            und dem Ziel, Luxusparfüms für jeden zugänglich zu machen.
+          </p>
+        </div>
+      </section>
+
+      {/* Features Grid */}
+      <section className="section-spacing">
+        <div className="container-premium">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+            {features.map((feature) => (
+              <div 
+                key={feature.title} 
+                className="p-6 lg:p-8 border border-border bg-card hover:border-accent/50 transition-colors"
+              >
+                <div className="w-10 h-10 lg:w-12 lg:h-12 flex items-center justify-center bg-accent/10 mb-4">
+                  <feature.icon className="w-5 h-5 lg:w-6 lg:h-6 text-accent" strokeWidth={1.5} />
+                </div>
+                <h3 className="font-display text-lg text-foreground mb-2">
+                  {feature.title}
+                </h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {feature.description}
+                </p>
+              </div>
+            ))}
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* Features */}
-        <section className="pb-16 lg:pb-24">
-          <div className="max-w-6xl mx-auto px-4 lg:px-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {features.map((feature) => (
-                <Card key={feature.title} className="text-center border-border/50">
-                  <CardContent className="pt-8 pb-6 px-6">
-                    <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
-                      <feature.icon className="w-7 h-7 text-primary" />
-                    </div>
-                    <h3 className="font-semibold text-foreground mb-2">{feature.title}</h3>
-                    <p className="text-sm text-muted-foreground">{feature.description}</p>
-                  </CardContent>
-                </Card>
+      {/* Story Section */}
+      <section className="section-spacing bg-secondary/30">
+        <div className="container-premium">
+          <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
+            {/* Text */}
+            <div className="space-y-6">
+              <span className="inline-block text-[10px] tracking-[0.3em] uppercase text-accent">
+                Unsere Geschichte
+              </span>
+              <h2 className="font-display text-2xl lg:text-3xl text-foreground">
+                Luxusdüfte für Jeden
+              </h2>
+              <div className="space-y-4 text-muted-foreground text-sm lg:text-base leading-relaxed">
+                <p>
+                  ALDENAIR wurde aus der Überzeugung geboren, dass jeder Mensch
+                  Zugang zu hochwertigen Düften haben sollte - ohne dafür ein Vermögen
+                  ausgeben zu müssen.
+                </p>
+                <p>
+                  Wir haben es uns zur Aufgabe gemacht, Düfte zu kreieren, die von den
+                  bekanntesten Luxusmarken der Welt inspiriert sind. Dabei setzen wir auf
+                  <span className="text-foreground font-medium"> hochwertige Inhaltsstoffe</span> und{' '}
+                  <span className="text-foreground font-medium">faire Preise</span>.
+                </p>
+                <p>
+                  Mit über 500 verschiedenen Düften und mehr als 10.000 zufriedenen
+                  Kunden sind wir stolz darauf, Ihr Vertrauen verdient zu haben.
+                </p>
+              </div>
+            </div>
+
+            {/* Stats Grid */}
+            <div className="grid grid-cols-2 gap-4">
+              {stats.map((stat) => (
+                <div
+                  key={stat.label}
+                  className="p-6 lg:p-8 bg-background border border-border text-center"
+                >
+                  <div className="font-display text-3xl lg:text-4xl text-foreground mb-2">
+                    {stat.value}
+                  </div>
+                  <div className="text-[10px] tracking-[0.15em] uppercase text-muted-foreground">
+                    {stat.label}
+                  </div>
+                </div>
               ))}
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* Story Section */}
-        <section className="pb-16 lg:pb-24">
-          <div className="max-w-6xl mx-auto px-4 lg:px-8">
-            <Card className="border-border/50">
-              <CardContent className="p-8 lg:p-12">
-                <div className="grid lg:grid-cols-2 gap-10 items-center">
-                  {/* Text */}
-                  <div className="space-y-6">
-                    <h2 className="text-2xl lg:text-3xl font-bold text-foreground">
-                      Unsere Geschichte
-                    </h2>
-                    <div className="space-y-4 text-muted-foreground leading-relaxed">
-                      <p>
-                        ALDENAIR wurde aus der Überzeugung geboren, dass jeder Mensch
-                        Zugang zu hochwertigen Düften haben sollte - ohne dafür ein Vermögen
-                        ausgeben zu müssen.
-                      </p>
-                      <p>
-                        Wir haben es uns zur Aufgabe gemacht, Düfte zu kreieren, die von den
-                        bekanntesten Luxusmarken der Welt inspiriert sind. Dabei setzen wir auf
-                        <span className="text-foreground font-medium"> hochwertige Inhaltsstoffe</span> und{' '}
-                        <span className="text-foreground font-medium">faire Preise</span>.
-                      </p>
-                      <p>
-                        Mit über 500 verschiedenen Düften und mehr als 10.000 zufriedenen
-                        Kunden sind wir stolz darauf, Ihr Vertrauen verdient zu haben.
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Stats */}
-                  <div className="grid grid-cols-2 gap-4">
-                    {stats.map((stat) => (
-                      <div
-                        key={stat.label}
-                        className="p-6 rounded-xl bg-muted/30 border border-border/50 text-right"
-                      >
-                        <div className="text-sm text-muted-foreground mb-1">{stat.label}</div>
-                        <div className="text-2xl lg:text-3xl font-bold text-foreground">{stat.value}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+      {/* Values Section */}
+      <section className="section-spacing">
+        <div className="container-premium">
+          <div className="max-w-2xl mx-auto text-center">
+            <span className="inline-block text-[10px] tracking-[0.3em] uppercase text-accent mb-3">
+              Unsere Werte
+            </span>
+            <h2 className="font-display text-2xl lg:text-3xl text-foreground mb-6">
+              Was uns antreibt
+            </h2>
+            <p className="text-muted-foreground leading-relaxed">
+              Bei ALDENAIR verbinden wir traditionelle Parfümkunst mit modernem Design. 
+              Jeder Duft erzählt eine Geschichte - und wir möchten, dass Sie Ihre eigene 
+              Geschichte mit unseren Kreationen schreiben.
+            </p>
           </div>
-        </section>
-      </main>
-
-      <Footer />
-    </div>
+        </div>
+      </section>
+    </PremiumPageLayout>
   );
 }

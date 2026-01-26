@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Heart, ShoppingBag, Truck, Shield, ArrowLeft, Plus, Minus, Star, RotateCcw, Sparkles, Leaf } from 'lucide-react';
+import { Heart, ShoppingBag, Truck, Shield, Plus, Minus, Star, RotateCcw, Sparkles, Leaf } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { useProduct } from '@/hooks/useProducts';
 import { PremiumPageLayout } from '@/components/premium/PremiumPageLayout';
 import { ProductReviews } from '@/components/products/ProductReviews';
+import { Breadcrumb } from '@/components/Breadcrumb';
 import { Seo } from '@/components/Seo';
 import { toast } from 'sonner';
 
@@ -87,17 +88,15 @@ export default function ProductDetail() {
         canonicalPath={`/products/${slug}`}
       />
 
-      <div className="container-premium py-8 lg:py-16">
+      <div className="container-premium py-8 lg:py-12">
         {/* Breadcrumb */}
-        <nav className="mb-8">
-          <button 
-            onClick={() => navigate(-1)}
-            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" strokeWidth={1.5} />
-            Zurück
-          </button>
-        </nav>
+        <Breadcrumb 
+          items={[
+            { label: 'Kollektion', path: '/products' },
+            { label: product.name }
+          ]} 
+          className="mb-8"
+        />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16">
           {/* Product Image */}

@@ -1,137 +1,237 @@
-import Navigation from '@/components/Navigation';
-import { Footer } from '@/components/Footer';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Mail, Phone, MapPin, Clock } from 'lucide-react';
 import { useState } from 'react';
+import { Mail, Clock, ArrowRight } from 'lucide-react';
+import { PremiumPageLayout } from '@/components/premium/PremiumPageLayout';
+import { Breadcrumb } from '@/components/Breadcrumb';
+import { Seo } from '@/components/Seo';
 import { useToast } from '@/hooks/use-toast';
+import { z } from 'zod';
+
+const contactSchema = z.object({
+  name: z.string().trim().min(2, 'Name muss mindestens 2 Zeichen haben').max(100),
+  email: z.string().trim().email('Ungültige E-Mail-Adresse').max(255),
+  subject: z.string().trim().min(3, 'Betreff muss mindestens 3 Zeichen haben').max(200),
+  message: z.string().trim().min(10, 'Nachricht muss mindestens 10 Zeichen haben').max(2000),
+});
 
 const contactInfo = [
-  { icon: Mail, label: 'E-Mail', value: 'info@aldenair.de' },
-  { icon: Phone, label: 'Telefon', value: '+49 123 456 789' },
-  { icon: MapPin, label: 'Standort', value: 'Deutschland' },
+  { icon: Mail, label: 'E-Mail', value: 'support@aldenairperfumes.de' },
   { icon: Clock, label: 'Erreichbarkeit', value: 'Mo-Fr 9-18 Uhr' },
 ];
 
 export default function Contact() {
   const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     subject: '',
     message: '',
   });
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrors({});
+
+    const result = contactSchema.safeParse(formData);
+    if (!result.success) {
+      const fieldErrors: Record<string, string> = {};
+      result.error.errors.forEach((err) => {
+        if (err.path[0]) {
+          fieldErrors[err.path[0] as string] = err.message;
+        }
+      });
+      setErrors(fieldErrors);
+      return;
+    }
+
+    setLoading(true);
+    // Simulate API call
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    
     toast({
       title: 'Nachricht gesendet',
       description: 'Wir werden uns so schnell wie möglich bei Ihnen melden.',
     });
+    
     setFormData({ name: '', email: '', subject: '', message: '' });
+    setLoading(false);
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navigation />
+    <PremiumPageLayout>
+      <Seo
+        title="Kontakt | ALDENAIR"
+        description="Kontaktieren Sie ALDENAIR für Fragen zu Produkten, Bestellungen oder allgemeine Anfragen."
+        canonicalPath="/contact"
+      />
 
-      <main className="max-w-6xl mx-auto px-4 lg:px-8 py-12 lg:py-20">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-3xl lg:text-4xl font-bold text-foreground mb-4">
+      {/* Header */}
+      <section className="border-b border-border">
+        <div className="container-premium py-8 lg:py-12">
+          <Breadcrumb className="mb-6" />
+          
+          <span className="inline-block text-[10px] tracking-[0.3em] uppercase text-accent mb-3">
             Kontakt
+          </span>
+          <h1 className="font-display text-3xl lg:text-4xl text-foreground mb-4">
+            Schreiben Sie uns
           </h1>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-muted-foreground max-w-xl text-sm lg:text-base">
             Haben Sie Fragen zu unseren Produkten oder Ihrer Bestellung? 
             Wir sind gerne für Sie da.
           </p>
         </div>
+      </section>
 
-        <div className="grid lg:grid-cols-3 gap-8">
-          {/* Contact Info */}
-          <Card className="lg:col-span-1 border-border/50">
-            <CardHeader>
-              <CardTitle>Kontaktdaten</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {contactInfo.map((item) => (
-                <div key={item.label} className="flex items-start gap-4">
-                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <item.icon className="w-5 h-5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">{item.label}</p>
-                    <p className="font-medium text-foreground">{item.value}</p>
-                  </div>
+      {/* Contact Form & Info */}
+      <section className="section-spacing">
+        <div className="container-premium">
+          <div className="grid lg:grid-cols-3 gap-8 lg:gap-12">
+            {/* Contact Info */}
+            <div className="lg:col-span-1 space-y-8">
+              <div>
+                <h2 className="text-[10px] tracking-[0.2em] uppercase text-accent mb-4">
+                  Kontaktdaten
+                </h2>
+                <div className="space-y-4">
+                  {contactInfo.map((item) => (
+                    <div key={item.label} className="flex items-start gap-4">
+                      <div className="w-10 h-10 flex items-center justify-center bg-accent/10 flex-shrink-0">
+                        <item.icon className="w-4 h-4 text-accent" strokeWidth={1.5} />
+                      </div>
+                      <div>
+                        <p className="text-[10px] tracking-[0.1em] uppercase text-muted-foreground mb-1">
+                          {item.label}
+                        </p>
+                        <p className="text-sm text-foreground font-medium">
+                          {item.value}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </CardContent>
-          </Card>
+              </div>
 
-          {/* Contact Form */}
-          <Card className="lg:col-span-2 border-border/50">
-            <CardHeader>
-              <CardTitle>Nachricht senden</CardTitle>
-            </CardHeader>
-            <CardContent>
+              <div className="p-6 bg-secondary/30 border border-border">
+                <h3 className="font-display text-lg text-foreground mb-2">
+                  Schnelle Antwort
+                </h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Wir antworten in der Regel innerhalb von 24 Stunden auf alle Anfragen.
+                </p>
+              </div>
+            </div>
+
+            {/* Contact Form */}
+            <div className="lg:col-span-2">
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="name">Name</Label>
-                    <Input
+                    <label 
+                      htmlFor="name" 
+                      className="block text-[10px] tracking-[0.15em] uppercase text-muted-foreground"
+                    >
+                      Name
+                    </label>
+                    <input
                       id="name"
+                      type="text"
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       placeholder="Ihr Name"
+                      className={`w-full px-4 py-3 bg-background border ${
+                        errors.name ? 'border-destructive' : 'border-border'
+                      } text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-accent transition-colors`}
                       required
                     />
+                    {errors.name && (
+                      <p className="text-xs text-destructive">{errors.name}</p>
+                    )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="email">E-Mail</Label>
-                    <Input
+                    <label 
+                      htmlFor="email" 
+                      className="block text-[10px] tracking-[0.15em] uppercase text-muted-foreground"
+                    >
+                      E-Mail
+                    </label>
+                    <input
                       id="email"
                       type="email"
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       placeholder="ihre@email.de"
+                      className={`w-full px-4 py-3 bg-background border ${
+                        errors.email ? 'border-destructive' : 'border-border'
+                      } text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-accent transition-colors`}
                       required
                     />
+                    {errors.email && (
+                      <p className="text-xs text-destructive">{errors.email}</p>
+                    )}
                   </div>
                 </div>
+                
                 <div className="space-y-2">
-                  <Label htmlFor="subject">Betreff</Label>
-                  <Input
+                  <label 
+                    htmlFor="subject" 
+                    className="block text-[10px] tracking-[0.15em] uppercase text-muted-foreground"
+                  >
+                    Betreff
+                  </label>
+                  <input
                     id="subject"
+                    type="text"
                     value={formData.subject}
                     onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
                     placeholder="Worum geht es?"
+                    className={`w-full px-4 py-3 bg-background border ${
+                      errors.subject ? 'border-destructive' : 'border-border'
+                    } text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-accent transition-colors`}
                     required
                   />
+                  {errors.subject && (
+                    <p className="text-xs text-destructive">{errors.subject}</p>
+                  )}
                 </div>
+                
                 <div className="space-y-2">
-                  <Label htmlFor="message">Nachricht</Label>
-                  <Textarea
+                  <label 
+                    htmlFor="message" 
+                    className="block text-[10px] tracking-[0.15em] uppercase text-muted-foreground"
+                  >
+                    Nachricht
+                  </label>
+                  <textarea
                     id="message"
                     value={formData.message}
                     onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                     placeholder="Ihre Nachricht..."
-                    rows={5}
+                    rows={6}
+                    className={`w-full px-4 py-3 bg-background border ${
+                      errors.message ? 'border-destructive' : 'border-border'
+                    } text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-accent transition-colors resize-none`}
                     required
                   />
+                  {errors.message && (
+                    <p className="text-xs text-destructive">{errors.message}</p>
+                  )}
                 </div>
-                <Button type="submit" className="w-full sm:w-auto">
-                  Nachricht senden
-                </Button>
+                
+                <button 
+                  type="submit" 
+                  disabled={loading}
+                  className="inline-flex items-center px-8 py-4 bg-foreground text-background text-[11px] tracking-[0.15em] uppercase font-medium hover:bg-foreground/90 transition-colors disabled:opacity-50"
+                >
+                  {loading ? 'Senden...' : 'Nachricht senden'}
+                  <ArrowRight className="ml-2 w-4 h-4" strokeWidth={1.5} />
+                </button>
               </form>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
-      </main>
-
-      <Footer />
-    </div>
+      </section>
+    </PremiumPageLayout>
   );
 }
