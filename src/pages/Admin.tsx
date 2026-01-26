@@ -12,6 +12,7 @@ import { InventoryManagement } from '@/components/admin/InventoryManagement';
 import { TicketingSystem } from '@/components/admin/TicketingSystem';
 import { ReturnsManagement } from '@/components/admin/ReturnsManagement';
 import { AuditLogs } from '@/components/admin/AuditLogs';
+import { EmailLogsManagement } from '@/components/admin/EmailLogsManagement';
 import CouponManagement from '@/components/admin/CouponManagement';
 import NewsletterManagement from '@/components/admin/NewsletterManagement';
 import ContestManagement from '@/components/admin/ContestManagement';
@@ -97,6 +98,8 @@ export default function Admin() {
         return <PaybackManagement />;
       case 'chat':
         return <LiveChatManagement />;
+      case 'emails':
+        return <EmailLogsManagement />;
       case 'audit':
         return <AuditLogs />;
       case 'settings':
