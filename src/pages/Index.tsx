@@ -8,6 +8,8 @@ import { PremiumProductGrid } from '@/components/premium/PremiumProductGrid';
 import { PremiumNewsletter } from '@/components/premium/PremiumNewsletter';
 import { PremiumFooter } from '@/components/premium/PremiumFooter';
 import { OrganizationSchema, WebsiteSchema } from '@/components/StructuredData';
+import { LocalBusinessSchema } from '@/components/seo';
+import { Seo } from '@/components/Seo';
 import { ProductComparison } from '@/components/ProductComparison';
 import { MobileBottomNav } from '@/components/MobileBottomNav';
 import { ProductRecommendations } from '@/components/ai/ProductRecommendations';
@@ -15,8 +17,14 @@ import { ProductRecommendations } from '@/components/ai/ProductRecommendations';
 export default function Index() {
   return (
     <div className="min-h-screen bg-background">
+      <Seo 
+        title="ALDENAIR | Premium Parfüms & Exklusive Düfte"
+        description="Entdecken Sie ALDENAIR - Premium Parfüms inspiriert von weltbekannten Marken. Hochwertige Düfte zu fairen Preisen. Kostenloser Versand ab 50€."
+        canonicalPath="/"
+      />
       <OrganizationSchema />
       <WebsiteSchema />
+      <LocalBusinessSchema />
       
       <PremiumNavigation />
 
