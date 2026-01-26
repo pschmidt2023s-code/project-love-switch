@@ -35,12 +35,19 @@ const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+const MAX_RETRIES = 3;
+const RETRY_DELAY_MS = 1000;
+
+async function delay(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 async function logEmail(
   type: string,
   recipientEmail: string,
   recipientName: string,
   subject: string,
-  status: 'sent' | 'skipped' | 'failed',
+  status: 'sent' | 'skipped' | 'failed' | 'pending',
   errorMessage?: string,
   resendId?: string,
   metadata?: Record<string, unknown>
@@ -60,6 +67,45 @@ async function logEmail(
   } catch (err) {
     console.error('Failed to log email:', err);
   }
+}
+
+async function sendEmailWithRetry(
+  resend: any,
+  emailParams: { from: string; to: string[]; subject: string; html: string },
+  retries = MAX_RETRIES
+): Promise<{ data?: { id: string }; error?: any }> {
+  let lastError: any = null;
+  
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      console.log(`[SEND-ORDER-EMAIL] Attempt ${attempt}/${retries} to send email`);
+      const result = await resend.emails.send(emailParams);
+      
+      if (result.error) {
+        // Non-retryable errors
+        if (result.error.message?.includes("testing emails") || 
+            result.error.message?.includes("verify a domain") ||
+            result.error.message?.includes("invalid_email")) {
+          return result;
+        }
+        lastError = result.error;
+        console.warn(`[SEND-ORDER-EMAIL] Attempt ${attempt} failed:`, result.error.message);
+      } else {
+        return result;
+      }
+    } catch (err) {
+      lastError = err;
+      console.warn(`[SEND-ORDER-EMAIL] Attempt ${attempt} threw exception:`, err);
+    }
+    
+    if (attempt < retries) {
+      const backoffDelay = RETRY_DELAY_MS * Math.pow(2, attempt - 1);
+      console.log(`[SEND-ORDER-EMAIL] Waiting ${backoffDelay}ms before retry...`);
+      await delay(backoffDelay);
+    }
+  }
+  
+  return { error: lastError };
 }
 
 function generateOrderConfirmationHtml(
@@ -368,15 +414,18 @@ serve(async (req) => {
         throw new Error(`Unknown email type: ${payload.type}`);
     }
 
-    const { data: emailData, error } = await resend.emails.send({
+    // Use retry mechanism for sending email
+    const emailParams = {
       from: "ALDENAIR <noreply@aldenairperfumes.de>",
       to: [payload.customerEmail],
       subject,
       html,
-    });
+    };
+
+    const { data: emailData, error } = await sendEmailWithRetry(resend, emailParams);
 
     if (error) {
-      console.error("Email send error:", error);
+      console.error("Email send error after retries:", error);
       
       if (error.message?.includes("testing emails") || error.message?.includes("verify a domain")) {
         console.log("Resend test mode: Email not sent. Domain verification required.");
@@ -407,7 +456,7 @@ serve(async (req) => {
         'failed', 
         error.message, 
         undefined, 
-        { orderId: payload.orderId, orderNumber: payload.orderNumber }
+        { orderId: payload.orderId, orderNumber: payload.orderNumber, retries: MAX_RETRIES }
       );
       throw error;
     }
