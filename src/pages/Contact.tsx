@@ -4,6 +4,8 @@ import { PremiumPageLayout } from '@/components/premium/PremiumPageLayout';
 import { Breadcrumb } from '@/components/Breadcrumb';
 import { Seo } from '@/components/Seo';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { z } from 'zod';
 
 const contactSchema = z.object({
@@ -20,6 +22,7 @@ const contactInfo = [
 
 export default function Contact() {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -46,16 +49,38 @@ export default function Contact() {
     }
 
     setLoading(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    
-    toast({
-      title: 'Nachricht gesendet',
-      description: 'Wir werden uns so schnell wie möglich bei Ihnen melden.',
-    });
-    
-    setFormData({ name: '', email: '', subject: '', message: '' });
-    setLoading(false);
+
+    try {
+      // Create ticket in database
+      const { error } = await supabase.from('tickets').insert({
+        user_id: user?.id || null,
+        customer_name: formData.name,
+        customer_email: formData.email,
+        subject: formData.subject,
+        message: formData.message,
+        category: 'contact',
+        priority: 'medium',
+        status: 'open',
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Nachricht gesendet',
+        description: 'Wir werden uns so schnell wie möglich bei Ihnen melden.',
+      });
+      
+      setFormData({ name: '', email: '', subject: '', message: '' });
+    } catch (error) {
+      console.error('Error submitting contact form:', error);
+      toast({
+        title: 'Fehler',
+        description: 'Nachricht konnte nicht gesendet werden. Bitte versuchen Sie es erneut.',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

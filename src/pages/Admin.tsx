@@ -10,6 +10,7 @@ import { AdminCustomersContent } from '@/components/admin/AdminCustomersContent'
 import { AdminAnalyticsContent } from '@/components/admin/AdminAnalyticsContent';
 import { InventoryManagement } from '@/components/admin/InventoryManagement';
 import { TicketingSystem } from '@/components/admin/TicketingSystem';
+import { ReturnsManagement } from '@/components/admin/ReturnsManagement';
 import { AuditLogs } from '@/components/admin/AuditLogs';
 import CouponManagement from '@/components/admin/CouponManagement';
 import NewsletterManagement from '@/components/admin/NewsletterManagement';
@@ -82,6 +83,8 @@ export default function Admin() {
         return <AdminAnalyticsContent />;
       case 'tickets':
         return <TicketingSystem />;
+      case 'returns':
+        return <ReturnsManagement />;
       case 'coupons':
         return <CouponManagement />;
       case 'newsletter':
