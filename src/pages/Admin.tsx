@@ -8,6 +8,9 @@ import { AdminOrdersContent } from '@/components/admin/AdminOrdersContent';
 import { AdminProductsContent } from '@/components/admin/AdminProductsContent';
 import { AdminCustomersContent } from '@/components/admin/AdminCustomersContent';
 import { AdminAnalyticsContent } from '@/components/admin/AdminAnalyticsContent';
+import { InventoryManagement } from '@/components/admin/InventoryManagement';
+import { TicketingSystem } from '@/components/admin/TicketingSystem';
+import { AuditLogs } from '@/components/admin/AuditLogs';
 import CouponManagement from '@/components/admin/CouponManagement';
 import NewsletterManagement from '@/components/admin/NewsletterManagement';
 import ContestManagement from '@/components/admin/ContestManagement';
@@ -73,8 +76,12 @@ export default function Admin() {
         return <AdminProductsContent />;
       case 'customers':
         return <AdminCustomersContent />;
+      case 'inventory':
+        return <InventoryManagement />;
       case 'analytics':
         return <AdminAnalyticsContent />;
+      case 'tickets':
+        return <TicketingSystem />;
       case 'coupons':
         return <CouponManagement />;
       case 'newsletter':
@@ -87,6 +94,8 @@ export default function Admin() {
         return <PaybackManagement />;
       case 'chat':
         return <LiveChatManagement />;
+      case 'audit':
+        return <AuditLogs />;
       case 'settings':
         return <SettingsManagement />;
       default:

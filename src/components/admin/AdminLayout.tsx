@@ -16,7 +16,10 @@ import {
   ChevronLeft,
   ChevronRight,
   Home,
-  LogOut
+  LogOut,
+  Warehouse,
+  Ticket,
+  Shield
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -30,7 +33,9 @@ const navItems = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'orders', label: 'Bestellungen', icon: ShoppingCart },
   { id: 'products', label: 'Produkte', icon: Package },
+  { id: 'inventory', label: 'Lagerbestand', icon: Warehouse },
   { id: 'customers', label: 'Kunden', icon: Users },
+  { id: 'tickets', label: 'Support-Tickets', icon: Ticket },
   { id: 'analytics', label: 'Analytics', icon: BarChart3 },
   { id: 'coupons', label: 'Gutscheine', icon: Tag },
   { id: 'newsletter', label: 'Newsletter', icon: Mail },
@@ -38,6 +43,7 @@ const navItems = [
   { id: 'partners', label: 'Partner', icon: Handshake },
   { id: 'payback', label: 'Payback', icon: Wallet },
   { id: 'chat', label: 'Live Chat', icon: MessageSquare },
+  { id: 'audit', label: 'Audit-Logs', icon: Shield },
   { id: 'settings', label: 'Einstellungen', icon: Settings },
 ];
 

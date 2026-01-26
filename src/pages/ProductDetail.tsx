@@ -4,6 +4,7 @@ import { Heart, ShoppingBag, Truck, Shield, ArrowLeft, Plus, Minus, Star, Rotate
 import { useCart } from '@/contexts/CartContext';
 import { useProduct } from '@/hooks/useProducts';
 import { PremiumPageLayout } from '@/components/premium/PremiumPageLayout';
+import { ProductReviews } from '@/components/products/ProductReviews';
 import { Seo } from '@/components/Seo';
 import { toast } from 'sonner';
 
@@ -342,6 +343,14 @@ export default function ProductDetail() {
           </div>
         </div>
       </div>
+
+      {/* Reviews Section */}
+      <ProductReviews 
+        productId={product.id}
+        productName={product.name}
+        averageRating={rating || 4.5}
+        reviewCount={product.review_count || 0}
+      />
     </PremiumPageLayout>
   );
 }
