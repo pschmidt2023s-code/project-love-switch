@@ -251,6 +251,42 @@
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
+   NAVIGATION COLOR INVERSION  
+   ───────────────────────────────────────────────────────────────────────────── */
+.nav-header[data-inverted="true"] .nav-logo,
+.nav-header[data-inverted="true"] .nav-icon,
+.nav-header[data-inverted="true"] .nav-link {
+  color: white !important;
+}
+
+.nav-header[data-inverted="true"] .nav-link-muted {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.nav-header[data-inverted="true"] .nav-link-muted:hover {
+  color: white !important;
+}
+
+.nav-header[data-inverted="true"] .nav-btn {
+  color: white !important;
+  border-color: white !important;
+}
+
+.nav-header[data-inverted="true"] .nav-btn:hover {
+  background-color: white !important;
+  color: black !important;
+}
+
+.nav-header[data-inverted="true"] .nav-badge {
+  background-color: white !important;
+  color: black !important;
+}
+
+.nav-header[data-inverted="true"] .nav-underline {
+  background-color: white !important;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
    COMPONENT CLASSES
    ───────────────────────────────────────────────────────────────────────────── */
 @layer components {
@@ -536,6 +572,154 @@
   }
   50% {
     opacity: 0.7;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes glow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(180, 140, 70, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(180, 140, 70, 0.6);
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   PREMIUM EFFECTS
+   ───────────────────────────────────────────────────────────────────────────── */
+@layer utilities {
+  /* Glass morphism effect */
+  .glass {
+    @apply bg-white/5 backdrop-blur-xl border border-white/10;
+  }
+  
+  .glass-dark {
+    @apply bg-black/20 backdrop-blur-xl border border-white/5;
+  }
+  
+  /* Shimmer loading effect */
+  .shimmer {
+    background: linear-gradient(
+      90deg,
+      hsl(var(--muted)) 0%,
+      hsl(var(--muted-foreground) / 0.1) 50%,
+      hsl(var(--muted)) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s ease-in-out infinite;
+  }
+  
+  /* Float animation */
+  .animate-float {
+    animation: float 4s ease-in-out infinite;
+  }
+  
+  /* Glow effect */
+  .glow {
+    animation: glow 3s ease-in-out infinite;
+  }
+  
+  /* Text shadow for dark backgrounds */
+  .text-shadow {
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  }
+  
+  /* Premium gradient text */
+  .text-gold-gradient {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, #b48c46 0%, #d4a853 50%, #b48c46 100%);
+  }
+  
+  /* Blur fade edges */
+  .mask-fade-bottom {
+    mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
+  }
+  
+  .mask-fade-top {
+    mask-image: linear-gradient(to top, black 70%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to top, black 70%, transparent 100%);
+  }
+  
+  /* Reveal on scroll placeholder */
+  .reveal-on-scroll {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  
+  .reveal-on-scroll.revealed {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  
+  /* Parallax helper */
+  .parallax-slow {
+    will-change: transform;
+  }
+  
+  /* Cursor effects */
+  .cursor-glow {
+    cursor: pointer;
+    position: relative;
+  }
+  
+  .cursor-glow::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    background: linear-gradient(135deg, hsl(var(--accent) / 0.3), transparent);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+  }
+  
+  .cursor-glow:hover::before {
+    opacity: 1;
+  }
+  
+  /* Magnetic button effect base */
+  .magnetic-btn {
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  
+  /* Line reveal animation */
+  .line-reveal {
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .line-reveal::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 0;
+    height: 1px;
+    background: hsl(var(--accent));
+    transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  
+  .line-reveal:hover::after {
+    width: 100%;
   }
 }
 
