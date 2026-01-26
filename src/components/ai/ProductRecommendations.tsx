@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, forwardRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, RefreshCw, ChevronRight, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -44,12 +44,12 @@ interface ProductRecommendationsProps {
   className?: string;
 }
 
-export function ProductRecommendations({
+export const ProductRecommendations = forwardRef<HTMLDivElement, ProductRecommendationsProps>(function ProductRecommendations({
   preferences,
   limit = 4,
   showTitle = true,
   className = '',
-}: ProductRecommendationsProps) {
+}, ref) {
   const { user } = useAuth();
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [summary, setSummary] = useState('');
@@ -87,7 +87,7 @@ export function ProductRecommendations({
   }
 
   return (
-    <div className={`space-y-6 ${className}`}>
+    <div ref={ref} className={`space-y-6 ${className}`}>
       {showTitle && (
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -207,4 +207,6 @@ export function ProductRecommendations({
       )}
     </div>
   );
-}
+});
+
+ProductRecommendations.displayName = 'ProductRecommendations';

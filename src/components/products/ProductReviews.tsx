@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Star, ThumbsUp, User } from 'lucide-react';
 
 interface Review {
@@ -53,7 +53,7 @@ interface ProductReviewsProps {
   reviewCount?: number;
 }
 
-export function ProductReviews({ productId, productName, averageRating = 4.8, reviewCount = 24 }: ProductReviewsProps) {
+export const ProductReviews = React.forwardRef<HTMLElement, ProductReviewsProps>(function ProductReviews({ productId, productName, averageRating = 4.8, reviewCount = 24 }, ref) {
   const [reviews] = useState<Review[]>(demoReviews);
   const [sortBy, setSortBy] = useState<'recent' | 'helpful'>('helpful');
 
@@ -71,7 +71,7 @@ export function ProductReviews({ productId, productName, averageRating = 4.8, re
   ];
 
   return (
-    <section className="py-10 lg:py-16 border-t border-border">
+    <section ref={ref} className="py-10 lg:py-16 border-t border-border">
       <div className="container-premium">
         {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 mb-10">
@@ -229,4 +229,6 @@ export function ProductReviews({ productId, productName, averageRating = 4.8, re
       </div>
     </section>
   );
-}
+});
+
+ProductReviews.displayName = 'ProductReviews';
