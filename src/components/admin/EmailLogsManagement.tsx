@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { 
   Table, 
   TableBody, 
@@ -10,6 +11,13 @@ import {
   TableHeader, 
   TableRow 
 } from '@/components/ui/table';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { 
   Mail, 
   RefreshCw, 
@@ -17,7 +25,10 @@ import {
   XCircle, 
   AlertTriangle,
   Clock,
-  ExternalLink
+  ExternalLink,
+  RotateCcw,
+  Search,
+  Filter
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
@@ -49,12 +60,22 @@ const typeLabels: Record<string, string> = {
   ticket_reply: 'Ticket-Antwort',
   status_change: 'Statusänderung',
   new_return: 'Neue Retoure',
+  order_confirmation: 'Bestellbestätigung',
+  shipping_notification: 'Versandbenachrichtigung',
+  order_delivered: 'Lieferung',
+  subscription_reminder: 'Abo-Erinnerung',
 };
 
 export function EmailLogsManagement() {
   const [logs, setLogs] = useState<EmailLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedLog, setSelectedLog] = useState<EmailLog | null>(null);
+  const [retryingId, setRetryingId] = useState<string | null>(null);
+  
+  // Filters
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [typeFilter, setTypeFilter] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const fetchLogs = async () => {
     setLoading(true);
@@ -63,7 +84,7 @@ export function EmailLogsManagement() {
         .from('email_logs')
         .select('*')
         .order('created_at', { ascending: false })
-        .limit(100);
+        .limit(200);
 
       if (error) throw error;
       setLogs(data || []);
@@ -79,13 +100,68 @@ export function EmailLogsManagement() {
     fetchLogs();
   }, []);
 
-  // Stats
+  const handleRetry = async (logId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setRetryingId(logId);
+    
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('Nicht authentifiziert');
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke('resend-email', {
+        body: { emailLogId: logId }
+      });
+
+      if (error) throw error;
+
+      if (data.error) {
+        toast.error(data.error);
+      } else {
+        toast.success('E-Mail wurde erneut gesendet');
+        fetchLogs(); // Refresh list
+      }
+    } catch (error) {
+      console.error('Error retrying email:', error);
+      toast.error('E-Mail konnte nicht erneut gesendet werden');
+    } finally {
+      setRetryingId(null);
+    }
+  };
+
+  // Apply filters
+  const filteredLogs = logs.filter(log => {
+    // Status filter
+    if (statusFilter !== 'all' && log.status !== statusFilter) return false;
+    
+    // Type filter
+    if (typeFilter !== 'all' && log.type !== typeFilter) return false;
+    
+    // Search query
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      return (
+        log.recipient_email.toLowerCase().includes(query) ||
+        (log.recipient_name?.toLowerCase().includes(query)) ||
+        log.subject.toLowerCase().includes(query)
+      );
+    }
+    
+    return true;
+  });
+
+  // Stats (from all logs, not filtered)
   const stats = {
     total: logs.length,
     sent: logs.filter(l => l.status === 'sent').length,
     skipped: logs.filter(l => l.status === 'skipped').length,
     failed: logs.filter(l => l.status === 'failed').length,
   };
+
+  // Get unique types for filter
+  const uniqueTypes = Array.from(new Set(logs.map(l => l.type)));
 
   return (
     <div className="space-y-6">
@@ -110,7 +186,10 @@ export function EmailLogsManagement() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-card border border-border p-4">
+        <button 
+          onClick={() => setStatusFilter('all')}
+          className={`bg-card border border-border p-4 text-left transition-all hover:border-foreground/30 ${statusFilter === 'all' ? 'ring-1 ring-foreground' : ''}`}
+        >
           <div className="flex items-center gap-3">
             <div className="p-2 bg-muted">
               <Mail className="w-4 h-4 text-foreground" strokeWidth={1.5} />
@@ -120,8 +199,11 @@ export function EmailLogsManagement() {
               <p className="text-xs text-muted-foreground">Gesamt</p>
             </div>
           </div>
-        </div>
-        <div className="bg-card border border-border p-4">
+        </button>
+        <button 
+          onClick={() => setStatusFilter('sent')}
+          className={`bg-card border border-border p-4 text-left transition-all hover:border-foreground/30 ${statusFilter === 'sent' ? 'ring-1 ring-green-600' : ''}`}
+        >
           <div className="flex items-center gap-3">
             <div className="p-2 bg-green-500/10">
               <CheckCircle2 className="w-4 h-4 text-green-600" strokeWidth={1.5} />
@@ -131,8 +213,11 @@ export function EmailLogsManagement() {
               <p className="text-xs text-muted-foreground">Gesendet</p>
             </div>
           </div>
-        </div>
-        <div className="bg-card border border-border p-4">
+        </button>
+        <button 
+          onClick={() => setStatusFilter('skipped')}
+          className={`bg-card border border-border p-4 text-left transition-all hover:border-foreground/30 ${statusFilter === 'skipped' ? 'ring-1 ring-yellow-600' : ''}`}
+        >
           <div className="flex items-center gap-3">
             <div className="p-2 bg-yellow-500/10">
               <AlertTriangle className="w-4 h-4 text-yellow-600" strokeWidth={1.5} />
@@ -142,8 +227,11 @@ export function EmailLogsManagement() {
               <p className="text-xs text-muted-foreground">Übersprungen</p>
             </div>
           </div>
-        </div>
-        <div className="bg-card border border-border p-4">
+        </button>
+        <button 
+          onClick={() => setStatusFilter('failed')}
+          className={`bg-card border border-border p-4 text-left transition-all hover:border-foreground/30 ${statusFilter === 'failed' ? 'ring-1 ring-red-600' : ''}`}
+        >
           <div className="flex items-center gap-3">
             <div className="p-2 bg-red-500/10">
               <XCircle className="w-4 h-4 text-red-600" strokeWidth={1.5} />
@@ -153,8 +241,57 @@ export function EmailLogsManagement() {
               <p className="text-xs text-muted-foreground">Fehlgeschlagen</p>
             </div>
           </div>
-        </div>
+        </button>
       </div>
+
+      {/* Filters */}
+      <div className="flex flex-wrap gap-4 items-center">
+        <div className="relative flex-1 min-w-[200px] max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Suche nach E-Mail, Name oder Betreff..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <Filter className="w-4 h-4 text-muted-foreground" />
+          <Select value={typeFilter} onValueChange={setTypeFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Typ filtern" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Alle Typen</SelectItem>
+              {uniqueTypes.map(type => (
+                <SelectItem key={type} value={type}>
+                  {typeLabels[type] || type}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {(statusFilter !== 'all' || typeFilter !== 'all' || searchQuery) && (
+          <Button 
+            variant="ghost" 
+            size="sm"
+            onClick={() => {
+              setStatusFilter('all');
+              setTypeFilter('all');
+              setSearchQuery('');
+            }}
+          >
+            Filter zurücksetzen
+          </Button>
+        )}
+      </div>
+
+      {/* Results count */}
+      <p className="text-sm text-muted-foreground">
+        {filteredLogs.length} von {logs.length} E-Mails
+      </p>
 
       {/* Table */}
       <div className="bg-card border border-border">
@@ -166,7 +303,7 @@ export function EmailLogsManagement() {
               <TableHead className="text-xs uppercase tracking-wider text-muted-foreground">Empfänger</TableHead>
               <TableHead className="text-xs uppercase tracking-wider text-muted-foreground">Betreff</TableHead>
               <TableHead className="text-xs uppercase tracking-wider text-muted-foreground">Status</TableHead>
-              <TableHead className="text-xs uppercase tracking-wider text-muted-foreground">Resend ID</TableHead>
+              <TableHead className="text-xs uppercase tracking-wider text-muted-foreground">Aktionen</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -179,16 +316,17 @@ export function EmailLogsManagement() {
                   </div>
                 </TableCell>
               </TableRow>
-            ) : logs.length === 0 ? (
+            ) : filteredLogs.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
-                  Keine E-Mail-Logs vorhanden
+                  {logs.length === 0 ? 'Keine E-Mail-Logs vorhanden' : 'Keine E-Mails gefunden'}
                 </TableCell>
               </TableRow>
             ) : (
-              logs.map((log) => {
+              filteredLogs.map((log) => {
                 const status = statusConfig[log.status] || statusConfig.pending;
                 const StatusIcon = status.icon;
+                const canRetry = log.status === 'failed' || log.status === 'skipped';
 
                 return (
                   <TableRow 
@@ -219,21 +357,33 @@ export function EmailLogsManagement() {
                         {status.label}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-xs text-muted-foreground font-mono">
-                      {log.resend_id ? (
-                        <a 
-                          href={`https://resend.com/emails/${log.resend_id}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-1 hover:text-foreground"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          {log.resend_id.slice(0, 8)}...
-                          <ExternalLink className="w-3 h-3" />
-                        </a>
-                      ) : (
-                        '-'
-                      )}
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        {canRetry && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={(e) => handleRetry(log.id, e)}
+                            disabled={retryingId === log.id}
+                            title="Erneut senden"
+                          >
+                            <RotateCcw className={`w-4 h-4 ${retryingId === log.id ? 'animate-spin' : ''}`} />
+                          </Button>
+                        )}
+                        {log.resend_id && (
+                          <a 
+                            href={`https://resend.com/emails/${log.resend_id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-muted-foreground hover:text-foreground"
+                            onClick={(e) => e.stopPropagation()}
+                            title="In Resend öffnen"
+                          >
+                            <ExternalLink className="w-4 h-4" />
+                          </a>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 );
@@ -245,7 +395,20 @@ export function EmailLogsManagement() {
         {/* Detail Panel */}
         {selectedLog && (
           <div className="border-t border-border p-4 bg-muted/30">
-            <h3 className="text-sm font-medium mb-3">Details</h3>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-medium">Details</h3>
+              {(selectedLog.status === 'failed' || selectedLog.status === 'skipped') && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={(e) => handleRetry(selectedLog.id, e)}
+                  disabled={retryingId === selectedLog.id}
+                >
+                  <RotateCcw className={`w-4 h-4 mr-2 ${retryingId === selectedLog.id ? 'animate-spin' : ''}`} />
+                  Erneut senden
+                </Button>
+              )}
+            </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
               <div>
                 <p className="text-xs text-muted-foreground mb-1">ID</p>
@@ -277,7 +440,7 @@ export function EmailLogsManagement() {
             {selectedLog.metadata && Object.keys(selectedLog.metadata).length > 0 && (
               <div className="mt-4">
                 <p className="text-xs text-muted-foreground mb-1">Metadaten</p>
-                <pre className="text-xs bg-muted p-2 rounded overflow-auto">
+                <pre className="text-xs bg-muted p-2 rounded overflow-auto max-h-32">
                   {JSON.stringify(selectedLog.metadata, null, 2)}
                 </pre>
               </div>
