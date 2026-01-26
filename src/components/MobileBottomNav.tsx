@@ -1,6 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
 import { Home, ShoppingBag, User, Heart } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { useCart } from '@/contexts/CartContext';
 import { useFavorites } from '@/hooks/useFavorites';
 import { cn } from '@/lib/utils';
@@ -69,13 +68,13 @@ export function MobileBottomNav() {
 
             if (item.isAction) {
               return (
-                <Button
+                <button
                   key={item.label}
-                  variant="ghost"
                   className={cn(
-                    'flex flex-col items-center justify-center flex-1 h-auto py-2 px-1 relative gap-1',
+                    'flex flex-col items-center justify-center flex-1 py-2 px-1 transition-colors relative gap-1',
                     isActive ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
                   )}
+                  type="button"
                   onClick={() => handleItemClick(item)}
                 >
                   <div className="relative">
@@ -90,7 +89,7 @@ export function MobileBottomNav() {
                   {isActive && (
                     <div className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-foreground rounded-full" />
                   )}
-                </Button>
+                </button>
               );
             }
 
