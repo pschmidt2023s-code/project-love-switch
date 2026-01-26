@@ -10,6 +10,7 @@ import { PremiumFooter } from '@/components/premium/PremiumFooter';
 import { OrganizationSchema, WebsiteSchema } from '@/components/StructuredData';
 import { ProductComparison } from '@/components/ProductComparison';
 import { MobileBottomNav } from '@/components/MobileBottomNav';
+import { ProductRecommendations } from '@/components/ai/ProductRecommendations';
 
 export default function Index() {
   return (
@@ -58,6 +59,13 @@ export default function Index() {
                 <ArrowRight className="ml-2 lg:ml-3 w-4 h-4" strokeWidth={1.5} />
               </Link>
             </div>
+          </div>
+        </section>
+
+        {/* AI Recommendations Section */}
+        <section className="py-8 lg:py-12 bg-secondary/30">
+          <div className="container-premium">
+            <ProductRecommendations />
           </div>
         </section>
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { 
   MessageSquare, 
   Clock, 
@@ -8,7 +8,10 @@ import {
   Mail,
   X,
   Send,
-  RefreshCw
+  RefreshCw,
+  AlertTriangle,
+  Timer,
+  TrendingUp
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -27,6 +30,14 @@ interface Ticket {
   created_at: string;
   updated_at: string;
 }
+
+// SLA Configuration (in hours)
+const SLA_TARGETS = {
+  urgent: { response: 1, resolution: 4 },
+  high: { response: 4, resolution: 24 },
+  medium: { response: 8, resolution: 48 },
+  low: { response: 24, resolution: 72 }
+};
 
 interface TicketReply {
   id: string;
@@ -164,6 +175,48 @@ export function TicketingSystem() {
     return t.status === filter;
   });
 
+  // SLA Calculations
+  const getSlaStatus = (ticket: Ticket) => {
+    const createdAt = new Date(ticket.created_at);
+    const now = new Date();
+    const hoursElapsed = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
+    const slaTarget = SLA_TARGETS[ticket.priority];
+
+    if (ticket.status === 'resolved' || ticket.status === 'closed') {
+      return { status: 'met', label: 'Erfüllt', color: 'text-success' };
+    }
+
+    const responseBreached = hoursElapsed > slaTarget.response;
+    const resolutionBreached = hoursElapsed > slaTarget.resolution;
+    const resolutionWarning = hoursElapsed > slaTarget.resolution * 0.75;
+
+    if (resolutionBreached) {
+      return { status: 'breached', label: 'Überfällig', color: 'text-destructive' };
+    }
+    if (resolutionWarning) {
+      return { status: 'warning', label: 'Bald fällig', color: 'text-warning' };
+    }
+    return { status: 'on_track', label: 'Im Zeitplan', color: 'text-success' };
+  };
+
+  const slaMetrics = useMemo(() => {
+    const openTickets = tickets.filter(t => t.status !== 'resolved' && t.status !== 'closed');
+    const breached = openTickets.filter(t => getSlaStatus(t).status === 'breached').length;
+    const warning = openTickets.filter(t => getSlaStatus(t).status === 'warning').length;
+    const onTrack = openTickets.filter(t => getSlaStatus(t).status === 'on_track').length;
+    
+    const resolvedTickets = tickets.filter(t => t.status === 'resolved' || t.status === 'closed');
+    const avgResolutionTime = resolvedTickets.length > 0
+      ? resolvedTickets.reduce((acc, t) => {
+          const created = new Date(t.created_at);
+          const updated = new Date(t.updated_at);
+          return acc + (updated.getTime() - created.getTime()) / (1000 * 60 * 60);
+        }, 0) / resolvedTickets.length
+      : 0;
+
+    return { breached, warning, onTrack, avgResolutionTime };
+  }, [tickets]);
+
   const stats = {
     total: tickets.length,
     open: tickets.filter(t => t.status === 'open').length,
@@ -276,6 +329,46 @@ export function TicketingSystem() {
         </div>
       </div>
 
+      {/* SLA Monitoring */}
+      <div className="bg-card border border-border p-4">
+        <div className="flex items-center gap-2 mb-4">
+          <Timer className="w-4 h-4 text-accent" strokeWidth={1.5} />
+          <h2 className="text-sm font-medium text-foreground">SLA-Monitoring</h2>
+        </div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="p-3 bg-destructive/10 border border-destructive/20">
+            <div className="flex items-center gap-2 mb-1">
+              <AlertTriangle className="w-4 h-4 text-destructive" strokeWidth={1.5} />
+              <span className="text-[10px] tracking-[0.1em] uppercase text-destructive">Überfällig</span>
+            </div>
+            <p className="text-xl font-display text-destructive">{slaMetrics.breached}</p>
+          </div>
+          <div className="p-3 bg-warning/10 border border-warning/20">
+            <div className="flex items-center gap-2 mb-1">
+              <Clock className="w-4 h-4 text-warning" strokeWidth={1.5} />
+              <span className="text-[10px] tracking-[0.1em] uppercase text-warning">Bald fällig</span>
+            </div>
+            <p className="text-xl font-display text-warning">{slaMetrics.warning}</p>
+          </div>
+          <div className="p-3 bg-success/10 border border-success/20">
+            <div className="flex items-center gap-2 mb-1">
+              <CheckCircle2 className="w-4 h-4 text-success" strokeWidth={1.5} />
+              <span className="text-[10px] tracking-[0.1em] uppercase text-success">Im Zeitplan</span>
+            </div>
+            <p className="text-xl font-display text-success">{slaMetrics.onTrack}</p>
+          </div>
+          <div className="p-3 bg-muted border border-border">
+            <div className="flex items-center gap-2 mb-1">
+              <TrendingUp className="w-4 h-4 text-muted-foreground" strokeWidth={1.5} />
+              <span className="text-[10px] tracking-[0.1em] uppercase text-muted-foreground">Ø Lösungszeit</span>
+            </div>
+            <p className="text-xl font-display text-foreground">
+              {slaMetrics.avgResolutionTime.toFixed(1)}h
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Filters */}
       <div className="flex gap-2 overflow-x-auto pb-2">
         {(['all', 'open', 'in_progress', 'resolved'] as const).map((f) => (
@@ -313,6 +406,7 @@ export function TicketingSystem() {
                 filteredTickets.map((ticket) => {
                   const status = getStatusInfo(ticket.status);
                   const priority = getPriorityInfo(ticket.priority);
+                  const sla = getSlaStatus(ticket);
                   
                   return (
                     <button
@@ -320,7 +414,7 @@ export function TicketingSystem() {
                       onClick={() => setSelectedTicket(ticket)}
                       className={`w-full p-4 text-left hover:bg-muted/50 transition-colors ${
                         selectedTicket?.id === ticket.id ? 'bg-muted/50' : ''
-                      }`}
+                      } ${sla.status === 'breached' ? 'border-l-2 border-l-destructive' : sla.status === 'warning' ? 'border-l-2 border-l-warning' : ''}`}
                     >
                       <div className="flex items-start justify-between gap-3 mb-2">
                         <div className="flex-1 min-w-0">
@@ -349,15 +443,22 @@ export function TicketingSystem() {
                         {ticket.message}
                       </p>
                       
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <Clock className="w-3 h-3" strokeWidth={1.5} />
-                        {new Date(ticket.created_at).toLocaleDateString('de-DE', {
-                          day: '2-digit',
-                          month: '2-digit',
-                          year: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <div className="flex items-center gap-2">
+                          <Clock className="w-3 h-3" strokeWidth={1.5} />
+                          {new Date(ticket.created_at).toLocaleDateString('de-DE', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </div>
+                        {ticket.status !== 'resolved' && ticket.status !== 'closed' && (
+                          <span className={`text-[9px] uppercase font-medium ${sla.color}`}>
+                            {sla.label}
+                          </span>
+                        )}
                       </div>
                     </button>
                   );
