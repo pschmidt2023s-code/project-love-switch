@@ -47,6 +47,7 @@ const navItems = [
   { id: 'partners', label: 'Partner', icon: Handshake },
   { id: 'payback', label: 'Payback', icon: Wallet },
   { id: 'chat', label: 'Live Chat', icon: MessageSquare },
+  { id: 'emails', label: 'E-Mail-Logs', icon: Mail },
   { id: 'audit', label: 'Audit-Logs', icon: Shield },
   { id: 'settings', label: 'Einstellungen', icon: Settings },
 ];
