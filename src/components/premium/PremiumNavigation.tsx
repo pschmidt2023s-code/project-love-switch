@@ -104,12 +104,12 @@ export function PremiumNavigation() {
         }`}
       >
         <nav className="container-premium">
-          <div className="flex items-center justify-between h-16 md:h-20">
-            {/* Left: Mobile Menu Toggle */}
-            <div className="flex items-center lg:hidden">
+          <div className="flex items-center justify-between h-14 sm:h-16 md:h-20">
+            {/* Left: Mobile Menu Toggle - fixed width for balance */}
+            <div className="flex items-center w-10 lg:hidden">
               <button
                 onClick={() => setShowMobileMenu(!showMobileMenu)}
-                className="p-2 -ml-2 text-foreground hover:text-muted-foreground transition-colors"
+                className="flex items-center justify-center w-10 h-10 text-foreground hover:text-muted-foreground transition-colors"
                 aria-label={showMobileMenu ? 'Menü schließen' : 'Menü öffnen'}
               >
                 {showMobileMenu ? (
@@ -140,34 +140,36 @@ export function PremiumNavigation() {
               ))}
             </div>
 
-            {/* Center: Logo */}
+            {/* Center: Logo - truly centered */}
             <Link
               to="/"
-              className="absolute left-1/2 -translate-x-1/2"
+              className="absolute left-1/2 -translate-x-1/2 flex items-center justify-center"
             >
-              <h1 className="font-display text-xl md:text-2xl tracking-[0.25em] text-foreground font-medium">
+              <h1 className="font-display text-lg sm:text-xl md:text-2xl tracking-[0.2em] sm:tracking-[0.25em] text-foreground font-medium whitespace-nowrap">
                 ALDENAIR
               </h1>
             </Link>
 
-            {/* Right: Actions */}
-            <div className="flex items-center gap-1 sm:gap-2">
+            {/* Right: Actions - consistent sizing */}
+            <div className="flex items-center gap-0 sm:gap-1">
               {/* Search */}
               <button
                 onClick={() => setShowSearch(!showSearch)}
-                className="p-2.5 text-foreground hover:text-muted-foreground transition-colors"
+                className="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 text-foreground hover:text-muted-foreground transition-colors"
                 aria-label="Suche"
               >
                 <Search className="w-[18px] h-[18px]" strokeWidth={1.5} />
               </button>
 
-              {/* Dark Mode */}
-              <DarkModeToggle />
+              {/* Dark Mode - hidden on small mobile */}
+              <div className="hidden sm:flex">
+                <DarkModeToggle />
+              </div>
 
-              {/* Favorites */}
+              {/* Favorites - hidden on mobile */}
               <Link
                 to="/favorites"
-                className="hidden sm:flex p-2.5 text-foreground hover:text-muted-foreground transition-colors"
+                className="hidden md:flex items-center justify-center w-10 h-10 text-foreground hover:text-muted-foreground transition-colors"
                 aria-label="Favoriten"
               >
                 <Heart className="w-[18px] h-[18px]" strokeWidth={1.5} />
@@ -176,12 +178,12 @@ export function PremiumNavigation() {
               {/* Cart */}
               <button
                 onClick={() => setShowCart(true)}
-                className="relative p-2.5 text-foreground hover:text-muted-foreground transition-colors"
+                className="relative flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 text-foreground hover:text-muted-foreground transition-colors"
                 aria-label="Warenkorb"
               >
                 <ShoppingBag className="w-[18px] h-[18px]" strokeWidth={1.5} />
                 {itemCount > 0 && (
-                  <span className="absolute top-1 right-1 min-w-[16px] h-4 flex items-center justify-center bg-accent text-accent-foreground text-[9px] font-semibold px-1">
+                  <span className="absolute top-0.5 right-0.5 sm:top-1 sm:right-1 min-w-[14px] sm:min-w-[16px] h-3.5 sm:h-4 flex items-center justify-center bg-accent text-accent-foreground text-[8px] sm:text-[9px] font-semibold px-0.5 sm:px-1">
                     {itemCount > 99 ? '99+' : itemCount}
                   </span>
                 )}
@@ -192,7 +194,7 @@ export function PremiumNavigation() {
                 <div className="relative" ref={dropdownRef}>
                   <button
                     onClick={() => setShowUserMenu(!showUserMenu)}
-                    className="p-2.5 text-foreground hover:text-muted-foreground transition-colors"
+                    className="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 text-foreground hover:text-muted-foreground transition-colors"
                     aria-label="Konto"
                   >
                     <User className="w-[18px] h-[18px]" strokeWidth={1.5} />
