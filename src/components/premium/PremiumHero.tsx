@@ -1,23 +1,11 @@
 import { Link } from 'react-router-dom';
 import { ArrowRight, Truck, Shield, Clock, Play } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
-import { motion, useScroll, useTransform } from 'framer-motion';
+import { useEffect, useState } from 'react';
 import { VideoModal } from './VideoModal';
 
 export function PremiumHero() {
   const [isVisible, setIsVisible] = useState(false);
   const [showVideo, setShowVideo] = useState(false);
-  const heroRef = useRef<HTMLDivElement>(null);
-  
-  // Parallax effects - all hooks must be called unconditionally at top level
-  const { scrollY } = useScroll();
-  const backgroundY = useTransform(scrollY, [0, 800], [0, 200]);
-  const contentY = useTransform(scrollY, [0, 600], [0, 100]);
-  const contentOpacity = useTransform(scrollY, [0, 400], [1, 0.3]);
-  const scale = useTransform(scrollY, [0, 600], [1, 1.1]);
-  const accentLine1Y = useTransform(scrollY, [0, 600], [0, 50]);
-  const accentLine2Y = useTransform(scrollY, [0, 600], [0, -30]);
-  const accentLine3X = useTransform(scrollY, [0, 600], [0, -40]);
   
   useEffect(() => {
     const timer = setTimeout(() => setIsVisible(true), 100);
@@ -26,54 +14,38 @@ export function PremiumHero() {
 
   return (
     <>
-      {/* Dark Luxury Hero with Video-style background */}
+      {/* Dark Luxury Hero - NO Parallax */}
       <section 
-        ref={heroRef}
         data-header-dark
         className="relative min-h-[85vh] lg:min-h-[90vh] bg-black overflow-hidden flex items-center"
       >
-        {/* Parallax Animated gradient background */}
-        <motion.div 
-          className="absolute inset-0"
-          style={{ y: backgroundY, scale }}
-        >
+        {/* Static gradient background */}
+        <div className="absolute inset-0">
           <div className="absolute inset-0 bg-gradient-to-br from-black via-neutral-900 to-black" />
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(180,140,70,0.15)_0%,transparent_50%)]" />
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,rgba(180,140,70,0.1)_0%,transparent_50%)]" />
           
-          {/* Animated particles/grain effect */}
+          {/* Subtle grain effect */}
           <div className="absolute inset-0 opacity-20 mix-blend-overlay">
             <div 
-              className="absolute inset-0 animate-pulse" 
+              className="absolute inset-0" 
               style={{
                 backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
               }} 
             />
           </div>
-        </motion.div>
+        </div>
         
-        {/* Floating accent lines with parallax */}
-        <motion.div 
-          className="absolute top-20 left-10 w-px h-32 bg-gradient-to-b from-transparent via-amber-600/30 to-transparent"
-          style={{ y: accentLine1Y }}
-        />
-        <motion.div 
-          className="absolute bottom-20 right-10 w-px h-32 bg-gradient-to-b from-transparent via-amber-600/30 to-transparent"
-          style={{ y: accentLine2Y }}
-        />
-        <motion.div 
-          className="absolute top-1/3 right-20 w-32 h-px bg-gradient-to-r from-transparent via-amber-600/20 to-transparent"
-          style={{ x: accentLine3X }}
-        />
+        {/* Static accent lines */}
+        <div className="absolute top-20 left-10 w-px h-32 bg-gradient-to-b from-transparent via-amber-600/30 to-transparent" />
+        <div className="absolute bottom-20 right-10 w-px h-32 bg-gradient-to-b from-transparent via-amber-600/30 to-transparent" />
+        <div className="absolute top-1/3 right-20 w-32 h-px bg-gradient-to-r from-transparent via-amber-600/20 to-transparent" />
         
-        <motion.div 
-          className="container-premium relative z-10"
-          style={{ y: contentY, opacity: contentOpacity }}
-        >
+        <div className="container-premium relative z-10">
           <div className="grid grid-cols-12 gap-6 lg:gap-12 items-center">
             {/* Content */}
             <div className={`col-span-12 lg:col-span-7 transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-              <span className="inline-block text-[10px] tracking-[0.4em] uppercase text-amber-500 font-medium mb-4 lg:mb-6 animate-pulse">
+              <span className="inline-block text-[10px] tracking-[0.4em] uppercase text-amber-500 font-medium mb-4 lg:mb-6">
                 Premium Parfüm Kollektion
               </span>
 
@@ -140,7 +112,7 @@ export function PremiumHero() {
               </div>
             </div>
           </div>
-        </motion.div>
+        </div>
         
         {/* Scroll indicator */}
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 animate-bounce">
@@ -150,7 +122,7 @@ export function PremiumHero() {
       </section>
 
       {/* Light section below for contrast */}
-      <section className="py-16 lg:py-24 bg-background">
+      <section data-header-light className="py-16 lg:py-24 bg-background">
         <div className="container-premium">
           <div className="text-center max-w-2xl mx-auto">
             <span className="inline-block text-[10px] tracking-[0.3em] uppercase text-accent font-medium mb-4">
