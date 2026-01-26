@@ -30,17 +30,17 @@ export default function Index() {
         <PremiumSparsets />
 
         {/* Products Section */}
-        <section className="section-spacing">
+        <section className="py-8 lg:py-12">
           <div className="container-premium">
             {/* Section Header */}
-            <div className="text-center mb-12 lg:mb-16">
-              <span className="inline-block text-[10px] tracking-[0.3em] uppercase text-accent mb-4">
+            <div className="text-center mb-6 lg:mb-10">
+              <span className="inline-block text-[10px] tracking-[0.3em] uppercase text-accent mb-2 lg:mb-4">
                 Kollektion
               </span>
-              <h2 className="font-display text-3xl lg:text-4xl text-foreground mb-4">
+              <h2 className="font-display text-2xl lg:text-3xl text-foreground mb-2 lg:mb-4">
                 Unsere Bestseller
               </h2>
-              <p className="text-muted-foreground max-w-md mx-auto">
+              <p className="text-sm text-muted-foreground max-w-md mx-auto">
                 Premium-Düfte inspiriert von weltbekannten Marken
               </p>
             </div>
@@ -49,13 +49,13 @@ export default function Index() {
             <PremiumProductGrid />
 
             {/* View All CTA */}
-            <div className="text-center mt-12 lg:mt-16">
+            <div className="text-center mt-8 lg:mt-12">
               <Link
                 to="/products"
-                className="inline-flex items-center px-8 py-4 border border-foreground text-foreground text-[11px] tracking-[0.15em] uppercase font-medium hover:bg-foreground hover:text-background transition-all duration-300"
+                className="inline-flex items-center px-6 py-3 lg:px-8 lg:py-4 border border-foreground text-foreground text-[10px] lg:text-[11px] tracking-[0.15em] uppercase font-medium hover:bg-foreground hover:text-background transition-all duration-300"
               >
                 Alle Produkte ansehen
-                <ArrowRight className="ml-3 w-4 h-4" strokeWidth={1.5} />
+                <ArrowRight className="ml-2 lg:ml-3 w-4 h-4" strokeWidth={1.5} />
               </Link>
             </div>
           </div>

@@ -40,21 +40,21 @@ export function PremiumNewsletter() {
   };
 
   return (
-    <section className="bg-foreground text-background py-16 lg:py-24">
+    <section className="bg-foreground text-background py-10 lg:py-16">
       <div className="container-premium">
         <div className="max-w-2xl mx-auto text-center">
           {/* Eyebrow */}
-          <span className="inline-block text-[10px] tracking-[0.3em] uppercase text-background/50 mb-4">
+          <span className="inline-block text-[10px] tracking-[0.3em] uppercase text-background/50 mb-3">
             Newsletter
           </span>
           
           {/* Headline */}
-          <h2 className="font-display text-3xl lg:text-4xl text-background mb-4">
+          <h2 className="font-display text-2xl lg:text-3xl text-background mb-3">
             Bleibe auf dem Laufenden
           </h2>
           
           {/* Description */}
-          <p className="text-background/70 mb-8 max-w-md mx-auto">
+          <p className="text-sm text-background/70 mb-6 max-w-md mx-auto">
             Melde dich für unseren Newsletter an und erhalte exklusive Angebote 
             und Neuigkeiten direkt in dein Postfach.
           </p>
