@@ -1,25 +1,38 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense, lazy } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { AdminLayout } from '@/components/admin/AdminLayout';
-import { AdminDashboardContent } from '@/components/admin/AdminDashboardContent';
-import { AdminOrdersContent } from '@/components/admin/AdminOrdersContent';
-import { AdminProductsContent } from '@/components/admin/AdminProductsContent';
-import { AdminCustomersContent } from '@/components/admin/AdminCustomersContent';
-import { AdminAnalyticsContent } from '@/components/admin/AdminAnalyticsContent';
-import { InventoryManagement } from '@/components/admin/InventoryManagement';
-import { TicketingSystem } from '@/components/admin/TicketingSystem';
-import { ReturnsManagement } from '@/components/admin/ReturnsManagement';
-import { AuditLogs } from '@/components/admin/AuditLogs';
-import { EmailLogsManagement } from '@/components/admin/EmailLogsManagement';
-import CouponManagement from '@/components/admin/CouponManagement';
-import NewsletterManagement from '@/components/admin/NewsletterManagement';
-import ContestManagement from '@/components/admin/ContestManagement';
-import PartnerManagement from '@/components/admin/PartnerManagement';
-import PaybackManagement from '@/components/admin/PaybackManagement';
-import LiveChatManagement from '@/components/admin/LiveChatManagement';
-import SettingsManagement from '@/components/admin/SettingsManagement';
+
+// Lazy load all admin components for better performance
+const AdminDashboardContent = lazy(() => import('@/components/admin/AdminDashboardContent').then(m => ({ default: m.AdminDashboardContent })));
+const AdminOrdersContent = lazy(() => import('@/components/admin/AdminOrdersContent').then(m => ({ default: m.AdminOrdersContent })));
+const AdminProductsContent = lazy(() => import('@/components/admin/AdminProductsContent').then(m => ({ default: m.AdminProductsContent })));
+const AdminCustomersContent = lazy(() => import('@/components/admin/AdminCustomersContent').then(m => ({ default: m.AdminCustomersContent })));
+const AdminAnalyticsContent = lazy(() => import('@/components/admin/AdminAnalyticsContent').then(m => ({ default: m.AdminAnalyticsContent })));
+const InventoryManagement = lazy(() => import('@/components/admin/InventoryManagement').then(m => ({ default: m.InventoryManagement })));
+const TicketingSystem = lazy(() => import('@/components/admin/TicketingSystem').then(m => ({ default: m.TicketingSystem })));
+const ReturnsManagement = lazy(() => import('@/components/admin/ReturnsManagement').then(m => ({ default: m.ReturnsManagement })));
+const AuditLogs = lazy(() => import('@/components/admin/AuditLogs').then(m => ({ default: m.AuditLogs })));
+const EmailLogsManagement = lazy(() => import('@/components/admin/EmailLogsManagement').then(m => ({ default: m.EmailLogsManagement })));
+const CouponManagement = lazy(() => import('@/components/admin/CouponManagement'));
+const NewsletterManagement = lazy(() => import('@/components/admin/NewsletterManagement'));
+const ContestManagement = lazy(() => import('@/components/admin/ContestManagement'));
+const PartnerManagement = lazy(() => import('@/components/admin/PartnerManagement'));
+const PaybackManagement = lazy(() => import('@/components/admin/PaybackManagement'));
+const LiveChatManagement = lazy(() => import('@/components/admin/LiveChatManagement'));
+const SettingsManagement = lazy(() => import('@/components/admin/SettingsManagement'));
+
+function AdminContentLoader() {
+  return (
+    <div className="flex items-center justify-center p-12">
+      <div className="text-center">
+        <div className="w-6 h-6 border-2 border-accent border-t-transparent animate-spin mx-auto mb-3" />
+        <p className="text-xs text-muted-foreground">Laden...</p>
+      </div>
+    </div>
+  );
+}
 
 export default function Admin() {
   const { user, loading: authLoading } = useAuth();
@@ -69,44 +82,52 @@ export default function Admin() {
   }, [user, authLoading, navigate]);
 
   const renderContent = () => {
-    switch (activeTab) {
-      case 'dashboard':
-        return <AdminDashboardContent />;
-      case 'orders':
-        return <AdminOrdersContent />;
-      case 'products':
-        return <AdminProductsContent />;
-      case 'customers':
-        return <AdminCustomersContent />;
-      case 'inventory':
-        return <InventoryManagement />;
-      case 'analytics':
-        return <AdminAnalyticsContent />;
-      case 'tickets':
-        return <TicketingSystem />;
-      case 'returns':
-        return <ReturnsManagement />;
-      case 'coupons':
-        return <CouponManagement />;
-      case 'newsletter':
-        return <NewsletterManagement />;
-      case 'contest':
-        return <ContestManagement />;
-      case 'partners':
-        return <PartnerManagement />;
-      case 'payback':
-        return <PaybackManagement />;
-      case 'chat':
-        return <LiveChatManagement />;
-      case 'emails':
-        return <EmailLogsManagement />;
-      case 'audit':
-        return <AuditLogs />;
-      case 'settings':
-        return <SettingsManagement />;
-      default:
-        return <AdminDashboardContent />;
-    }
+    const content = (() => {
+      switch (activeTab) {
+        case 'dashboard':
+          return <AdminDashboardContent />;
+        case 'orders':
+          return <AdminOrdersContent />;
+        case 'products':
+          return <AdminProductsContent />;
+        case 'customers':
+          return <AdminCustomersContent />;
+        case 'inventory':
+          return <InventoryManagement />;
+        case 'analytics':
+          return <AdminAnalyticsContent />;
+        case 'tickets':
+          return <TicketingSystem />;
+        case 'returns':
+          return <ReturnsManagement />;
+        case 'coupons':
+          return <CouponManagement />;
+        case 'newsletter':
+          return <NewsletterManagement />;
+        case 'contest':
+          return <ContestManagement />;
+        case 'partners':
+          return <PartnerManagement />;
+        case 'payback':
+          return <PaybackManagement />;
+        case 'chat':
+          return <LiveChatManagement />;
+        case 'emails':
+          return <EmailLogsManagement />;
+        case 'audit':
+          return <AuditLogs />;
+        case 'settings':
+          return <SettingsManagement />;
+        default:
+          return <AdminDashboardContent />;
+      }
+    })();
+
+    return (
+      <Suspense fallback={<AdminContentLoader />}>
+        {content}
+      </Suspense>
+    );
   };
 
   if (loading) {

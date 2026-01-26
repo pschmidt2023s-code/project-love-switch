@@ -9,6 +9,7 @@ import { SubscriptionCard } from '@/components/subscription/SubscriptionCard';
 import { ProductRecommendations } from '@/components/ai/ProductRecommendations';
 import { Breadcrumb } from '@/components/Breadcrumb';
 import { Seo } from '@/components/Seo';
+import { ProductSchema, BreadcrumbSchema } from '@/components/seo';
 import { toast } from 'sonner';
 
 export default function ProductDetail() {
@@ -88,6 +89,29 @@ export default function ProductDetail() {
         title={`${product.name} | ALDENAIR`}
         description={product.description || `Entdecke ${product.name} - Premium Parfüm von ALDENAIR`}
         canonicalPath={`/products/${slug}`}
+      />
+      <ProductSchema
+        product={{
+          name: product.name,
+          description: product.description || `Premium Parfüm ${product.name} von ALDENAIR`,
+          image: product.image_url || 'https://aldenairperfumes.de/images/aldenair-prestige.png',
+          price: selectedVariant ? Number(selectedVariant.price) : Number(product.base_price),
+          originalPrice: selectedVariant?.original_price ? Number(selectedVariant.original_price) : undefined,
+          currency: 'EUR',
+          sku: selectedVariant?.sku || product.id,
+          brand: 'ALDENAIR',
+          availability: inStock ? 'InStock' : 'OutOfStock',
+          rating: rating || undefined,
+          reviewCount: product.review_count || undefined,
+          url: `https://aldenairperfumes.de/products/${slug}`
+        }}
+      />
+      <BreadcrumbSchema
+        items={[
+          { name: 'Startseite', url: 'https://aldenairperfumes.de' },
+          { name: 'Kollektion', url: 'https://aldenairperfumes.de/products' },
+          { name: product.name, url: `https://aldenairperfumes.de/products/${slug}` }
+        ]}
       />
 
       <div className="container-premium py-8 lg:py-12">

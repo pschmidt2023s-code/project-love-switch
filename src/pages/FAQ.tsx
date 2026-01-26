@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronDown, ArrowRight } from 'lucide-react';
 import { PremiumPageLayout } from '@/components/premium/PremiumPageLayout';
 import { Breadcrumb } from '@/components/Breadcrumb';
 import { Seo } from '@/components/Seo';
+import { FAQSchema, BreadcrumbSchema } from '@/components/seo';
 
 const faqData = [
   {
@@ -114,12 +115,25 @@ function FAQItem({ question, answer }: { question: string; answer: string }) {
 }
 
 export default function FAQ() {
+  // Flatten all FAQs for schema
+  const allFaqs = useMemo(() => 
+    faqData.flatMap(cat => cat.questions),
+    []
+  );
+
   return (
     <PremiumPageLayout>
       <Seo
         title="FAQ | ALDENAIR"
         description="Häufig gestellte Fragen zu Bestellung, Lieferung, Rückgabe und mehr bei ALDENAIR."
         canonicalPath="/faq"
+      />
+      <FAQSchema faqs={allFaqs} />
+      <BreadcrumbSchema 
+        items={[
+          { name: 'Startseite', url: 'https://aldenairperfumes.de' },
+          { name: 'FAQ', url: 'https://aldenairperfumes.de/faq' }
+        ]} 
       />
 
       {/* Header */}
