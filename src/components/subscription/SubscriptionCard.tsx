@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Package, Calendar, Percent, Check, Pause, Play, X, ChevronDown } from 'lucide-react';
+import { Package, Check, ChevronDown, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -90,23 +90,45 @@ export function SubscriptionCard({
         nextDelivery.setMonth(nextDelivery.getMonth() + 3);
       }
 
-      const { error } = await supabase.from('subscriptions').insert({
+      // Create subscription record first
+      const { data: subscription, error: subError } = await supabase.from('subscriptions').insert({
         user_id: user.id,
         product_id: productId,
         variant_id: variantId,
         frequency: currentPlan?.frequency || 'monthly',
         discount_percent: currentPlan?.discount || 15,
         next_delivery: nextDelivery.toISOString().split('T')[0],
-        status: 'active',
+        status: 'pending', // Will be activated after payment
+      }).select().single();
+
+      if (subError) throw subError;
+
+      // Create checkout session via edge function
+      const { data: checkoutData, error: checkoutError } = await supabase.functions.invoke('create-checkout', {
+        body: {
+          items: [{
+            variantId,
+            quantity: 1,
+            isSubscription: true,
+            subscriptionId: subscription.id,
+            discountPercent: currentPlan?.discount || 15,
+          }],
+          successUrl: `${window.location.origin}/checkout/success?subscription=${subscription.id}`,
+          cancelUrl: `${window.location.origin}/checkout/cancel`,
+        },
       });
 
-      if (error) throw error;
+      if (checkoutError) throw checkoutError;
 
-      toast.success('Abo erfolgreich abgeschlossen!');
-      onSubscribe?.();
+      if (checkoutData?.url) {
+        // Redirect to Stripe checkout
+        window.location.href = checkoutData.url;
+      } else {
+        throw new Error('Keine Checkout-URL erhalten');
+      }
     } catch (error) {
       console.error('Subscription error:', error);
-      toast.error('Fehler beim Abschließen des Abos');
+      toast.error('Fehler beim Abschließen des Abos. Bitte versuchen Sie es erneut.');
     } finally {
       setLoading(false);
     }
@@ -199,9 +221,16 @@ export function SubscriptionCard({
           <button
             onClick={handleSubscribe}
             disabled={loading || !user}
-            className="w-full py-3 bg-foreground text-background text-[11px] tracking-[0.15em] uppercase font-medium hover:bg-foreground/90 transition-colors disabled:opacity-50"
+            className="w-full py-3 bg-foreground text-background text-[11px] tracking-[0.15em] uppercase font-medium hover:bg-foreground/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
           >
-            {loading ? 'Wird abgeschlossen...' : 'Abo starten'}
+            {loading ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Wird weitergeleitet...
+              </>
+            ) : (
+              'Abo starten & bezahlen'
+            )}
           </button>
 
           {!user && (
@@ -211,7 +240,7 @@ export function SubscriptionCard({
           )}
 
           <p className="text-[10px] text-muted-foreground text-center">
-            Jederzeit kündbar • Keine versteckten Kosten
+            Jederzeit kündbar • Sichere Zahlung via Stripe
           </p>
         </div>
       </motion.div>

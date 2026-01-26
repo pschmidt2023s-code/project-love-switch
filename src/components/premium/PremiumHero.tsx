@@ -2,9 +2,11 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, Truck, Shield, Clock, Play } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
+import { VideoModal } from './VideoModal';
 
 export function PremiumHero() {
   const [isVisible, setIsVisible] = useState(false);
+  const [showVideo, setShowVideo] = useState(false);
   const heroRef = useRef<HTMLDivElement>(null);
   
   // Parallax effects - all hooks must be called unconditionally at top level
@@ -104,6 +106,7 @@ export function PremiumHero() {
                 </Link>
                 
                 <button
+                  onClick={() => setShowVideo(true)}
                   className="group inline-flex items-center justify-center px-8 py-4 lg:px-10 lg:py-5 border border-white/30 text-white text-[11px] lg:text-[12px] tracking-[0.15em] uppercase font-medium hover:border-amber-500/50 hover:text-amber-400 transition-all duration-500"
                 >
                   <Play className="mr-3 w-4 h-4" strokeWidth={2} />
@@ -162,6 +165,9 @@ export function PremiumHero() {
           </div>
         </div>
       </section>
+
+      {/* Video Modal */}
+      <VideoModal isOpen={showVideo} onClose={() => setShowVideo(false)} />
     </>
   );
 }
