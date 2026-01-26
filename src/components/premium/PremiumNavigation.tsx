@@ -185,13 +185,7 @@ export function PremiumNavigation() {
 
   const isActive = (path: string) => location.pathname === path;
   
-  // CSS classes for inverted state - using Tailwind classes that work
-  const textColorClass = isInverted ? 'text-white' : 'text-foreground';
-  const mutedTextColorClass = isInverted ? 'text-white/70' : 'text-muted-foreground';
-  const iconColorClass = isInverted ? 'text-white' : 'text-foreground';
-  const borderColorClass = isInverted ? 'border-white' : 'border-foreground';
-  
-  // Transition class for smooth fade
+  // Transition class for smooth fade - colors are handled via CSS in index.css
   const transitionClass = 'transition-colors duration-[400ms] ease-[cubic-bezier(0.25,0.46,0.45,0.94)]';
 
   return (
@@ -209,7 +203,7 @@ export function PremiumNavigation() {
       <header
         ref={headerRef}
         data-inverted={isInverted ? "true" : "false"}
-        className={`sticky top-0 z-50 ${transitionClass} ${
+        className={`nav-header sticky top-0 z-50 ${transitionClass} ${
           isScrolled
             ? isInverted 
               ? 'bg-black/95 backdrop-blur-xl border-b border-white/10 shadow-lg' 
@@ -223,13 +217,13 @@ export function PremiumNavigation() {
             <div className="flex items-center w-10 lg:hidden">
               <button
                 onClick={() => setShowMobileMenu(!showMobileMenu)}
-                className={`flex items-center justify-center w-10 h-10 hover:opacity-70 ${transitionClass}`}
+                className={`nav-icon flex items-center justify-center w-10 h-10 hover:opacity-70 ${transitionClass}`}
                 aria-label={showMobileMenu ? 'Menü schließen' : 'Menü öffnen'}
               >
                 {showMobileMenu ? (
-                  <X className={`w-5 h-5 ${iconColorClass} ${transitionClass}`} strokeWidth={1.5} />
+                  <X className={`w-5 h-5 ${transitionClass}`} strokeWidth={1.5} />
                 ) : (
-                  <Menu className={`w-5 h-5 ${iconColorClass} ${transitionClass}`} strokeWidth={1.5} />
+                  <Menu className={`w-5 h-5 ${transitionClass}`} strokeWidth={1.5} />
                 )}
               </button>
             </div>
@@ -240,13 +234,13 @@ export function PremiumNavigation() {
                 <Link
                   key={link.to}
                   to={link.to}
-                  className={`relative text-[11px] tracking-[0.15em] uppercase font-medium hover:opacity-80 ${transitionClass} ${
-                    isActive(link.to) ? textColorClass : mutedTextColorClass
+                  className={`nav-link relative text-[11px] tracking-[0.15em] uppercase font-medium hover:opacity-80 ${transitionClass} ${
+                    isActive(link.to) ? '' : 'nav-link-muted'
                   }`}
                 >
                   {link.label}
                   {isActive(link.to) && (
-                    <span className="absolute -bottom-1 left-0 w-full h-px bg-accent" />
+                    <span className="nav-underline absolute -bottom-1 left-0 w-full h-px bg-accent" />
                   )}
                 </Link>
               ))}
@@ -255,7 +249,7 @@ export function PremiumNavigation() {
             {/* Center: Logo - truly centered */}
             <Link
               to="/"
-              className={`absolute left-1/2 -translate-x-1/2 flex items-center justify-center ${textColorClass} ${transitionClass}`}
+              className={`nav-logo absolute left-1/2 -translate-x-1/2 flex items-center justify-center ${transitionClass}`}
             >
               <h1 className="font-display text-lg sm:text-xl md:text-2xl tracking-[0.2em] sm:tracking-[0.25em] font-medium whitespace-nowrap">
                 ALDENAIR
@@ -267,10 +261,10 @@ export function PremiumNavigation() {
               {/* Search */}
               <button
                 onClick={() => setShowSearch(!showSearch)}
-                className={`flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 hover:opacity-70 ${transitionClass}`}
+                className={`nav-icon flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 hover:opacity-70 ${transitionClass}`}
                 aria-label="Suche"
               >
-                <Search className={`w-[18px] h-[18px] ${iconColorClass} ${transitionClass}`} strokeWidth={1.5} />
+                <Search className={`w-[18px] h-[18px] ${transitionClass}`} strokeWidth={1.5} />
               </button>
 
               {/* Dark Mode - hidden on small mobile */}
@@ -281,21 +275,21 @@ export function PremiumNavigation() {
               {/* Favorites - hidden on mobile */}
               <Link
                 to="/favorites"
-                className={`hidden md:flex items-center justify-center w-10 h-10 hover:opacity-70 ${transitionClass}`}
+                className={`nav-icon hidden md:flex items-center justify-center w-10 h-10 hover:opacity-70 ${transitionClass}`}
                 aria-label="Favoriten"
               >
-                <Heart className={`w-[18px] h-[18px] ${iconColorClass} ${transitionClass}`} strokeWidth={1.5} />
+                <Heart className={`w-[18px] h-[18px] ${transitionClass}`} strokeWidth={1.5} />
               </Link>
 
               {/* Cart */}
               <button
                 onClick={() => setShowCart(true)}
-                className={`relative flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 hover:opacity-70 ${transitionClass}`}
+                className={`nav-icon relative flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 hover:opacity-70 ${transitionClass}`}
                 aria-label="Warenkorb"
               >
-                <ShoppingBag className={`w-[18px] h-[18px] ${iconColorClass} ${transitionClass}`} strokeWidth={1.5} />
+                <ShoppingBag className={`w-[18px] h-[18px] ${transitionClass}`} strokeWidth={1.5} />
                 {itemCount > 0 && (
-                  <span className="absolute top-0.5 right-0.5 sm:top-1 sm:right-1 min-w-[14px] sm:min-w-[16px] h-3.5 sm:h-4 flex items-center justify-center text-[8px] sm:text-[9px] font-semibold px-0.5 sm:px-1 bg-accent text-accent-foreground">
+                  <span className="nav-badge absolute top-0.5 right-0.5 sm:top-1 sm:right-1 min-w-[14px] sm:min-w-[16px] h-3.5 sm:h-4 flex items-center justify-center text-[8px] sm:text-[9px] font-semibold px-0.5 sm:px-1 bg-accent text-accent-foreground">
                     {itemCount > 99 ? '99+' : itemCount}
                   </span>
                 )}
@@ -306,10 +300,10 @@ export function PremiumNavigation() {
                 <div className="relative" ref={dropdownRef}>
                   <button
                     onClick={() => setShowUserMenu(!showUserMenu)}
-                    className={`flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 hover:opacity-70 ${transitionClass}`}
+                    className={`nav-icon flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 hover:opacity-70 ${transitionClass}`}
                     aria-label="Konto"
                   >
-                    <User className={`w-[18px] h-[18px] ${iconColorClass} ${transitionClass}`} strokeWidth={1.5} />
+                    <User className={`w-[18px] h-[18px] ${transitionClass}`} strokeWidth={1.5} />
                   </button>
                   
                   {showUserMenu && (
@@ -363,11 +357,7 @@ export function PremiumNavigation() {
               ) : (
                 <AuthModal>
                   <button 
-                    className={`hidden sm:flex items-center px-5 py-2 text-[11px] tracking-[0.1em] uppercase font-medium border ${transitionClass} ${
-                      isInverted 
-                        ? 'text-white border-white hover:bg-white hover:text-black' 
-                        : 'text-foreground border-foreground hover:bg-foreground hover:text-background'
-                    }`}
+                    className={`nav-btn hidden sm:flex items-center px-5 py-2 text-[11px] tracking-[0.1em] uppercase font-medium border ${transitionClass}`}
                   >
                     Anmelden
                   </button>
