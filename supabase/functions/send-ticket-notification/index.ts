@@ -2,6 +2,38 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "https://esm.sh/resend@2.0.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 
+// Initialize Supabase client for logging
+const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+async function logEmail(
+  type: string,
+  recipientEmail: string,
+  recipientName: string,
+  subject: string,
+  status: 'sent' | 'skipped' | 'failed',
+  errorMessage?: string,
+  resendId?: string,
+  metadata?: Record<string, unknown>
+) {
+  try {
+    await supabase.from('email_logs').insert({
+      type,
+      recipient_email: recipientEmail,
+      recipient_name: recipientName,
+      subject,
+      status,
+      error_message: errorMessage,
+      resend_id: resendId,
+      metadata: metadata || {}
+    });
+    console.log(`Email logged: ${type} to ${recipientEmail} - ${status}`);
+  } catch (err) {
+    console.error('Failed to log email:', err);
+  }
+}
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -98,7 +130,7 @@ serve(async (req) => {
         break;
     }
 
-    const { error } = await resend.emails.send({
+    const { data: emailData, error } = await resend.emails.send({
       from: "ALDENAIR <noreply@resend.dev>",
       to: [customerEmail],
       subject: emailSubject,
@@ -110,6 +142,7 @@ serve(async (req) => {
       // Handle Resend test mode limitation gracefully
       if (error.message?.includes("testing emails") || error.message?.includes("verify a domain")) {
         console.log("Resend test mode: Email not sent to external recipient. Domain verification required.");
+        await logEmail(type, customerEmail, customerName, emailSubject, 'skipped', error.message, undefined, { ticketId, reason: 'domain_verification_required' });
         return new Response(JSON.stringify({ 
           success: true, 
           warning: "Email notification skipped - domain verification required for production emails" 
@@ -118,10 +151,12 @@ serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
+      await logEmail(type, customerEmail, customerName, emailSubject, 'failed', error.message, undefined, { ticketId });
       throw error;
     }
 
     console.log(`Email sent: ${type} to ${customerEmail}`);
+    await logEmail(type, customerEmail, customerName, emailSubject, 'sent', undefined, emailData?.id, { ticketId });
 
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
