@@ -37,6 +37,7 @@ const Cart = React.lazy(() => import('@/pages/Cart'));
 const About = React.lazy(() => import('@/pages/About'));
 const Shipping = React.lazy(() => import('@/pages/Shipping'));
 const Sparkits = React.lazy(() => import('@/pages/Sparkits'));
+const ScentFinder = React.lazy(() => import('@/pages/ScentFinder'));
 const Account = React.lazy(() => import('@/pages/Account'));
 const Orders = React.lazy(() => import('@/pages/Orders'));
 const OrdersList = React.lazy(() => import('@/pages/OrdersList'));
@@ -95,6 +96,7 @@ function App() {
                         <Route path="/checkout/success" element={<Suspense fallback={<LoadingSpinner />}><CheckoutSuccess /></Suspense>} />
                         <Route path="/checkout/cancel" element={<Suspense fallback={<LoadingSpinner />}><CheckoutCancel /></Suspense>} />
                         <Route path="/sparkits" element={<Suspense fallback={<LoadingSpinner />}><Sparkits /></Suspense>} />
+                        <Route path="/scent-finder" element={<Suspense fallback={<LoadingSpinner />}><ScentFinder /></Suspense>} />
                         <Route path="/account" element={<Suspense fallback={<LoadingSpinner />}><Account /></Suspense>} />
                         <Route path="/orders" element={<Suspense fallback={<LoadingSpinner />}><OrdersList /></Suspense>} />
                         <Route path="/orders/:id" element={<Suspense fallback={<LoadingSpinner />}><Orders /></Suspense>} />

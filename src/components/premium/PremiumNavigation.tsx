@@ -77,6 +77,7 @@ export function PremiumNavigation() {
   const navLinks = [
     { to: '/', label: 'Home' },
     { to: '/products', label: 'Kollektion' },
+    { to: '/scent-finder', label: 'Duft-Finder' },
     { to: '/about', label: 'Über Uns' },
     { to: '/contact', label: 'Kontakt' },
   ];
