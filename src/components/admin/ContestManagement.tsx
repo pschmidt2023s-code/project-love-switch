@@ -19,7 +19,7 @@ interface ContestEntry {
   created_at: string | null;
 }
 
-export function ContestManagement() {
+export default function ContestManagement() {
   const { toast } = useToast();
   const [entries, setEntries] = useState<ContestEntry[]>([]);
   const [loading, setLoading] = useState(true);
