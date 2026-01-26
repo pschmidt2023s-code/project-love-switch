@@ -25,22 +25,21 @@ export function PremiumFeatures() {
   ];
 
   return (
-    <section className="section-spacing border-y border-border">
+    <section className="py-8 lg:py-12 border-y border-border">
       <div className="container-premium">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
-          {features.map((feature, index) => (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-8">
+          {features.map((feature) => (
             <div 
               key={feature.title}
-              className="text-center animate-fade-in-up"
-              style={{ animationDelay: `${index * 0.1}s`, opacity: 0 }}
+              className="text-center"
             >
-              <div className="inline-flex items-center justify-center w-12 h-12 mb-4">
-                <feature.icon className="w-6 h-6 text-accent" strokeWidth={1.5} />
+              <div className="inline-flex items-center justify-center w-10 h-10 lg:w-12 lg:h-12 mb-2 lg:mb-4">
+                <feature.icon className="w-5 h-5 lg:w-6 lg:h-6 text-accent" strokeWidth={1.5} />
               </div>
-              <h3 className="font-display text-lg text-foreground mb-2">
+              <h3 className="font-display text-sm lg:text-lg text-foreground mb-1 lg:mb-2">
                 {feature.title}
               </h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">
+              <p className="text-xs lg:text-sm text-muted-foreground leading-relaxed">
                 {feature.description}
               </p>
             </div>
