@@ -16,13 +16,27 @@ import {
   Line
 } from 'recharts';
 import { supabase } from '@/integrations/supabase/client';
-import { TrendingUp, TrendingDown, Users, ShoppingBag, DollarSign, Package } from 'lucide-react';
+import { TrendingUp, TrendingDown, Users, ShoppingBag, DollarSign, Package, RefreshCcw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+
+interface OrderStatusCount {
+  status: string;
+  count: number;
+}
+
+interface TopProduct {
+  name: string;
+  sales: number;
+  revenue: number;
+}
 
 export function AdminAnalyticsContent() {
   const [revenueData, setRevenueData] = useState<any[]>([]);
   const [ordersData, setOrdersData] = useState<any[]>([]);
   const [customerData, setCustomerData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [statusData, setStatusData] = useState<{ name: string; value: number; color: string }[]>([]);
+  const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
   const [stats, setStats] = useState({
     totalRevenue: 0,
     totalOrders: 0,
@@ -38,6 +52,7 @@ export function AdminAnalyticsContent() {
   }, []);
 
   const fetchAnalytics = async () => {
+    setLoading(true);
     try {
       // Fetch orders for revenue and order trends
       const { data: orders } = await supabase
@@ -50,6 +65,11 @@ export function AdminAnalyticsContent() {
         .from('profiles')
         .select('created_at')
         .order('created_at', { ascending: true });
+
+      // Fetch order items for top products
+      const { data: orderItems } = await supabase
+        .from('order_items')
+        .select('product_name, quantity, total_price');
 
       if (orders) {
         const now = new Date();
@@ -127,6 +147,62 @@ export function AdminAnalyticsContent() {
             ? ((currentPeriodCustomers - previousPeriodCustomers) / previousPeriodCustomers) * 100 
             : 0,
         });
+
+        // Calculate status distribution from real data
+        const statusCounts: Record<string, number> = {};
+        orders.forEach(order => {
+          const status = order.status || 'pending';
+          statusCounts[status] = (statusCounts[status] || 0) + 1;
+        });
+
+        const totalOrders = orders.length || 1;
+        const statusColors: Record<string, string> = {
+          delivered: 'hsl(142, 76%, 36%)',
+          shipped: 'hsl(221, 83%, 53%)',
+          processing: 'hsl(200, 83%, 53%)',
+          pending: 'hsl(45, 93%, 47%)',
+          cancelled: 'hsl(0, 84%, 60%)',
+        };
+        const statusLabels: Record<string, string> = {
+          delivered: 'Geliefert',
+          shipped: 'Versendet',
+          processing: 'In Bearbeitung',
+          pending: 'Ausstehend',
+          cancelled: 'Storniert',
+        };
+
+        const statusDataArray = Object.entries(statusCounts).map(([status, count]) => ({
+          name: statusLabels[status] || status,
+          value: Math.round((count / totalOrders) * 100),
+          color: statusColors[status] || 'hsl(0, 0%, 50%)',
+        }));
+
+        setStatusData(statusDataArray.length > 0 ? statusDataArray : [
+          { name: 'Keine Daten', value: 100, color: 'hsl(0, 0%, 80%)' }
+        ]);
+
+        // Calculate top products from real order items
+        if (orderItems && orderItems.length > 0) {
+          const productStats: Record<string, { sales: number; revenue: number }> = {};
+          
+          orderItems.forEach(item => {
+            const name = item.product_name;
+            if (!productStats[name]) {
+              productStats[name] = { sales: 0, revenue: 0 };
+            }
+            productStats[name].sales += item.quantity;
+            productStats[name].revenue += Number(item.total_price || 0);
+          });
+
+          const sortedProducts = Object.entries(productStats)
+            .map(([name, data]) => ({ name, ...data }))
+            .sort((a, b) => b.revenue - a.revenue)
+            .slice(0, 5);
+
+          setTopProducts(sortedProducts);
+        } else {
+          setTopProducts([]);
+        }
       }
     } catch (error) {
       console.error('Error fetching analytics:', error);
@@ -134,13 +210,6 @@ export function AdminAnalyticsContent() {
       setLoading(false);
     }
   };
-
-  const statusData = [
-    { name: 'Abgeschlossen', value: 45, color: 'hsl(142, 76%, 36%)' },
-    { name: 'Versendet', value: 25, color: 'hsl(221, 83%, 53%)' },
-    { name: 'Ausstehend', value: 20, color: 'hsl(45, 93%, 47%)' },
-    { name: 'Storniert', value: 10, color: 'hsl(0, 84%, 60%)' },
-  ];
 
   if (loading) {
     return (
@@ -201,11 +270,17 @@ export function AdminAnalyticsContent() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-display text-foreground mb-1">Analytics</h1>
-        <p className="text-sm text-muted-foreground">
-          Umsatz-, Bestell- und Kundenstatistiken der letzten 30 Tage
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-display text-foreground mb-1">Analytics</h1>
+          <p className="text-sm text-muted-foreground">
+            Live-Daten der letzten 30 Tage
+          </p>
+        </div>
+        <Button variant="outline" onClick={fetchAnalytics} disabled={loading}>
+          <RefreshCcw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+          Aktualisieren
+        </Button>
       </div>
 
       {/* Stats Grid */}
@@ -369,9 +444,9 @@ export function AdminAnalyticsContent() {
           </div>
         </div>
 
-        {/* Status Distribution */}
+        {/* Status Distribution - Now with LIVE data */}
         <div className="bg-card border border-border p-6">
-          <h3 className="text-sm font-medium text-foreground mb-6">Bestellstatus-Verteilung</h3>
+          <h3 className="text-sm font-medium text-foreground mb-6">Bestellstatus-Verteilung (Live)</h3>
           <div className="h-64 flex items-center gap-8">
             <div className="flex-1">
               <ResponsiveContainer width="100%" height="100%">
@@ -417,44 +492,39 @@ export function AdminAnalyticsContent() {
         </div>
       </div>
 
-      {/* Top Products */}
+      {/* Top Products - Now with LIVE data */}
       <div className="bg-card border border-border p-6">
-        <h3 className="text-sm font-medium text-foreground mb-6">Top Produkte (letzte 30 Tage)</h3>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-border">
-                <th className="text-left text-xs tracking-wider uppercase text-muted-foreground pb-4">#</th>
-                <th className="text-left text-xs tracking-wider uppercase text-muted-foreground pb-4">Produkt</th>
-                <th className="text-right text-xs tracking-wider uppercase text-muted-foreground pb-4">Verkäufe</th>
-                <th className="text-right text-xs tracking-wider uppercase text-muted-foreground pb-4">Umsatz</th>
-                <th className="text-right text-xs tracking-wider uppercase text-muted-foreground pb-4">Trend</th>
-              </tr>
-            </thead>
-            <tbody>
-              {[
-                { name: 'ALDENAIR 632', sales: 156, revenue: 4680, trend: 12 },
-                { name: 'ALDENAIR 888', sales: 134, revenue: 4020, trend: 8 },
-                { name: 'ALDENAIR 111', sales: 98, revenue: 2940, trend: -3 },
-                { name: 'ALDENAIR Prestige', sales: 67, revenue: 2010, trend: 24 },
-                { name: 'Sparsets 3er', sales: 45, revenue: 1890, trend: 15 },
-              ].map((product, index) => (
-                <tr key={product.name} className="border-b border-border last:border-0">
-                  <td className="py-4 text-sm text-muted-foreground">{index + 1}</td>
-                  <td className="py-4 text-sm text-foreground">{product.name}</td>
-                  <td className="py-4 text-sm text-muted-foreground text-right">{product.sales}</td>
-                  <td className="py-4 text-sm text-foreground text-right">€{product.revenue.toLocaleString('de-DE')}</td>
-                  <td className="py-4 text-right">
-                    <span className={`inline-flex items-center gap-1 text-xs ${product.trend >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                      {product.trend >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                      {product.trend >= 0 ? '+' : ''}{product.trend}%
-                    </span>
-                  </td>
+        <h3 className="text-sm font-medium text-foreground mb-6">Top Produkte (Live-Daten)</h3>
+        {topProducts.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-border">
+                  <th className="text-left text-xs tracking-wider uppercase text-muted-foreground pb-4">#</th>
+                  <th className="text-left text-xs tracking-wider uppercase text-muted-foreground pb-4">Produkt</th>
+                  <th className="text-right text-xs tracking-wider uppercase text-muted-foreground pb-4">Verkäufe</th>
+                  <th className="text-right text-xs tracking-wider uppercase text-muted-foreground pb-4">Umsatz</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {topProducts.map((product, index) => (
+                  <tr key={product.name} className="border-b border-border last:border-0">
+                    <td className="py-4 text-sm text-muted-foreground">{index + 1}</td>
+                    <td className="py-4 text-sm text-foreground">{product.name}</td>
+                    <td className="py-4 text-sm text-muted-foreground text-right">{product.sales}</td>
+                    <td className="py-4 text-sm text-foreground text-right">€{product.revenue.toLocaleString('de-DE', { minimumFractionDigits: 2 })}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="text-center py-8 text-muted-foreground">
+            <Package className="w-12 h-12 mx-auto mb-4 opacity-20" />
+            <p>Noch keine Bestellungen vorhanden</p>
+            <p className="text-sm">Sobald Bestellungen eingehen, werden hier die Top-Produkte angezeigt</p>
+          </div>
+        )}
       </div>
     </div>
   );

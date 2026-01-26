@@ -815,6 +815,63 @@ export type Database = {
           },
         ]
       }
+      settings: {
+        Row: {
+          allow_guest_checkout: boolean | null
+          announce_bar_enabled: boolean | null
+          announce_bar_link: string | null
+          announce_bar_message: string | null
+          created_at: string | null
+          email_notifications: boolean | null
+          express_shipping_cost: number | null
+          free_shipping_threshold: number | null
+          id: string
+          low_stock_alerts: boolean | null
+          low_stock_threshold: number | null
+          maintenance_message: string | null
+          maintenance_mode: boolean | null
+          order_alerts: boolean | null
+          standard_shipping_cost: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          allow_guest_checkout?: boolean | null
+          announce_bar_enabled?: boolean | null
+          announce_bar_link?: string | null
+          announce_bar_message?: string | null
+          created_at?: string | null
+          email_notifications?: boolean | null
+          express_shipping_cost?: number | null
+          free_shipping_threshold?: number | null
+          id?: string
+          low_stock_alerts?: boolean | null
+          low_stock_threshold?: number | null
+          maintenance_message?: string | null
+          maintenance_mode?: boolean | null
+          order_alerts?: boolean | null
+          standard_shipping_cost?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          allow_guest_checkout?: boolean | null
+          announce_bar_enabled?: boolean | null
+          announce_bar_link?: string | null
+          announce_bar_message?: string | null
+          created_at?: string | null
+          email_notifications?: boolean | null
+          express_shipping_cost?: number | null
+          free_shipping_threshold?: number | null
+          id?: string
+          low_stock_alerts?: boolean | null
+          low_stock_threshold?: number | null
+          maintenance_message?: string | null
+          maintenance_mode?: boolean | null
+          order_alerts?: boolean | null
+          standard_shipping_cost?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       subscriptions: {
         Row: {
           created_at: string
