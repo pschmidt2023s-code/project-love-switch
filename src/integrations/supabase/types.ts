@@ -729,6 +729,196 @@ export type Database = {
         }
         Relationships: []
       }
+      returns: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          order_id: string | null
+          reason: string
+          refund_amount: number | null
+          status: string
+          tracking_number: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          order_id?: string | null
+          reason: string
+          refund_amount?: number | null
+          status?: string
+          tracking_number?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          order_id?: string | null
+          reason?: string
+          refund_amount?: number | null
+          status?: string
+          tracking_number?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "returns_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subscriptions: {
+        Row: {
+          created_at: string
+          delivery_count: number | null
+          discount_percent: number | null
+          frequency: string
+          id: string
+          last_delivery: string | null
+          next_delivery: string | null
+          product_id: string | null
+          status: string
+          updated_at: string
+          user_id: string
+          variant_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          delivery_count?: number | null
+          discount_percent?: number | null
+          frequency?: string
+          id?: string
+          last_delivery?: string | null
+          next_delivery?: string | null
+          product_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+          variant_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          delivery_count?: number | null
+          discount_percent?: number | null
+          frequency?: string
+          id?: string
+          last_delivery?: string | null
+          next_delivery?: string | null
+          product_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+          variant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscriptions_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "product_variants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ticket_replies: {
+        Row: {
+          created_at: string
+          id: string
+          is_internal: boolean | null
+          message: string
+          ticket_id: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_internal?: boolean | null
+          message: string
+          ticket_id: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_internal?: boolean | null
+          message?: string
+          ticket_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_replies_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tickets: {
+        Row: {
+          assigned_to: string | null
+          category: string | null
+          created_at: string
+          customer_email: string
+          customer_name: string
+          id: string
+          message: string
+          priority: string
+          resolved_at: string | null
+          status: string
+          subject: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          assigned_to?: string | null
+          category?: string | null
+          created_at?: string
+          customer_email: string
+          customer_name: string
+          id?: string
+          message: string
+          priority?: string
+          resolved_at?: string | null
+          status?: string
+          subject: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          assigned_to?: string | null
+          category?: string | null
+          created_at?: string
+          customer_email?: string
+          customer_name?: string
+          id?: string
+          message?: string
+          priority?: string
+          resolved_at?: string | null
+          status?: string
+          subject?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string

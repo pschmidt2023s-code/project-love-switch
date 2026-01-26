@@ -39,6 +39,7 @@ const navItems = [
   { id: 'inventory', label: 'Lagerbestand', icon: Warehouse },
   { id: 'customers', label: 'Kunden', icon: Users },
   { id: 'tickets', label: 'Support-Tickets', icon: Ticket },
+  { id: 'returns', label: 'Retouren', icon: Package },
   { id: 'analytics', label: 'Analytics', icon: BarChart3 },
   { id: 'coupons', label: 'Gutscheine', icon: Tag },
   { id: 'newsletter', label: 'Newsletter', icon: Mail },

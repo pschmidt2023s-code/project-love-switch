@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.capture-paypal]
 verify_jwt = false
+
+[functions.ai-recommendations]
+verify_jwt = false
