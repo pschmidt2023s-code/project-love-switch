@@ -255,7 +255,9 @@ const Navigation = () => {
               {!user && (
                 <div className="pt-4 border-t border-border mt-4">
                   <AuthModal>
-                    <Button className="w-full">Anmelden / Registrieren</Button>
+                    <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
+                      Anmelden / Registrieren
+                    </Button>
                   </AuthModal>
                 </div>
               )}

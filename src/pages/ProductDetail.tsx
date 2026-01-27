@@ -21,6 +21,11 @@ export default function ProductDetail() {
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
 
+  // Scroll to top on product change
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, [slug]);
+
   // Set default variant when variants load
   useEffect(() => {
     if (variants.length > 0 && !selectedVariantId) {

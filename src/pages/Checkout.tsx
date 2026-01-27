@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -30,7 +30,7 @@ const Checkout = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   
-  const [paymentMethod, setPaymentMethod] = useState<'stripe' | 'paypal'>('stripe');
+  const [paymentMethod, setPaymentMethod] = useState<'stripe' | 'paypal' | 'bank_transfer'>('stripe');
   const [loading, setLoading] = useState(false);
   const [shippingAddress, setShippingAddress] = useState<Address | null>(null);
   const [billingAddress, setBillingAddress] = useState<Address | null>(null);
@@ -39,6 +39,11 @@ const Checkout = () => {
 
   const shippingCost = total >= 50 ? 0 : 4.95;
   const grandTotal = total + shippingCost;
+
+  // Scroll to top on mount and step change
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [step]);
 
   if (items.length === 0) {
     return (
