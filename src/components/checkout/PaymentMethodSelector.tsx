@@ -1,11 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { CreditCard, Shield, Lock } from 'lucide-react';
+import { CreditCard, Shield, Lock, Banknote } from 'lucide-react';
 
 interface PaymentMethodSelectorProps {
-  value: 'stripe' | 'paypal';
-  onChange: (value: 'stripe' | 'paypal') => void;
+  value: 'stripe' | 'paypal' | 'bank_transfer';
+  onChange: (value: 'stripe' | 'paypal' | 'bank_transfer') => void;
 }
 
 export function PaymentMethodSelector({ value, onChange }: PaymentMethodSelectorProps) {
@@ -18,7 +18,7 @@ export function PaymentMethodSelector({ value, onChange }: PaymentMethodSelector
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        <RadioGroup value={value} onValueChange={(v) => onChange(v as 'stripe' | 'paypal')}>
+        <RadioGroup value={value} onValueChange={(v) => onChange(v as 'stripe' | 'paypal' | 'bank_transfer')}>
           {/* Stripe / Credit Card */}
           <div
             className={`flex items-center space-x-3 p-4 border rounded-lg cursor-pointer transition-all ${
@@ -38,13 +38,6 @@ export function PaymentMethodSelector({ value, onChange }: PaymentMethodSelector
                 <p className="text-sm text-muted-foreground">
                   Visa, Mastercard, American Express
                 </p>
-              </div>
-              <div className="flex gap-1">
-                <img
-                  src="https://cdn.jsdelivr.net/gh/lipis/flag-icons/flags/4x3/us.svg"
-                  alt="Visa"
-                  className="h-6 w-auto opacity-70"
-                />
               </div>
             </Label>
           </div>
@@ -73,7 +66,37 @@ export function PaymentMethodSelector({ value, onChange }: PaymentMethodSelector
               </div>
             </Label>
           </div>
+
+          {/* Bank Transfer */}
+          <div
+            className={`flex items-center space-x-3 p-4 border rounded-lg cursor-pointer transition-all ${
+              value === 'bank_transfer'
+                ? 'border-primary bg-primary/5'
+                : 'border-border hover:border-primary/50 hover:bg-muted/50'
+            }`}
+            onClick={() => onChange('bank_transfer')}
+          >
+            <RadioGroupItem value="bank_transfer" id="bank_transfer" />
+            <Label htmlFor="bank_transfer" className="flex items-center gap-3 cursor-pointer flex-1">
+              <div className="p-2 bg-muted rounded-lg">
+                <Banknote className="w-5 h-5 text-primary" />
+              </div>
+              <div className="flex-1">
+                <p className="font-medium">Überweisung</p>
+                <p className="text-sm text-muted-foreground">
+                  Banküberweisung nach Bestellung
+                </p>
+              </div>
+            </Label>
+          </div>
         </RadioGroup>
+
+        {value === 'bank_transfer' && (
+          <div className="p-3 bg-muted/50 rounded-lg text-sm text-muted-foreground">
+            Nach Abschluss der Bestellung erhältst du eine E-Mail mit unseren Bankdaten. 
+            Der Versand erfolgt nach Zahlungseingang (1-2 Werktage).
+          </div>
+        )}
 
         {/* Security badges */}
         <div className="flex items-center justify-center gap-4 pt-4 border-t">

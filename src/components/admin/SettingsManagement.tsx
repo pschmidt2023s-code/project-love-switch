@@ -6,9 +6,10 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Settings, Bell, Mail, Shield, Database, Globe, Megaphone, AlertTriangle, Loader2 } from 'lucide-react';
+import { Settings, Bell, Shield, Globe, Megaphone, AlertTriangle, Loader2, Truck, Package, Zap, MapPin } from 'lucide-react';
 
 interface ShopSettings {
   id: string;
@@ -35,14 +36,32 @@ const defaultSettings: ShopSettings = {
   announce_bar_message: '',
   announce_bar_link: '',
   free_shipping_threshold: 50,
-  standard_shipping_cost: 4.99,
-  express_shipping_cost: 2.99,
+  standard_shipping_cost: 4.95,
+  express_shipping_cost: 9.95,
   allow_guest_checkout: true,
   email_notifications: true,
   order_alerts: true,
   low_stock_alerts: true,
   low_stock_threshold: 5,
 };
+
+// Shipping zones and countries
+const shippingZones = [
+  { 
+    id: 'germany', 
+    name: 'Deutschland', 
+    countries: ['DE'],
+    standardDays: '2-3',
+    expressDays: '1'
+  },
+  { 
+    id: 'eu', 
+    name: 'EU-Länder', 
+    countries: ['AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR', 'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL', 'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE'],
+    standardDays: '5-7',
+    expressDays: '2-3'
+  }
+];
 
 export default function SettingsManagement() {
   const { toast } = useToast();
@@ -73,8 +92,8 @@ export default function SettingsManagement() {
           announce_bar_message: data.announce_bar_message ?? '',
           announce_bar_link: data.announce_bar_link ?? '',
           free_shipping_threshold: Number(data.free_shipping_threshold) || 50,
-          standard_shipping_cost: Number(data.standard_shipping_cost) || 4.99,
-          express_shipping_cost: Number(data.express_shipping_cost) || 2.99,
+          standard_shipping_cost: Number(data.standard_shipping_cost) || 4.95,
+          express_shipping_cost: Number(data.express_shipping_cost) || 9.95,
           allow_guest_checkout: data.allow_guest_checkout ?? true,
           email_notifications: data.email_notifications ?? true,
           order_alerts: data.order_alerts ?? true,
@@ -180,6 +199,115 @@ export default function SettingsManagement() {
           </CardContent>
         </Card>
 
+        {/* Shipping Settings - Expanded */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Truck className="w-5 h-5" />
+              Versand
+            </CardTitle>
+            <CardDescription>
+              Konfigurieren Sie Versandoptionen, Kosten und Liefergebiete
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Shipping Zones Info */}
+            <div className="p-4 bg-muted/50 rounded-lg space-y-3">
+              <div className="flex items-center gap-2">
+                <MapPin className="w-4 h-4 text-primary" />
+                <Label className="text-sm font-medium">Aktive Liefergebiete</Label>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {shippingZones.map((zone) => (
+                  <div key={zone.id} className="p-3 bg-background rounded-lg border">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-medium">{zone.name}</span>
+                      <Badge variant="outline" className="text-xs">Aktiv</Badge>
+                    </div>
+                    <div className="text-xs text-muted-foreground space-y-1">
+                      <p className="flex items-center gap-1">
+                        <Package className="w-3 h-3" /> Standard: {zone.standardDays} Werktage
+                      </p>
+                      <p className="flex items-center gap-1">
+                        <Zap className="w-3 h-3" /> Express: {zone.expressDays} Werktage
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Aktuell versenden wir nur nach Deutschland und in EU-Länder.
+              </p>
+            </div>
+
+            <Separator />
+
+            {/* Shipping Costs */}
+            <div>
+              <Label className="text-sm font-medium mb-3 block">Versandkosten (Deutschland)</Label>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Package className="w-4 h-4 text-muted-foreground" />
+                    <Label className="text-sm">Standardversand (€)</Label>
+                  </div>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={settings.standard_shipping_cost}
+                    onChange={(e) => setSettings({ ...settings, standard_shipping_cost: parseFloat(e.target.value) || 0 })}
+                  />
+                  <p className="text-xs text-muted-foreground">2-3 Werktage</p>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Zap className="w-4 h-4 text-amber-500" />
+                    <Label className="text-sm">Expressversand (€)</Label>
+                  </div>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={settings.express_shipping_cost}
+                    onChange={(e) => setSettings({ ...settings, express_shipping_cost: parseFloat(e.target.value) || 0 })}
+                  />
+                  <p className="text-xs text-muted-foreground">1 Werktag (Prio)</p>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Truck className="w-4 h-4 text-green-500" />
+                    <Label className="text-sm">Kostenlos ab (€)</Label>
+                  </div>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={settings.free_shipping_threshold}
+                    onChange={(e) => setSettings({ ...settings, free_shipping_threshold: parseFloat(e.target.value) || 0 })}
+                  />
+                  <p className="text-xs text-muted-foreground">Standardversand gratis</p>
+                </div>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* EU Shipping Info */}
+            <div className="p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-900">
+              <h4 className="font-medium text-sm mb-2 flex items-center gap-2">
+                <Globe className="w-4 h-4" />
+                EU-Versand
+              </h4>
+              <div className="text-sm text-muted-foreground space-y-1">
+                <p>• Standardversand EU: +2,00 € auf DE-Preis</p>
+                <p>• Expressversand EU: +5,00 € auf DE-Preis</p>
+                <p>• Lieferzeit: 5-7 Werktage (Standard) / 2-3 Werktage (Express)</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Notifications */}
         <Card>
           <CardHeader>
@@ -245,50 +373,6 @@ export default function SettingsManagement() {
           </CardContent>
         </Card>
 
-        {/* Shipping */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Globe className="w-5 h-5" />
-              Versand
-            </CardTitle>
-            <CardDescription>
-              Konfigurieren Sie Versandoptionen und Kosten
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <Label>Kostenloser Versand ab (€)</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={settings.free_shipping_threshold}
-                  onChange={(e) => setSettings({ ...settings, free_shipping_threshold: parseFloat(e.target.value) || 50 })}
-                />
-              </div>
-              <div>
-                <Label>Standardversand (€)</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={settings.standard_shipping_cost}
-                  onChange={(e) => setSettings({ ...settings, standard_shipping_cost: parseFloat(e.target.value) || 4.99 })}
-                />
-              </div>
-              <div>
-                <Label>Expressversand (€)</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={settings.express_shipping_cost}
-                  onChange={(e) => setSettings({ ...settings, express_shipping_cost: parseFloat(e.target.value) || 2.99 })}
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Shop Settings */}
         <Card>
           <CardHeader>
@@ -345,7 +429,7 @@ export default function SettingsManagement() {
       </div>
 
       <div className="flex justify-end">
-        <Button onClick={handleSave} disabled={saving}>
+        <Button onClick={handleSave} disabled={saving} size="lg">
           {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
           Einstellungen speichern
         </Button>
