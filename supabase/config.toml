@@ -26,3 +26,6 @@ verify_jwt = false
 
 [functions.send-subscription-reminders]
 verify_jwt = false
+
+[functions.shop-webhook]
+verify_jwt = false
