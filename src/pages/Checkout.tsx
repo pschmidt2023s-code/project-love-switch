@@ -119,6 +119,8 @@ const Checkout = () => {
         });
       }
 
+      console.log('[CHECKOUT] Sending request with payment_method:', paymentMethod);
+      
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: {
           items: checkoutItems,
@@ -130,10 +132,17 @@ const Checkout = () => {
         },
       });
 
+      console.log('[CHECKOUT] Response:', { data, error });
+
       if (error) throw error;
+      
+      if (!data) {
+        throw new Error('Keine Antwort vom Server erhalten');
+      }
 
       // Handle bank transfer - navigate to bank details page instead of redirect
       if (data.payment_method === 'bank_transfer' && data.bank_details) {
+        console.log('[CHECKOUT] Navigating to bank transfer success page');
         navigate('/checkout/bank-transfer', {
           state: {
             bank_details: data.bank_details,
@@ -146,7 +155,10 @@ const Checkout = () => {
 
       // For Stripe/PayPal, redirect to external URL
       if (data.url) {
+        console.log('[CHECKOUT] Redirecting to:', data.url);
         window.location.href = data.url;
+      } else {
+        throw new Error('Keine Weiterleitungs-URL erhalten');
       }
     } catch (error) {
       console.error('Checkout error:', error);
