@@ -132,6 +132,19 @@ const Checkout = () => {
 
       if (error) throw error;
 
+      // Handle bank transfer - navigate to bank details page instead of redirect
+      if (data.payment_method === 'bank_transfer' && data.bank_details) {
+        navigate('/checkout/bank-transfer', {
+          state: {
+            bank_details: data.bank_details,
+            total: data.total,
+            currency: data.currency,
+          }
+        });
+        return;
+      }
+
+      // For Stripe/PayPal, redirect to external URL
       if (data.url) {
         window.location.href = data.url;
       }
