@@ -25,20 +25,21 @@ serve(async (req) => {
   try {
     logStep("Function started");
     
-    const { items, payment_method } = await req.json();
-    logStep("Request body", { items, payment_method });
+    const { items, payment_method, email: bodyEmail, user_id: bodyUserId, origin: bodyOrigin } = await req.json();
+    const origin = req.headers.get("origin") || bodyOrigin || "https://sweet-code-shift.lovable.app";
+    logStep("Request body", { items, payment_method, bodyEmail, origin });
 
     // Get user from auth header
     const authHeader = req.headers.get("Authorization");
-    let userEmail = null;
-    let userId = null;
+    let userEmail = bodyEmail || null;
+    let userId = bodyUserId || null;
     
     if (authHeader) {
       const token = authHeader.replace("Bearer ", "");
       const { data } = await supabaseClient.auth.getUser(token);
       if (data.user) {
-        userEmail = data.user.email;
-        userId = data.user.id;
+        userEmail = data.user.email || userEmail;
+        userId = data.user.id || userId;
         logStep("User authenticated", { email: userEmail, userId });
       }
     }
@@ -102,8 +103,8 @@ serve(async (req) => {
             })),
           }],
           application_context: {
-            return_url: `${req.headers.get("origin")}/checkout/success`,
-            cancel_url: `${req.headers.get("origin")}/checkout/cancel`,
+            return_url: `${origin}/checkout/success`,
+            cancel_url: `${origin}/checkout/cancel`,
             brand_name: "ALDENAIR",
             user_action: "PAY_NOW",
           },
@@ -145,17 +146,25 @@ serve(async (req) => {
       }
 
       // Create line items from cart
-      const lineItems = items.map((item: any) => ({
-        price_data: {
-          currency: "eur",
-          product_data: {
-            name: item.name,
-            images: item.image ? [item.image] : [],
+      const lineItems = items.map((item: any) => {
+        // Make image URL absolute if it's a relative path
+        let imageUrl = item.image;
+        if (imageUrl && imageUrl.startsWith('/')) {
+          imageUrl = `${origin}${imageUrl}`;
+        }
+        
+        return {
+          price_data: {
+            currency: "eur",
+            product_data: {
+              name: item.name,
+              images: imageUrl ? [imageUrl] : [],
+            },
+            unit_amount: Math.round(item.price * 100), // Convert to cents
           },
-          unit_amount: Math.round(item.price * 100), // Convert to cents
-        },
-        quantity: item.quantity,
-      }));
+          quantity: item.quantity,
+        };
+      });
 
       logStep("Creating Stripe session", { lineItems: lineItems.length });
 
@@ -164,8 +173,8 @@ serve(async (req) => {
         customer_email: customerId ? undefined : userEmail,
         line_items: lineItems,
         mode: "payment",
-        success_url: `${req.headers.get("origin")}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${req.headers.get("origin")}/checkout/cancel`,
+        success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${origin}/checkout/cancel`,
         shipping_address_collection: {
           allowed_countries: ["DE", "AT", "CH"],
         },

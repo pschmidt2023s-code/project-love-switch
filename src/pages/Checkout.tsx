@@ -36,6 +36,7 @@ const Checkout = () => {
   const [billingAddress, setBillingAddress] = useState<Address | null>(null);
   const [useSameAsShipping, setUseSameAsShipping] = useState(true);
   const [step, setStep] = useState<'address' | 'payment'>('address');
+  const [email, setEmail] = useState(user?.email || '');
 
   const shippingCost = total >= 50 ? 0 : 4.95;
   const grandTotal = total + shippingCost;
@@ -76,8 +77,11 @@ const Checkout = () => {
     );
   };
 
+  const isEmailValid = user?.email || (email && email.includes('@'));
+  
   const canProceedToPayment = isAddressValid(shippingAddress) && 
-    (useSameAsShipping || isAddressValid(billingAddress));
+    (useSameAsShipping || isAddressValid(billingAddress)) &&
+    isEmailValid;
 
   const handleProceedToPayment = () => {
     if (!canProceedToPayment) {
@@ -122,6 +126,7 @@ const Checkout = () => {
           shipping_address: shippingAddress,
           billing_address: finalBillingAddress,
           user_id: user?.id,
+          email: email || user?.email,
         },
       });
 
@@ -191,6 +196,30 @@ const Checkout = () => {
             <div className="lg:col-span-2 space-y-6">
               {step === 'address' ? (
                 <>
+                  {/* Email for Guest Checkout */}
+                  {!user && (
+                    <div className="bg-card border rounded-lg p-6">
+                      <h3 className="font-semibold mb-4">Kontakt</h3>
+                      <div>
+                        <label htmlFor="email" className="block text-sm font-medium mb-2">
+                          E-Mail-Adresse *
+                        </label>
+                        <input
+                          type="email"
+                          id="email"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          placeholder="deine@email.de"
+                          required
+                          className="w-full px-3 py-2 border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Für die Bestellbestätigung und Versandbenachrichtigungen
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Shipping Address */}
                   <AddressForm
                     type="shipping"
