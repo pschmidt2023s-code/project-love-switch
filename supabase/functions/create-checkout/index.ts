@@ -25,7 +25,10 @@ serve(async (req) => {
   try {
     logStep("Function started");
     
-    const { items, payment_method, email: bodyEmail, user_id: bodyUserId, origin: bodyOrigin } = await req.json();
+    const requestBody = await req.json();
+    const { items, payment_method, user_id: bodyUserId, origin: bodyOrigin } = requestBody;
+    // Support both 'email' and 'bodyEmail' field names for backwards compatibility
+    const bodyEmail = requestBody.email || requestBody.bodyEmail || null;
     const origin = req.headers.get("origin") || bodyOrigin || "https://sweet-code-shift.lovable.app";
     logStep("Request body", { items, payment_method, bodyEmail, origin });
 
