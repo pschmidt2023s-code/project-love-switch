@@ -137,7 +137,13 @@ const Checkout = () => {
       }
     } catch (error) {
       console.error('Checkout error:', error);
-      toast.error('Fehler beim Erstellen der Bestellung. Bitte versuche es erneut.');
+      const message =
+        error instanceof Error
+          ? error.message
+          : typeof error === 'string'
+            ? error
+            : 'Unbekannter Fehler';
+      toast.error(`Checkout fehlgeschlagen: ${message}`);
     } finally {
       setLoading(false);
     }
