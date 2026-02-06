@@ -48,6 +48,7 @@ const OrdersList = React.lazy(() => import('@/pages/OrdersList'));
 const MyReturns = React.lazy(() => import('@/pages/MyReturns'));
 const ExpressCheckout = React.lazy(() => import('@/pages/ExpressCheckout'));
 const ManageSubscription = React.lazy(() => import('@/pages/ManageSubscription'));
+const BankTransferSuccess = React.lazy(() => import('@/pages/BankTransferSuccess'));
 const NotFound = React.lazy(() => import('@/pages/NotFound'));
 
 const queryClient = new QueryClient({
@@ -103,6 +104,7 @@ function App() {
                         <Route path="/express-checkout" element={<Suspense fallback={<LoadingSpinner />}><ExpressCheckout /></Suspense>} />
                         <Route path="/checkout/success" element={<Suspense fallback={<LoadingSpinner />}><CheckoutSuccess /></Suspense>} />
                         <Route path="/checkout/cancel" element={<Suspense fallback={<LoadingSpinner />}><CheckoutCancel /></Suspense>} />
+                        <Route path="/checkout/bank-transfer" element={<Suspense fallback={<LoadingSpinner />}><BankTransferSuccess /></Suspense>} />
                         <Route path="/sparkits" element={<Suspense fallback={<LoadingSpinner />}><Sparkits /></Suspense>} />
                         <Route path="/scent-finder" element={<Suspense fallback={<LoadingSpinner />}><ScentFinder /></Suspense>} />
                         <Route path="/account" element={<Suspense fallback={<LoadingSpinner />}><Account /></Suspense>} />

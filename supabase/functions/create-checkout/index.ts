@@ -47,8 +47,36 @@ serve(async (req) => {
       }
     }
 
+    // ============ BANK TRANSFER ============
+    if (payment_method === "bank_transfer") {
+      logStep("Processing bank transfer order");
+      
+      // Shop bank details
+      const bankDetails = {
+        account_holder: "ALDENAIR GmbH",
+        iban: "DE89 3704 0044 0532 0130 00",
+        bic: "COBADEFFXXX",
+        bank_name: "Commerzbank",
+        reference: `ALDENAIR-${Date.now()}`,
+      };
+
+      // Calculate total
+      const total = items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
+
+      return new Response(JSON.stringify({
+        payment_method: "bank_transfer",
+        bank_details: bankDetails,
+        total: total.toFixed(2),
+        currency: "EUR",
+        message: "Bitte überweise den Betrag mit dem angegebenen Verwendungszweck.",
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
+
+    // ============ PAYPAL ============
     if (payment_method === "paypal") {
-      // PayPal Checkout
       const clientId = Deno.env.get("PAYPAL_CLIENT_ID");
       const secretKey = Deno.env.get("PAYPAL_SECRET_KEY");
       
@@ -131,73 +159,73 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
       });
-
-    } else {
-      // Stripe Checkout
-      const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
-        apiVersion: "2025-08-27.basil",
-      });
-
-      // Check for existing Stripe customer
-      let customerId;
-      if (userEmail) {
-        const customers = await stripe.customers.list({ email: userEmail, limit: 1 });
-        if (customers.data.length > 0) {
-          customerId = customers.data[0].id;
-          logStep("Found existing Stripe customer", { customerId });
-        }
-      }
-
-      // Create line items from cart
-      const lineItems = items.map((item: any) => {
-        // Make image URL absolute if it's a relative path
-        let imageUrl = item.image;
-        if (imageUrl && imageUrl.startsWith('/')) {
-          imageUrl = `${origin}${imageUrl}`;
-        }
-        
-        return {
-          price_data: {
-            currency: "eur",
-            product_data: {
-              name: item.name,
-              images: imageUrl ? [imageUrl] : [],
-            },
-            unit_amount: Math.round(item.price * 100), // Convert to cents
-          },
-          quantity: item.quantity,
-        };
-      });
-
-      logStep("Creating Stripe session", { lineItems: lineItems.length });
-
-      const session = await stripe.checkout.sessions.create({
-        customer: customerId,
-        customer_email: customerId ? undefined : userEmail,
-        line_items: lineItems,
-        mode: "payment",
-        success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${origin}/checkout/cancel`,
-        shipping_address_collection: {
-          allowed_countries: ["DE", "AT", "CH"],
-        },
-        billing_address_collection: "required",
-        metadata: {
-          user_id: userId || "",
-        },
-      });
-
-      logStep("Stripe session created", { sessionId: session.id });
-
-      return new Response(JSON.stringify({ 
-        url: session.url,
-        session_id: session.id,
-        payment_method: "stripe"
-      }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      });
     }
+
+    // ============ STRIPE (default) ============
+    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
+      apiVersion: "2025-08-27.basil",
+    });
+
+    // Check for existing Stripe customer
+    let customerId;
+    if (userEmail) {
+      const customers = await stripe.customers.list({ email: userEmail, limit: 1 });
+      if (customers.data.length > 0) {
+        customerId = customers.data[0].id;
+        logStep("Found existing Stripe customer", { customerId });
+      }
+    }
+
+    // Create line items from cart
+    const lineItems = items.map((item: any) => {
+      // Make image URL absolute if it's a relative path
+      let imageUrl = item.image;
+      if (imageUrl && imageUrl.startsWith('/')) {
+        imageUrl = `${origin}${imageUrl}`;
+      }
+      
+      return {
+        price_data: {
+          currency: "eur",
+          product_data: {
+            name: item.name,
+            images: imageUrl ? [imageUrl] : [],
+          },
+          unit_amount: Math.round(item.price * 100), // Convert to cents
+        },
+        quantity: item.quantity,
+      };
+    });
+
+    logStep("Creating Stripe session", { lineItems: lineItems.length });
+
+    const session = await stripe.checkout.sessions.create({
+      customer: customerId,
+      customer_email: customerId ? undefined : userEmail,
+      line_items: lineItems,
+      mode: "payment",
+      success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${origin}/checkout/cancel`,
+      shipping_address_collection: {
+        allowed_countries: ["DE", "AT", "CH"],
+      },
+      billing_address_collection: "required",
+      metadata: {
+        user_id: userId || "",
+      },
+    });
+
+    logStep("Stripe session created", { sessionId: session.id });
+
+    return new Response(JSON.stringify({ 
+      url: session.url,
+      session_id: session.id,
+      payment_method: "stripe"
+    }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 200,
+    });
+
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     logStep("ERROR", { message: errorMessage });
