@@ -51,28 +51,174 @@ serve(async (req) => {
     if (payment_method === "bank_transfer") {
       logStep("Processing bank transfer order");
       
+      const { shipping_address, billing_address } = requestBody;
+      
+      // Generate order number
+      const orderNumber = `ALN-BT-${Date.now().toString(36).toUpperCase()}`;
+      
       // Shop bank details
       const bankDetails = {
         account_holder: "ALDENAIR GmbH",
         iban: "DE89 3704 0044 0532 0130 00",
         bic: "COBADEFFXXX",
         bank_name: "Commerzbank",
-        reference: `ALDENAIR-${Date.now()}`,
+        reference: orderNumber,
       };
 
-      // Calculate total
-      const total = items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
+      // Calculate totals
+      const subtotal = items.reduce((sum: number, item: any) => {
+        // Skip shipping cost item for subtotal
+        if (item.name === "Versandkosten") return sum;
+        return sum + (item.price * item.quantity);
+      }, 0);
+      const shippingCost = items.find((item: any) => item.name === "Versandkosten")?.price || 0;
+      const total = subtotal + shippingCost;
 
-      return new Response(JSON.stringify({
-        payment_method: "bank_transfer",
-        bank_details: bankDetails,
-        total: total.toFixed(2),
-        currency: "EUR",
-        message: "Bitte überweise den Betrag mit dem angegebenen Verwendungszweck.",
-      }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      });
+      logStep("Creating order in database", { orderNumber, total, subtotal, shippingCost });
+
+      // Use service role client for database operations
+      const supabaseAdmin = createClient(
+        Deno.env.get("SUPABASE_URL") ?? "",
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+      );
+
+      try {
+        // Save shipping address only for logged-in users
+        let shippingAddressId = null;
+        if (shipping_address && userId) {
+          const { data: savedShipping, error: shippingError } = await supabaseAdmin
+            .from('addresses')
+            .insert({
+              first_name: shipping_address.first_name,
+              last_name: shipping_address.last_name,
+              street: shipping_address.street,
+              street2: shipping_address.street2 || null,
+              postal_code: shipping_address.postal_code,
+              city: shipping_address.city,
+              country: shipping_address.country || 'Deutschland',
+              user_id: userId,
+              type: 'shipping',
+            })
+            .select('id')
+            .single();
+          
+          if (shippingError) {
+            logStep("Error saving shipping address", shippingError);
+          } else {
+            shippingAddressId = savedShipping?.id;
+          }
+        }
+
+        // Create order
+        const { data: order, error: orderError } = await supabaseAdmin
+          .from('orders')
+          .insert({
+            order_number: orderNumber,
+            user_id: userId || null,
+            subtotal: subtotal,
+            shipping_cost: shippingCost,
+            total: total,
+            payment_method: 'bank_transfer',
+            payment_status: 'pending',
+            status: 'pending',
+            shipping_address_id: shippingAddressId,
+            notes: `Banküberweisung - Kunde: ${shipping_address?.first_name || ''} ${shipping_address?.last_name || ''} (${userEmail || 'Gast'})`
+          })
+          .select('id')
+          .single();
+
+        if (orderError) {
+          logStep("Error creating order", orderError);
+          throw new Error(`Failed to create order: ${orderError.message}`);
+        }
+
+        logStep("Order created", { orderId: order.id });
+
+        // Create order items
+        const orderItems = items
+          .filter((item: any) => item.name !== "Versandkosten")
+          .map((item: any) => ({
+            order_id: order.id,
+            product_name: item.name,
+            variant_size: item.size || 'Standard',
+            quantity: item.quantity,
+            unit_price: item.price,
+            total_price: item.price * item.quantity,
+          }));
+
+        if (orderItems.length > 0) {
+          const { error: itemsError } = await supabaseAdmin
+            .from('order_items')
+            .insert(orderItems);
+
+          if (itemsError) {
+            logStep("Error creating order items", itemsError);
+          }
+        }
+
+        // Send order confirmation email
+        if (userEmail) {
+          logStep("Sending order confirmation email", { email: userEmail });
+          
+          const customerName = shipping_address 
+            ? `${shipping_address.first_name} ${shipping_address.last_name}`.trim()
+            : 'Kunde';
+
+          try {
+            const emailResponse = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/send-order-email`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+              },
+              body: JSON.stringify({
+                type: 'order_confirmation',
+                orderId: order.id,
+                customerEmail: userEmail,
+                customerName: customerName,
+                orderNumber: orderNumber,
+                items: items.filter((item: any) => item.name !== "Versandkosten").map((item: any) => ({
+                  name: item.name,
+                  quantity: item.quantity,
+                  price: item.price
+                })),
+                subtotal: subtotal,
+                shipping: shippingCost,
+                total: total,
+                shippingAddress: shipping_address || {},
+                paymentMethod: 'bank_transfer',
+                bankDetails: bankDetails,
+              }),
+            });
+
+            if (emailResponse.ok) {
+              logStep("Order confirmation email sent successfully");
+            } else {
+              const emailError = await emailResponse.text();
+              logStep("Failed to send email", { error: emailError });
+            }
+          } catch (emailError) {
+            logStep("Error sending email", { error: String(emailError) });
+          }
+        }
+
+        return new Response(JSON.stringify({
+          payment_method: "bank_transfer",
+          bank_details: bankDetails,
+          total: total.toFixed(2),
+          currency: "EUR",
+          order_id: order.id,
+          order_number: orderNumber,
+          message: "Bitte überweise den Betrag mit dem angegebenen Verwendungszweck.",
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        });
+
+      } catch (dbError) {
+        logStep("Database error", { error: String(dbError) });
+        throw dbError;
+      }
     }
 
     // ============ PAYPAL ============
