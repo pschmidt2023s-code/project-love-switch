@@ -52,6 +52,12 @@ export default function Contact() {
     setLoading(true);
 
     try {
+      console.log('[Contact] Submitting contact form:', { 
+        name: formData.name, 
+        email: formData.email, 
+        subject: formData.subject 
+      });
+
       // Create ticket in database
       const { data, error } = await supabase.from('tickets').insert({
         user_id: user?.id || null,
@@ -64,22 +70,27 @@ export default function Contact() {
         status: 'open',
       }).select().single();
 
-      if (error) throw error;
-
-      // Send email notification
-      try {
-        await supabase.functions.invoke('send-ticket-notification', {
-          body: {
-            type: 'new_ticket',
-            ticketId: data.id,
-            customerEmail: formData.email,
-            customerName: formData.name,
-            subject: formData.subject,
-          }
-        });
-      } catch (emailError) {
-        console.error('Email notification failed:', emailError);
+      if (error) {
+        console.error('[Contact] Database error:', error);
+        throw new Error(error.message || 'Datenbankfehler beim Erstellen des Tickets');
       }
+
+      console.log('[Contact] Ticket created successfully:', data.id);
+
+      // Send email notification (non-blocking)
+      supabase.functions.invoke('send-ticket-notification', {
+        body: {
+          type: 'new_ticket',
+          ticketId: data.id,
+          customerEmail: formData.email,
+          customerName: formData.name,
+          subject: formData.subject,
+        }
+      }).then(() => {
+        console.log('[Contact] Email notification sent');
+      }).catch((emailError) => {
+        console.error('[Contact] Email notification failed:', emailError);
+      });
 
       toast({
         title: 'Nachricht gesendet',
@@ -87,11 +98,11 @@ export default function Contact() {
       });
       
       setFormData({ name: '', email: '', subject: '', message: '' });
-    } catch (error) {
-      console.error('Error submitting contact form:', error);
+    } catch (error: any) {
+      console.error('[Contact] Error submitting contact form:', error);
       toast({
         title: 'Fehler',
-        description: 'Nachricht konnte nicht gesendet werden. Bitte versuchen Sie es erneut.',
+        description: error?.message || 'Nachricht konnte nicht gesendet werden. Bitte versuchen Sie es erneut.',
         variant: 'destructive',
       });
     } finally {
