@@ -4,9 +4,12 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
+// External Support Dashboard endpoint
+const SUPPORT_DASHBOARD_URL = "https://lfkmrgsxxtijxdmfuzbv.supabase.co/functions/v1/widget-api?action=create-ticket";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 interface ContactRequest {
@@ -56,9 +59,10 @@ serve(async (req) => {
 
     console.log("[SUBMIT-CONTACT-TICKET] Creating ticket for:", email);
 
-    // Use service role to bypass RLS
+    // Use service role to bypass RLS for local database
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+    // 1. Save ticket locally in shop database
     const { data: ticket, error: ticketError } = await supabase
       .from("tickets")
       .insert({
@@ -75,16 +79,38 @@ serve(async (req) => {
       .single();
 
     if (ticketError) {
-      console.error("[SUBMIT-CONTACT-TICKET] Database error:", ticketError);
+      console.error("[SUBMIT-CONTACT-TICKET] Local DB error:", ticketError);
       return new Response(
         JSON.stringify({ error: "Ticket konnte nicht erstellt werden" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    console.log("[SUBMIT-CONTACT-TICKET] Ticket created:", ticket.id);
+    console.log("[SUBMIT-CONTACT-TICKET] Local ticket created:", ticket.id);
 
-    // Send email notification (non-blocking)
+    // 2. Forward ticket to external Support Dashboard (non-blocking)
+    try {
+      const dashboardResponse = await fetch(SUPPORT_DASHBOARD_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: name.trim(),
+          email: email.trim(),
+          subject: subject.trim(),
+          message: message.trim(),
+          category: "contact",
+        }),
+      });
+
+      const dashboardResult = await dashboardResponse.json();
+      console.log("[SUBMIT-CONTACT-TICKET] Dashboard response:", dashboardResult);
+    } catch (dashboardError) {
+      console.error("[SUBMIT-CONTACT-TICKET] Dashboard forward error (non-blocking):", dashboardError);
+    }
+
+    // 3. Send confirmation email (non-blocking)
     try {
       const resendKey = Deno.env.get("RESEND_API_KEY");
       if (resendKey) {
