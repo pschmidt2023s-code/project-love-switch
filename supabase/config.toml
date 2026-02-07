@@ -29,3 +29,6 @@ verify_jwt = false
 
 [functions.shop-webhook]
 verify_jwt = false
+
+[functions.submit-contact-ticket]
+verify_jwt = false

@@ -52,45 +52,34 @@ export default function Contact() {
     setLoading(true);
 
     try {
-      console.log('[Contact] Submitting contact form:', { 
+      console.log('[Contact] Submitting via Edge Function:', { 
         name: formData.name, 
         email: formData.email, 
         subject: formData.subject 
       });
 
-      // Create ticket in database
-      const { data, error } = await supabase.from('tickets').insert({
-        user_id: user?.id || null,
-        customer_name: formData.name,
-        customer_email: formData.email,
-        subject: formData.subject,
-        message: formData.message,
-        category: 'contact',
-        priority: 'medium',
-        status: 'open',
-      }).select().single();
+      // Use Edge Function to bypass RLS
+      const { data, error } = await supabase.functions.invoke('submit-contact-ticket', {
+        body: {
+          name: formData.name,
+          email: formData.email,
+          subject: formData.subject,
+          message: formData.message,
+          userId: user?.id || null,
+        }
+      });
 
       if (error) {
-        console.error('[Contact] Database error:', error);
-        throw new Error(error.message || 'Datenbankfehler beim Erstellen des Tickets');
+        console.error('[Contact] Function error:', error);
+        throw new Error(error.message || 'Fehler beim Senden der Nachricht');
       }
 
-      console.log('[Contact] Ticket created successfully:', data.id);
+      if (data?.error) {
+        console.error('[Contact] Response error:', data.error);
+        throw new Error(data.error);
+      }
 
-      // Send email notification (non-blocking)
-      supabase.functions.invoke('send-ticket-notification', {
-        body: {
-          type: 'new_ticket',
-          ticketId: data.id,
-          customerEmail: formData.email,
-          customerName: formData.name,
-          subject: formData.subject,
-        }
-      }).then(() => {
-        console.log('[Contact] Email notification sent');
-      }).catch((emailError) => {
-        console.error('[Contact] Email notification failed:', emailError);
-      });
+      console.log('[Contact] Ticket created successfully:', data?.ticketId);
 
       toast({
         title: 'Nachricht gesendet',
