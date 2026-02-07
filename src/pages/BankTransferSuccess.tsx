@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckCircle, Copy, Banknote, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCart } from '@/contexts/CartContext';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 interface BankDetails {
   account_holder: string;
@@ -20,6 +20,7 @@ const BankTransferSuccess = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { clearCart } = useCart();
+  const hasCleared = useRef(false);
   
   const state = location.state as {
     bank_details: BankDetails;
@@ -28,11 +29,12 @@ const BankTransferSuccess = () => {
   } | null;
 
   useEffect(() => {
-    // Clear cart after showing bank details
-    if (state?.bank_details) {
+    // Clear cart after showing bank details - only once
+    if (state?.bank_details && !hasCleared.current) {
+      hasCleared.current = true;
       clearCart();
     }
-  }, [state, clearCart]);
+  }, [state?.bank_details, clearCart]);
 
   if (!state?.bank_details) {
     return (
