@@ -202,6 +202,39 @@ serve(async (req) => {
           }
         }
 
+        // Send order to external dashboard
+        try {
+          logStep("Sending order to external dashboard");
+          const dashboardPayload = {
+            customer_email: userEmail || '',
+            customer_first_name: shipping_address?.first_name || '',
+            customer_last_name: shipping_address?.last_name || '',
+            customer_phone: shipping_address?.phone || undefined,
+            order_number: orderNumber,
+            total: total,
+            subtotal: subtotal,
+            tax: Math.round((total - (total / 1.19)) * 100) / 100, // 19% VAT
+            currency: 'EUR',
+            payment_method: 'bank_transfer',
+            status: 'pending',
+            items: items.filter((item: any) => item.name !== "Versandkosten").map((item: any) => ({
+              name: item.name,
+              quantity: item.quantity,
+              price: item.price,
+              sku: item.sku || undefined,
+            })),
+          };
+
+          await fetch('https://lfkmrgsxxtijxdmfuzbv.supabase.co/functions/v1/shop-webhook?source=lovable', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(dashboardPayload),
+          });
+          logStep("Order sent to dashboard successfully");
+        } catch (dashboardError) {
+          logStep("Dashboard sync failed (non-critical)", { error: String(dashboardError) });
+        }
+
         return new Response(JSON.stringify({
           payment_method: "bank_transfer",
           bank_details: bankDetails,
