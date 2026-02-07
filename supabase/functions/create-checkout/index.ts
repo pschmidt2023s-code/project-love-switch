@@ -58,10 +58,10 @@ serve(async (req) => {
       
       // Shop bank details
       const bankDetails = {
-        account_holder: "ALDENAIR GmbH",
-        iban: "DE89 3704 0044 0532 0130 00",
-        bic: "COBADEFFXXX",
-        bank_name: "Commerzbank",
+        account_holder: "Patric-Maurice Schmidt",
+        iban: "DE18 1001 1001 2901 4338 08",
+        bic: "NTSBDEB1",
+        bank_name: "N26 Bank",
         reference: orderNumber,
       };
 
