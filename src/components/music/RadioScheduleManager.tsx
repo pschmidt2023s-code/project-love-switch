@@ -35,9 +35,9 @@ export function RadioScheduleManager() {
     priority: '0',
   });
 
-  // Fetch tracks
+  // Fetch ALL tracks (including hidden for scheduling)
   const { data: tracks = [] } = useQuery({
-    queryKey: ['tracks'],
+    queryKey: ['tracks-all-admin'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('tracks')
@@ -45,7 +45,7 @@ export function RadioScheduleManager() {
         .eq('is_active', true)
         .order('sort_order', { ascending: true });
       if (error) throw error;
-      return data as Track[];
+      return data as (Track & { is_hidden?: boolean })[];
     },
   });
 
@@ -128,7 +128,9 @@ export function RadioScheduleManager() {
                   <SelectTrigger><SelectValue placeholder="Track wählen..." /></SelectTrigger>
                   <SelectContent>
                     {tracks.map(t => (
-                      <SelectItem key={t.id} value={t.id}>{t.title} – {t.artist}</SelectItem>
+                      <SelectItem key={t.id} value={t.id}>
+                        {(t as any).is_hidden ? '🔒 ' : ''}{t.title} – {t.artist}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>

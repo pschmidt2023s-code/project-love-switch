@@ -1,13 +1,16 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useMusicPlayer, Track } from '@/contexts/MusicPlayerContext';
 import { useAdminRole } from '@/hooks/useAdminRole';
 import { PageLayout } from '@/components/PageLayout';
 import { RadioMode } from '@/components/music/RadioMode';
+import { YouTubePlayer } from '@/components/music/YouTubePlayer';
+import { extractYouTubeId } from '@/lib/radio-sync';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
+import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
@@ -15,7 +18,7 @@ import { toast } from 'sonner';
 import { 
   Play, Pause, SkipForward, SkipBack, Volume2, VolumeX, 
   Upload, Plus, Trash2, Sparkles, Music as MusicIcon, 
-  ListMusic, Clock, Disc3, Shuffle, Youtube
+  ListMusic, Clock, Disc3, Shuffle, Youtube, EyeOff, Eye
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -33,6 +36,8 @@ export default function Music() {
   const [uploading, setUploading] = useState(false);
   const [automixing, setAutomixing] = useState(false);
   const [resolving, setResolving] = useState(false);
+  const [ytVideoId, setYtVideoId] = useState<string | null>(null);
+  const [ytStartAt, setYtStartAt] = useState(0);
 
   // Upload form state
   const [uploadForm, setUploadForm] = useState({
@@ -40,10 +45,11 @@ export default function Music() {
     mood: '', energy: '', audioFile: null as File | null,
     externalUrl: '', isExternal: false, youtubeUrl: '',
     sourceType: 'file' as 'file' | 'url' | 'youtube',
+    isHidden: false, // Leak mode
   });
 
-  // Fetch tracks
-  const { data: tracks = [], isLoading } = useQuery({
+  // Fetch ALL tracks (admin sees hidden too)
+  const { data: allTracks = [], isLoading } = useQuery({
     queryKey: ['tracks'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -52,21 +58,27 @@ export default function Music() {
         .eq('is_active', true)
         .order('sort_order', { ascending: true });
       if (error) throw error;
-      return data as Track[];
+      return data as (Track & { is_hidden?: boolean })[];
     },
   });
 
-  // Helper: extract YouTube video ID for thumbnail
-  const getYouTubeCover = (url: string): string | null => {
-    try {
-      const u = new URL(url);
-      let vid: string | null = null;
-      if (u.hostname.includes('youtu.be')) vid = u.pathname.slice(1).split('/')[0];
-      else vid = u.searchParams.get('v');
-      if (vid) return `https://img.youtube.com/vi/${vid}/hqdefault.jpg`;
-    } catch {}
-    return null;
-  };
+  // Public tracks (non-hidden) for regular users
+  const publicTracks = allTracks.filter(t => !t.is_hidden);
+  // Display tracks: admins see all, users see only public
+  const displayTracks = isAdmin ? allTracks : publicTracks;
+  // For automix/playback use public tracks
+  const tracks = publicTracks;
+
+  // YouTube playback integration - when current track has youtube_url, use YT player
+  useEffect(() => {
+    const current = player.currentTrack;
+    if (current?.youtube_url) {
+      const vid = extractYouTubeId(current.youtube_url);
+      setYtVideoId(vid);
+    } else {
+      setYtVideoId(null);
+    }
+  }, [player.currentTrack?.id]);
 
   // Resolve YouTube URL (single video or playlist)
   const resolveYouTube = async (url: string) => {
@@ -79,7 +91,6 @@ export default function Music() {
       if (!data?.tracks?.length) throw new Error('Keine Tracks gefunden');
 
       if (data.type === 'playlist' && data.tracks.length > 1) {
-        // Playlist: insert all tracks at once
         const inserts = data.tracks.map((t: any, i: number) => ({
           title: t.title,
           artist: uploadForm.artist || t.artist,
@@ -92,13 +103,13 @@ export default function Music() {
           cover_url: t.coverUrl || null,
           duration_seconds: t.durationSeconds || null,
           is_external: true,
-          sort_order: tracks.length + i,
+          is_hidden: uploadForm.isHidden,
+          sort_order: allTracks.length + i,
         }));
         const { error: insertErr } = await supabase.from('tracks').insert(inserts);
         if (insertErr) throw insertErr;
-        toast.success(`${data.tracks.length} Tracks aus Playlist hinzugefügt!`);
+        toast.success(`${data.tracks.length} Tracks ${uploadForm.isHidden ? 'als Leak ' : ''}hinzugefügt!`);
       } else {
-        // Single video
         const t = data.tracks[0];
         const { error: insertErr } = await supabase.from('tracks').insert({
           title: uploadForm.title || t.title,
@@ -112,19 +123,24 @@ export default function Music() {
           cover_url: t.coverUrl || null,
           duration_seconds: t.durationSeconds || null,
           is_external: true,
-          sort_order: tracks.length,
+          is_hidden: uploadForm.isHidden,
+          sort_order: allTracks.length,
         });
         if (insertErr) throw insertErr;
-        toast.success('YouTube Track hinzugefügt!');
+        toast.success(`YouTube Track ${uploadForm.isHidden ? 'als Leak ' : ''}hinzugefügt!`);
       }
       queryClient.invalidateQueries({ queryKey: ['tracks'] });
       setShowUpload(false);
-      setUploadForm({ title: '', artist: 'ALDENAIR', genre: '', bpm: '', mood: '', energy: '', audioFile: null, externalUrl: '', isExternal: false, youtubeUrl: '', sourceType: 'file' });
+      resetForm();
     } catch (e: any) {
       toast.error(e.message || 'YouTube-Auflösung fehlgeschlagen');
     } finally {
       setResolving(false);
     }
+  };
+
+  const resetForm = () => {
+    setUploadForm({ title: '', artist: 'ALDENAIR', genre: '', bpm: '', mood: '', energy: '', audioFile: null, externalUrl: '', isExternal: false, youtubeUrl: '', sourceType: 'file', isHidden: false });
   };
 
   // Upload track (file/url)
@@ -159,14 +175,15 @@ export default function Music() {
         energy: uploadForm.energy || null,
         audio_url: audioUrl,
         is_external: uploadForm.sourceType !== 'file',
-        sort_order: tracks.length,
+        is_hidden: uploadForm.isHidden,
+        sort_order: allTracks.length,
       });
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tracks'] });
       setShowUpload(false);
-      setUploadForm({ title: '', artist: 'ALDENAIR', genre: '', bpm: '', mood: '', energy: '', audioFile: null, externalUrl: '', isExternal: false, youtubeUrl: '', sourceType: 'file' });
+      resetForm();
       toast.success('Track hochgeladen!');
     },
     onError: (e) => {
@@ -219,8 +236,34 @@ export default function Music() {
     }
   };
 
+  // Handle YouTube time updates and ended events
+  const handleYtTimeUpdate = (time: number) => {
+    // Sync MusicPlayerContext currentTime (optional visual sync)
+  };
+
+  const handleYtEnded = () => {
+    player.next();
+  };
+
+  const handleYtDuration = (dur: number) => {
+    // Could sync to player state
+  };
+
   return (
     <PageLayout mainClassName="container mx-auto px-4 py-24 pb-32">
+      {/* Hidden YouTube player for track playback */}
+      {ytVideoId && player.currentTrack && (
+        <YouTubePlayer
+          videoId={ytVideoId}
+          isPlaying={player.isPlaying}
+          volume={player.volume}
+          isMuted={player.isMuted}
+          onTimeUpdate={handleYtTimeUpdate}
+          onEnded={handleYtEnded}
+          onDuration={handleYtDuration}
+        />
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
         <div>
@@ -272,8 +315,22 @@ export default function Music() {
                     </Button>
                   </div>
 
+                  {/* Leak toggle */}
+                  <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border border-border">
+                    <EyeOff className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                    <div className="flex-1">
+                      <Label htmlFor="leak-mode" className="text-sm font-medium cursor-pointer">Leak-Modus</Label>
+                      <p className="text-xs text-muted-foreground">Track ist versteckt – nur über Sendeplan spielbar</p>
+                    </div>
+                    <Switch
+                      id="leak-mode"
+                      checked={uploadForm.isHidden}
+                      onCheckedChange={v => setUploadForm(f => ({ ...f, isHidden: v }))}
+                    />
+                  </div>
+
                   <div>
-                    <Label>Titel *</Label>
+                    <Label>Titel {uploadForm.sourceType !== 'youtube' && '*'}</Label>
                     <Input value={uploadForm.title} onChange={e => setUploadForm(f => ({ ...f, title: e.target.value }))} />
                   </div>
                   <div>
@@ -328,9 +385,9 @@ export default function Music() {
                   <Button 
                     className="w-full" 
                     onClick={() => uploadMutation.mutate()}
-                    disabled={uploadMutation.isPending || resolving || !uploadForm.title && uploadForm.sourceType !== 'youtube' || (uploadForm.sourceType === 'file' && !uploadForm.audioFile) || (uploadForm.sourceType === 'url' && !uploadForm.externalUrl) || (uploadForm.sourceType === 'youtube' && !uploadForm.youtubeUrl)}
+                    disabled={uploadMutation.isPending || resolving || (!uploadForm.title && uploadForm.sourceType !== 'youtube') || (uploadForm.sourceType === 'file' && !uploadForm.audioFile) || (uploadForm.sourceType === 'url' && !uploadForm.externalUrl) || (uploadForm.sourceType === 'youtube' && !uploadForm.youtubeUrl)}
                   >
-                    {resolving ? 'YouTube wird aufgelöst...' : uploadMutation.isPending ? 'Lädt hoch...' : uploadForm.sourceType === 'youtube' ? 'YouTube importieren' : 'Track speichern'}
+                    {resolving ? 'YouTube wird aufgelöst...' : uploadMutation.isPending ? 'Lädt hoch...' : uploadForm.sourceType === 'youtube' ? (uploadForm.isHidden ? '🔒 Als Leak importieren' : 'YouTube importieren') : (uploadForm.isHidden ? '🔒 Als Leak speichern' : 'Track speichern')}
                   </Button>
                 </div>
               </DialogContent>
@@ -365,17 +422,19 @@ export default function Music() {
               <h2 className="text-xl font-bold truncate">{player.currentTrack.title}</h2>
               <p className="text-muted-foreground">{player.currentTrack.artist}</p>
               
-              <div className="flex items-center gap-3 mt-3">
-                <span className="text-xs text-muted-foreground tabular-nums">{formatTime(player.currentTime)}</span>
-                <Slider
-                  value={[player.currentTime]}
-                  max={player.duration || 100}
-                  step={0.1}
-                  onValueChange={([v]) => player.seek(v)}
-                  className="flex-1"
-                />
-                <span className="text-xs text-muted-foreground tabular-nums">{formatTime(player.duration)}</span>
-              </div>
+              {!ytVideoId && (
+                <div className="flex items-center gap-3 mt-3">
+                  <span className="text-xs text-muted-foreground tabular-nums">{formatTime(player.currentTime)}</span>
+                  <Slider
+                    value={[player.currentTime]}
+                    max={player.duration || 100}
+                    step={0.1}
+                    onValueChange={([v]) => player.seek(v)}
+                    className="flex-1"
+                  />
+                  <span className="text-xs text-muted-foreground tabular-nums">{formatTime(player.duration)}</span>
+                </div>
+              )}
 
               <div className="flex items-center gap-2 mt-3">
                 <Button variant="ghost" size="icon" onClick={player.previous}><SkipBack className="h-4 w-4" /></Button>
@@ -419,7 +478,7 @@ export default function Music() {
             <div key={i} className="h-16 rounded-lg bg-muted animate-pulse" />
           ))}
         </div>
-      ) : tracks.length === 0 ? (
+      ) : displayTracks.length === 0 ? (
         <div className="text-center py-20">
           <MusicIcon className="h-16 w-16 mx-auto text-muted-foreground/30 mb-4" />
           <h3 className="text-lg font-medium">Noch keine Tracks</h3>
@@ -438,18 +497,20 @@ export default function Music() {
               <Clock className="h-3 w-3 inline" />
             </span>
           </div>
-          {tracks.map((track, idx) => {
+          {displayTracks.map((track, idx) => {
             const isActive = player.currentTrack?.id === track.id;
+            const isHidden = (track as any).is_hidden;
             return (
               <button
                 key={track.id}
                 onClick={() => {
-                  player.setQueue(tracks);
+                  player.setQueue(isAdmin ? allTracks : publicTracks);
                   player.play(track);
                 }}
                 className={cn(
                   "w-full grid grid-cols-[auto_1fr_auto_auto_auto] gap-4 items-center px-4 py-3 rounded-lg text-left transition-colors group",
-                  isActive ? "bg-accent/10 text-accent" : "hover:bg-muted/50"
+                  isActive ? "bg-accent/10 text-accent" : "hover:bg-muted/50",
+                  isHidden && "border border-dashed border-muted-foreground/30"
                 )}
               >
                 <span className="w-8 text-sm tabular-nums text-muted-foreground group-hover:hidden">
@@ -472,10 +533,14 @@ export default function Music() {
                     )}
                   </div>
                   <div className="min-w-0">
-                    <p className={cn("text-sm font-medium truncate", isActive && "text-accent")}>
+                    <p className={cn("text-sm font-medium truncate flex items-center gap-1.5", isActive && "text-accent")}>
+                      {isHidden && <EyeOff className="h-3 w-3 text-muted-foreground flex-shrink-0" />}
                       {track.title}
                     </p>
-                    <p className="text-xs text-muted-foreground truncate">{track.artist}</p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {track.artist}
+                      {isHidden && <span className="ml-2 text-[10px] uppercase tracking-wider opacity-60">Leak</span>}
+                    </p>
                   </div>
                 </div>
 
