@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-webhook-signature",
 };
 
 const logStep = (step: string, details?: Record<string, unknown>) => {
@@ -34,6 +34,32 @@ interface WebhookPayload {
   };
 }
 
+// Constant-time comparison to prevent timing attacks
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let result = 0;
+  for (let i = 0; i < a.length; i++) {
+    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return result === 0;
+}
+
+async function verifySignature(body: string, signature: string, secret: string): Promise<boolean> {
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+  const sig = await crypto.subtle.sign("HMAC", key, encoder.encode(body));
+  const expectedSig = Array.from(new Uint8Array(sig))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+  return timingSafeEqual(signature, expectedSig);
+}
+
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
@@ -43,13 +69,45 @@ serve(async (req) => {
   try {
     logStep("Webhook received", { method: req.method });
 
+    // Authenticate the webhook request
+    const webhookSecret = Deno.env.get("WEBHOOK_SECRET");
+    if (!webhookSecret) {
+      logStep("ERROR: WEBHOOK_SECRET not configured");
+      return new Response(
+        JSON.stringify({ success: false, error: "Webhook not configured" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
+      );
+    }
+
+    const rawBody = await req.text();
+    const signature = req.headers.get("x-webhook-signature");
+
+    if (!signature) {
+      logStep("ERROR: Missing webhook signature");
+      return new Response(
+        JSON.stringify({ success: false, error: "Missing signature" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
+      );
+    }
+
+    const isValid = await verifySignature(rawBody, signature, webhookSecret);
+    if (!isValid) {
+      logStep("ERROR: Invalid webhook signature");
+      return new Response(
+        JSON.stringify({ success: false, error: "Invalid signature" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
+      );
+    }
+
+    logStep("Signature verified successfully");
+
     // Parse source from query params
     const url = new URL(req.url);
     const source = url.searchParams.get("source") || "unknown";
     logStep("Source identified", { source });
 
     // Parse the webhook payload
-    const payload: WebhookPayload = await req.json();
+    const payload: WebhookPayload = JSON.parse(rawBody);
     logStep("Payload received", { 
       id: payload.id, 
       email: payload.email,
@@ -131,7 +189,6 @@ serve(async (req) => {
 
       if (itemsError) {
         logStep("Order items creation failed", { error: itemsError.message });
-        // Don't throw - order is created, just log the error
       } else {
         logStep("Order items created", { count: orderItems.length });
       }
@@ -158,7 +215,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: errorMessage 
+        error: "Request processing failed"
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
