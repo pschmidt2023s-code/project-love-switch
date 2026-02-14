@@ -54,6 +54,7 @@ const BankTransferSuccess = React.lazy(() => import('@/pages/BankTransferSuccess
 const Blog = React.lazy(() => import('@/pages/Blog'));
 const BlogPostPage = React.lazy(() => import('@/pages/BlogPost'));
 const NotFound = React.lazy(() => import('@/pages/NotFound'));
+const Referral = React.lazy(() => import('@/pages/Referral'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -118,6 +119,7 @@ function App() {
                         <Route path="/blog" element={<Suspense fallback={<LoadingSpinner />}><Blog /></Suspense>} />
                         <Route path="/blog/:slug" element={<Suspense fallback={<LoadingSpinner />}><BlogPostPage /></Suspense>} />
                         <Route path="/manage-subscription" element={<Suspense fallback={<LoadingSpinner />}><ManageSubscription /></Suspense>} />
+                        <Route path="/referral" element={<Suspense fallback={<LoadingSpinner />}><Referral /></Suspense>} />
                         <Route path="*" element={<Suspense fallback={<LoadingSpinner />}><NotFound /></Suspense>} />
                         <Route path="*" element={<Suspense fallback={<LoadingSpinner />}><NotFound /></Suspense>} />
                       </Routes>

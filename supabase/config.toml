@@ -29,3 +29,9 @@ verify_jwt = false
 
 [functions.send-welcome-email]
 verify_jwt = false
+
+[functions.abandoned-cart-recovery]
+verify_jwt = false
+
+[functions.gdpr-export]
+verify_jwt = false

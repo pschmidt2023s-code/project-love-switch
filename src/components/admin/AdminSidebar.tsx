@@ -24,6 +24,14 @@ import {
   FileText,
   Shield,
   Activity,
+  ShieldAlert,
+  Gift,
+  Star,
+  FlaskConical,
+  TrendingDown,
+  Truck,
+  Zap,
+  Download,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdminRole } from '@/hooks/useAdminRole';
@@ -52,6 +60,9 @@ export default function AdminSidebar({ activeTab, onTabChange }: AdminSidebarPro
     { id: 'coupons', label: 'Rabattcodes', icon: Tag, show: permissions.canManageProducts },
     { id: 'newsletter', label: 'Newsletter', icon: Mail, show: permissions.canManageProducts },
     { id: 'contest', label: 'Gewinnspiel', icon: Trophy, show: permissions.canManageProducts },
+    { id: 'referrals', label: 'Empfehlungen', icon: Gift, show: permissions.canManageProducts },
+    { id: 'email-sequences', label: 'E-Mail Flows', icon: Zap, show: permissions.canManageProducts },
+    { id: 'ab-testing', label: 'A/B Testing', icon: FlaskConical, show: permissions.canManageProducts },
   ].filter(item => item.show);
 
   const partnerItems = [
@@ -62,6 +73,16 @@ export default function AdminSidebar({ activeTab, onTabChange }: AdminSidebarPro
   const supportItems = [
     { id: 'tickets', label: 'Tickets', icon: MessageSquare, show: permissions.canManageOrders },
     { id: 'chat', label: 'Live Chat', icon: MessageSquare, show: permissions.canManageOrders },
+    { id: 'csat', label: 'CSAT', icon: Star, show: permissions.canViewAnalytics },
+  ].filter(item => item.show);
+
+  const logisticsItems = [
+    { id: 'abandoned-carts', label: 'Warenkorbabbrecher', icon: ShoppingCart, show: permissions.canViewAnalytics },
+    { id: 'shipments', label: 'Versand-Tracking', icon: Truck, show: permissions.canManageOrders },
+    { id: 'conversion-funnel', label: 'Conversion Funnel', icon: TrendingDown, show: permissions.canViewAnalytics },
+    { id: 'clv', label: 'CLV Dashboard', icon: Users, show: permissions.canViewAnalytics },
+    { id: 'fraud', label: 'Fraud Detection', icon: ShieldAlert, show: permissions.canManageSettings },
+    { id: 'gdpr-export', label: 'DSGVO Export', icon: Download, show: permissions.canManageSettings },
   ].filter(item => item.show);
 
   const systemItems = [
@@ -180,6 +201,12 @@ export default function AdminSidebar({ activeTab, onTabChange }: AdminSidebarPro
             <>
               <Separator className="mx-1" />
               {renderSection('Support', supportItems)}
+            </>
+          )}
+          {logisticsItems.length > 0 && (
+            <>
+              <Separator className="mx-1" />
+              {renderSection('Logistik & Insights', logisticsItems)}
             </>
           )}
           {systemItems.length > 0 && (
