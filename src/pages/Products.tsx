@@ -461,9 +461,18 @@ export default function Products() {
               ))}
             </div>
           ) : filteredProducts.length === 0 ? (
-            <div className="text-center py-16">
-              <p className="text-lg text-muted-foreground mb-4">Keine Produkte gefunden</p>
-              <button onClick={clearFilters} className="text-sm text-accent hover:underline">
+            <div className="text-center py-20 max-w-md mx-auto">
+              <div className="w-20 h-20 mx-auto mb-6 flex items-center justify-center bg-muted">
+                <ShoppingBag className="w-8 h-8 text-muted-foreground" strokeWidth={1} />
+              </div>
+              <h3 className="font-display text-xl text-foreground mb-2">Keine Produkte gefunden</h3>
+              <p className="text-sm text-muted-foreground mb-6">
+                Versuche andere Filter oder entdecke unsere gesamte Kollektion.
+              </p>
+              <button 
+                onClick={clearFilters} 
+                className="inline-flex items-center px-6 py-3 bg-foreground text-background text-[11px] tracking-[0.15em] uppercase font-medium hover:bg-foreground/90 transition-colors"
+              >
                 Filter zurücksetzen
               </button>
             </div>
