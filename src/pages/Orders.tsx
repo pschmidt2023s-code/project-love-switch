@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link, useParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import Navigation from '@/components/Navigation';
-import { Footer } from '@/components/Footer';
+import { PremiumPageLayout } from '@/components/premium/PremiumPageLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -142,27 +141,25 @@ export default function Orders() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
-        <Navigation />
-        <div className="max-w-4xl mx-auto px-4 py-8">
+      <PremiumPageLayout>
+        <div className="container-premium py-8">
           <Skeleton className="h-10 w-48 mb-8" />
           <Skeleton className="h-64" />
         </div>
-      </div>
+      </PremiumPageLayout>
     );
   }
 
   if (!order) {
     return (
-      <div className="min-h-screen bg-background">
-        <Navigation />
-        <div className="max-w-4xl mx-auto px-4 py-8 text-center">
+      <PremiumPageLayout>
+        <div className="container-premium py-8 text-center">
           <p className="text-muted-foreground">Bestellung nicht gefunden</p>
           <Button asChild className="mt-4">
             <Link to="/account">Zurück zum Konto</Link>
           </Button>
         </div>
-      </div>
+      </PremiumPageLayout>
     );
   }
 
@@ -170,10 +167,8 @@ export default function Orders() {
   const StatusIcon = statusConfig.icon;
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <Navigation />
-
-      <main className="flex-1 max-w-4xl mx-auto px-4 py-8 w-full">
+    <PremiumPageLayout>
+      <section className="container-premium py-8">
         <div className="mb-6">
           <Button variant="ghost" asChild className="mb-4">
             <Link to="/account" className="gap-2">
@@ -317,9 +312,7 @@ export default function Orders() {
             )}
           </div>
         </div>
-      </main>
-
-      <Footer />
-    </div>
+      </section>
+    </PremiumPageLayout>
   );
 }
