@@ -12,6 +12,7 @@ import { Breadcrumb } from '@/components/Breadcrumb';
 import { Seo } from '@/components/Seo';
 import { ProductSchema, BreadcrumbSchema } from '@/components/seo';
 import { ScentNotesVisualization } from '@/components/features/ScentNotesVisualization';
+import { SocialShare } from '@/components/SocialShare';
 import { toast } from 'sonner';
 
 export default function ProductDetail() {
@@ -216,6 +217,15 @@ export default function ProductDetail() {
                 >
                   <Heart className="w-5 h-5" strokeWidth={1.5} />
                 </button>
+              </div>
+
+              {/* Social Share */}
+              <div className="pt-2">
+                <SocialShare
+                  url={window.location.href}
+                  title={externalProduct.name}
+                  description={externalProduct.description || ''}
+                />
               </div>
 
               {/* Trust Badges */}
@@ -496,6 +506,15 @@ export default function ProductDetail() {
               >
                 <Heart className="w-5 h-5" strokeWidth={1.5} />
               </button>
+            </div>
+
+            {/* Social Share */}
+            <div className="pt-2">
+              <SocialShare
+                url={window.location.href}
+                title={product.name}
+                description={product.description || ''}
+              />
             </div>
 
             <div className="grid grid-cols-3 gap-4 pt-4">

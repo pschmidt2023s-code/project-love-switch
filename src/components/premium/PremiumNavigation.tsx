@@ -6,6 +6,7 @@ import { useCart } from '@/contexts/CartContext';
 import { AuthModal } from '@/components/AuthModal';
 import { CartSidebar } from '@/components/CartSidebar';
 import { DarkModeToggle } from '@/components/DarkModeToggle';
+import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 
 export function PremiumNavigation() {
   const { user, signOut } = useAuth();
@@ -205,6 +206,11 @@ export function PremiumNavigation() {
               {/* Dark Mode - hidden on small mobile */}
               <div className="hidden sm:flex dark-mode-btn">
                 <DarkModeToggle />
+              </div>
+
+              {/* Language Switcher - hidden on small mobile */}
+              <div className="hidden sm:flex items-center">
+                <LanguageSwitcher />
               </div>
 
               {/* Favorites - hidden on mobile */}
