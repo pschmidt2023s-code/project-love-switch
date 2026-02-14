@@ -70,17 +70,17 @@ export function MusicPlayerProvider({ children }: { children: ReactNode }) {
 
   // Initialize audio element
   useEffect(() => {
-    audioRef.current = new Audio();
-    audioRef.current.volume = state.volume;
-    
-    const audio = audioRef.current;
+    const audio = new Audio();
+    audio.preload = 'auto';
+    audio.crossOrigin = 'anonymous';
+    audio.volume = state.volume;
+    audioRef.current = audio;
 
     const onTimeUpdate = () => {
       setState(s => ({ ...s, currentTime: audio.currentTime }));
       
       // Crossfade logic: preload next track near end
       if (audio.duration && audio.currentTime > audio.duration - state.crossfadeDuration) {
-        // Start fading out current and fading in next
         const remaining = audio.duration - audio.currentTime;
         const fadeRatio = remaining / state.crossfadeDuration;
         audio.volume = state.volume * fadeRatio;
@@ -92,7 +92,6 @@ export function MusicPlayerProvider({ children }: { children: ReactNode }) {
     };
     
     const onEnded = () => {
-      // Auto-advance to next track
       setQueueIndex(prev => {
         const nextIdx = prev + 1;
         if (nextIdx < state.queue.length) {
@@ -103,14 +102,34 @@ export function MusicPlayerProvider({ children }: { children: ReactNode }) {
       });
     };
 
+    const onError = (e: Event) => {
+      const mediaError = audio.error;
+      console.error('[MusicPlayer] Audio error:', mediaError?.code, mediaError?.message);
+      setState(s => ({ ...s, isPlaying: false }));
+    };
+
+    const onWaiting = () => {
+      console.log('[MusicPlayer] Buffering...');
+    };
+
+    const onCanPlay = () => {
+      console.log('[MusicPlayer] Can play through');
+    };
+
     audio.addEventListener('timeupdate', onTimeUpdate);
     audio.addEventListener('durationchange', onDurationChange);
     audio.addEventListener('ended', onEnded);
+    audio.addEventListener('error', onError);
+    audio.addEventListener('waiting', onWaiting);
+    audio.addEventListener('canplaythrough', onCanPlay);
 
     return () => {
       audio.removeEventListener('timeupdate', onTimeUpdate);
       audio.removeEventListener('durationchange', onDurationChange);
       audio.removeEventListener('ended', onEnded);
+      audio.removeEventListener('error', onError);
+      audio.removeEventListener('waiting', onWaiting);
+      audio.removeEventListener('canplaythrough', onCanPlay);
       audio.pause();
     };
   }, []);
@@ -141,16 +160,41 @@ export function MusicPlayerProvider({ children }: { children: ReactNode }) {
   const playDirect = useCallback((track: Track, queue: Track[]) => {
     if (!audioRef.current) return;
     const audio = audioRef.current;
+    
+    // Stop any current playback first
+    audio.pause();
+    audio.currentTime = 0;
+    
+    // Set source and load
     audio.src = track.audio_url;
     audio.volume = state.volume;
+    audio.load(); // Force load on mobile
+    
     console.log('[MusicPlayer] Direct play:', track.title, track.audio_url?.substring(0, 80));
-    audio.play().then(() => {
-      console.log('[MusicPlayer] Play succeeded');
-      setState(s => ({ ...s, isPlaying: true }));
-    }).catch((e) => {
-      console.warn('[MusicPlayer] Play failed:', e.message);
-      setState(s => ({ ...s, isPlaying: false }));
-    });
+    
+    // Play immediately (synchronous in user gesture context)
+    const playPromise = audio.play();
+    if (playPromise !== undefined) {
+      playPromise.then(() => {
+        console.log('[MusicPlayer] Play succeeded');
+        setState(s => ({ ...s, isPlaying: true }));
+      }).catch((e) => {
+        console.warn('[MusicPlayer] Play failed, retrying after canplaythrough:', e.message);
+        // Retry on canplaythrough for mobile devices that need buffering first
+        const retryPlay = () => {
+          audio.play().then(() => {
+            console.log('[MusicPlayer] Retry play succeeded');
+            setState(s => ({ ...s, isPlaying: true }));
+          }).catch((e2) => {
+            console.error('[MusicPlayer] Retry also failed:', e2.message);
+            setState(s => ({ ...s, isPlaying: false }));
+          });
+          audio.removeEventListener('canplaythrough', retryPlay);
+        };
+        audio.addEventListener('canplaythrough', retryPlay);
+      });
+    }
+    
     const idx = queue.indexOf(track);
     setQueueIndex(idx >= 0 ? idx : 0);
     setState(s => ({ ...s, currentTrack: track, currentTime: 0, queue }));
