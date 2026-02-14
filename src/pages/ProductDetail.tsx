@@ -12,6 +12,7 @@ import { ProductRecommendations } from '@/components/ai/ProductRecommendations';
 import { RecentlyViewed } from '@/components/RecentlyViewed';
 import { StickyAddToCart } from '@/components/StickyAddToCart';
 import { Breadcrumb } from '@/components/Breadcrumb';
+import { BackInStockNotify } from '@/components/BackInStockNotify';
 import { Seo } from '@/components/Seo';
 import { ProductSchema, BreadcrumbSchema } from '@/components/seo';
 import { SocialShare } from '@/components/SocialShare';
@@ -656,6 +657,15 @@ export default function ProductDetail() {
                 <Heart className="w-5 h-5" strokeWidth={1.5} />
               </button>
             </div>
+
+            {/* Back in Stock Notification */}
+            {!inStock && (
+              <BackInStockNotify
+                productId={product.id}
+                variantId={selectedVariant?.id}
+                productName={product.name}
+              />
+            )}
 
             {/* Trust Icons - inline */}
             <div className="flex items-center gap-6 pt-2">

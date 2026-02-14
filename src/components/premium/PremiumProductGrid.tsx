@@ -1,24 +1,12 @@
 import { useExternalProducts } from '@/hooks/useExternalProducts';
 import { PremiumProductCard } from './PremiumProductCard';
+import { ProductGridSkeleton } from '@/components/skeletons/ProductSkeletons';
 
 export function PremiumProductGrid() {
   const { products, loading } = useExternalProducts();
 
   if (loading) {
-    return (
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 lg:gap-6">
-        {[...Array(4)].map((_, i) => (
-          <div key={i} className="space-y-3">
-            <div className="aspect-[3/4] bg-muted animate-pulse" />
-            <div className="space-y-2">
-              <div className="h-3 w-16 bg-muted animate-pulse" />
-              <div className="h-4 w-3/4 bg-muted animate-pulse" />
-              <div className="h-3 w-1/2 bg-muted animate-pulse" />
-            </div>
-          </div>
-        ))}
-      </div>
-    );
+    return <ProductGridSkeleton count={4} />;
   }
 
   if (!products.length) {
