@@ -10,6 +10,7 @@ export default function Newsletter() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [privacyAccepted, setPrivacyAccepted] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -121,9 +122,21 @@ export default function Newsletter() {
                         className="flex h-14 w-full bg-transparent border border-border px-4 py-3 text-base text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-accent transition-colors"
                       />
                     </div>
+                    <label className="flex items-start gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={privacyAccepted}
+                        onChange={(e) => setPrivacyAccepted(e.target.checked)}
+                        className="mt-0.5 w-4 h-4 accent-accent flex-shrink-0"
+                        required
+                      />
+                      <span className="text-[11px] text-muted-foreground leading-relaxed">
+                        Ich bin mit dem Erhalt des Newsletters einverstanden und habe die <a href="/privacy" className="text-accent underline" target="_blank" rel="noopener noreferrer">Datenschutzerklärung</a> gelesen. Abmeldung jederzeit möglich. *
+                      </span>
+                    </label>
                     <button
                       type="submit"
-                      disabled={loading}
+                      disabled={loading || !privacyAccepted}
                       className="w-full h-14 inline-flex items-center justify-center gap-2 bg-foreground text-background text-[11px] tracking-[0.15em] uppercase font-medium hover:bg-foreground/90 transition-colors disabled:opacity-50"
                     >
                       {loading ? 'Wird angemeldet...' : 'Jetzt anmelden'}
@@ -131,7 +144,7 @@ export default function Newsletter() {
                     </button>
                   </form>
                   <p className="text-[10px] text-muted-foreground leading-relaxed">
-                    Kein Spam. Maximal 2 E-Mails pro Monat. Jederzeit abbestellbar.
+                    Kein Spam. Maximal 2 E-Mails pro Monat.
                   </p>
                 </div>
               )}

@@ -65,8 +65,7 @@ export default function Imprint() {
                 Umsatzsteuer-Identifikationsnummer
               </h2>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                Umsatzsteuer-Identifikationsnummer gemäß § 27a Umsatzsteuergesetz:<br />
-                <em>Wird bei der Finanzbehörde beantragt / nicht erforderlich (Kleinunternehmerregelung)</em>
+                Gemäß § 19 UStG wird keine Umsatzsteuer erhoben (Kleinunternehmerregelung). Eine Umsatzsteuer-Identifikationsnummer ist daher nicht vorhanden.
               </p>
             </div>
 
@@ -89,20 +88,9 @@ export default function Imprint() {
               </h2>
               <div className="text-sm text-muted-foreground leading-relaxed space-y-3">
                 <p>
-                  Die Europäische Kommission stellt eine Plattform zur Online-Streitbeilegung (OS) bereit:{' '}
-                  <a
-                    href="https://ec.europa.eu/consumers/odr/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-accent hover:underline"
-                  >
-                    https://ec.europa.eu/consumers/odr/
-                  </a>
+                  Die EU-Plattform zur Online-Streitbeilegung (OS-Plattform) wurde zum 20. Juli 2025 eingestellt und steht nicht mehr zur Verfügung.
                 </p>
                 <p>Unsere E-Mail-Adresse finden Sie oben im Impressum.</p>
-                <p className="text-xs italic">
-                  Hinweis: Die EU-Streitschlichtungsplattform (OS-Plattform) nimmt ab dem 20. März 2025 keine neuen Beschwerden mehr an und wird zum 20. Juli 2025 eingestellt.
-                </p>
               </div>
             </div>
 
@@ -170,7 +158,7 @@ export default function Imprint() {
             {/* Stand */}
             <div className="pt-8 border-t border-border">
               <p className="text-xs text-muted-foreground">
-                Stand: Dezember 2024
+                Stand: Februar 2026
               </p>
             </div>
 

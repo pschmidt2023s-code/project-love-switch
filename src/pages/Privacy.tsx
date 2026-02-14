@@ -153,14 +153,28 @@ export default function Privacy() {
             </div>
 
             <div className="space-y-6">
-              <h2 className="font-display text-2xl text-foreground">8. SSL/TLS-Verschlüsselung</h2>
+              <h2 className="font-display text-2xl text-foreground">8. Hosting</h2>
+              <div className="text-sm text-muted-foreground leading-relaxed space-y-4">
+                <p>Unsere Website wird bei folgendem Anbieter gehostet:</p>
+                <div className="p-6 border border-border space-y-2">
+                  <p className="text-foreground font-medium">Supabase, Inc.</p>
+                  <p>970 Toa Payoh North #07-04, Singapore 318992</p>
+                  <p>Zweck: Hosting der Website, Datenbanken und Backend-Dienste</p>
+                  <a href="https://supabase.com/privacy" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">Datenschutzerklärung →</a>
+                </div>
+                <p>Die Verarbeitung erfolgt auf Grundlage von Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse an einer zuverlässigen Darstellung unserer Website).</p>
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              <h2 className="font-display text-2xl text-foreground">9. SSL/TLS-Verschlüsselung</h2>
               <div className="text-sm text-muted-foreground leading-relaxed">
                 <p>Diese Seite nutzt aus Sicherheitsgründen eine SSL/TLS-Verschlüsselung. Eine verschlüsselte Verbindung erkennen Sie an "https://" und dem Schloss-Symbol in Ihrer Browserzeile.</p>
               </div>
             </div>
 
             <div className="space-y-6">
-              <h2 className="font-display text-2xl text-foreground">9. Kontakt</h2>
+              <h2 className="font-display text-2xl text-foreground">10. Kontakt</h2>
               <div className="text-sm text-muted-foreground leading-relaxed space-y-2">
                 <p>Bei Fragen zum Datenschutz:</p>
                 <p className="text-foreground">E-Mail: support@aldenairperfumes.de<br />Post: ALDENAIR, BGM.-Scheller-Str. 14, 96215 Lichtenfels</p>
@@ -168,7 +182,7 @@ export default function Privacy() {
             </div>
 
             <div className="pt-8 border-t border-border">
-              <p className="text-xs text-muted-foreground">Stand: Dezember 2024</p>
+              <p className="text-xs text-muted-foreground">Stand: Februar 2026</p>
             </div>
           </div>
         </div>

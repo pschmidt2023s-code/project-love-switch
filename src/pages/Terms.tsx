@@ -53,7 +53,7 @@ export default function Terms() {
             <div className="space-y-6">
               <h2 className="font-display text-2xl text-foreground">§ 3 Preise und Versandkosten</h2>
               <div className="text-sm text-muted-foreground leading-relaxed space-y-4">
-                <p>(1) Alle Preise sind Endpreise inkl. 19% MwSt.</p>
+                <p>(1) Alle Preise sind Endpreise. Gemäß § 19 UStG wird keine Umsatzsteuer erhoben (Kleinunternehmerregelung). Die Preise enthalten daher keine Umsatzsteuer.</p>
                 <p>(2) Versandkosten:</p>
                 <ul className="list-disc pl-6 space-y-1">
                   <li>Versandkostenfrei ab 50 € (Deutschland)</li>
@@ -133,9 +133,8 @@ export default function Terms() {
             <div className="space-y-6">
               <h2 className="font-display text-2xl text-foreground">§ 11 Online-Streitbeilegung</h2>
               <div className="text-sm text-muted-foreground leading-relaxed space-y-4">
-                <p>EU-Plattform zur Online-Streitbeilegung:{' '}<a href="https://ec.europa.eu/consumers/odr/" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">https://ec.europa.eu/consumers/odr/</a></p>
+                <p>Die EU-Plattform zur Online-Streitbeilegung (OS-Plattform) wurde zum 20. Juli 2025 eingestellt und steht nicht mehr zur Verfügung.</p>
                 <p>E-Mail: support@aldenairperfumes.de</p>
-                <p className="text-xs italic">Hinweis: Die EU-OS-Plattform nimmt ab 20.03.2025 keine neuen Beschwerden mehr an.</p>
                 <p>Wir sind nicht verpflichtet, an Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen.</p>
               </div>
             </div>
@@ -196,7 +195,7 @@ export default function Terms() {
             <div className="pt-8 border-t border-border space-y-6">
               <h2 className="font-display text-2xl text-foreground">Kontakt</h2>
               <p className="text-sm text-muted-foreground">Bei Fragen: support@aldenairperfumes.de</p>
-              <p className="text-xs text-muted-foreground">Stand: Dezember 2024</p>
+              <p className="text-xs text-muted-foreground">Stand: Februar 2026</p>
             </div>
           </div>
         </div>
