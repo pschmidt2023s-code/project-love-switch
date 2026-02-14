@@ -14,6 +14,128 @@ export type Database = {
   }
   public: {
     Tables: {
+      ab_experiment_events: {
+        Row: {
+          created_at: string
+          event_type: string
+          experiment_id: string
+          id: string
+          metadata: Json | null
+          session_id: string | null
+          user_id: string | null
+          variant: string
+        }
+        Insert: {
+          created_at?: string
+          event_type?: string
+          experiment_id: string
+          id?: string
+          metadata?: Json | null
+          session_id?: string | null
+          user_id?: string | null
+          variant: string
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          experiment_id?: string
+          id?: string
+          metadata?: Json | null
+          session_id?: string | null
+          user_id?: string | null
+          variant?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ab_experiment_events_experiment_id_fkey"
+            columns: ["experiment_id"]
+            isOneToOne: false
+            referencedRelation: "ab_experiments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ab_experiments: {
+        Row: {
+          created_at: string
+          description: string | null
+          end_date: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          start_date: string | null
+          target_element: string | null
+          variant_a_label: string | null
+          variant_b_label: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          start_date?: string | null
+          target_element?: string | null
+          variant_a_label?: string | null
+          variant_b_label?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          start_date?: string | null
+          target_element?: string | null
+          variant_a_label?: string | null
+          variant_b_label?: string | null
+        }
+        Relationships: []
+      }
+      abandoned_carts: {
+        Row: {
+          cart_data: Json
+          created_at: string
+          guest_email: string | null
+          id: string
+          last_reminder_at: string | null
+          recovered: boolean | null
+          recovered_at: string | null
+          reminder_sent_count: number | null
+          total_amount: number | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          cart_data?: Json
+          created_at?: string
+          guest_email?: string | null
+          id?: string
+          last_reminder_at?: string | null
+          recovered?: boolean | null
+          recovered_at?: string | null
+          reminder_sent_count?: number | null
+          total_amount?: number | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          cart_data?: Json
+          created_at?: string
+          guest_email?: string | null
+          id?: string
+          last_reminder_at?: string | null
+          recovered?: boolean | null
+          recovered_at?: string | null
+          reminder_sent_count?: number | null
+          total_amount?: number | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       addresses: {
         Row: {
           city: string
@@ -321,6 +443,44 @@ export type Database = {
         }
         Relationships: []
       }
+      csat_surveys: {
+        Row: {
+          category: string | null
+          created_at: string
+          feedback: string | null
+          id: string
+          order_id: string | null
+          rating: number
+          user_id: string | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          feedback?: string | null
+          id?: string
+          order_id?: string | null
+          rating: number
+          user_id?: string | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          feedback?: string | null
+          id?: string
+          order_id?: string | null
+          rating?: number
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "csat_surveys_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_logs: {
         Row: {
           created_at: string
@@ -357,6 +517,154 @@ export type Database = {
           status?: string
           subject?: string
           type?: string
+        }
+        Relationships: []
+      }
+      email_sequence_logs: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          sequence_id: string | null
+          status: string | null
+          step_index: number
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          sequence_id?: string | null
+          status?: string | null
+          step_index?: number
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          sequence_id?: string | null
+          status?: string | null
+          step_index?: number
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_sequence_logs_sequence_id_fkey"
+            columns: ["sequence_id"]
+            isOneToOne: false
+            referencedRelation: "email_sequences"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_sequences: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean | null
+          name: string
+          steps: Json
+          trigger_type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          name: string
+          steps?: Json
+          trigger_type: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          steps?: Json
+          trigger_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      fraud_scores: {
+        Row: {
+          created_at: string
+          factors: Json | null
+          flagged: boolean | null
+          id: string
+          order_id: string | null
+          reviewed: boolean | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          risk_level: string | null
+          score: number
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          factors?: Json | null
+          flagged?: boolean | null
+          id?: string
+          order_id?: string | null
+          reviewed?: boolean | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          risk_level?: string | null
+          score?: number
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          factors?: Json | null
+          flagged?: boolean | null
+          id?: string
+          order_id?: string | null
+          reviewed?: boolean | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          risk_level?: string | null
+          score?: number
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fraud_scores_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      funnel_events: {
+        Row: {
+          created_at: string
+          id: string
+          metadata: Json | null
+          page: string | null
+          session_id: string
+          step: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          page?: string | null
+          session_id: string
+          step: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          page?: string | null
+          session_id?: string
+          step?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -819,6 +1127,99 @@ export type Database = {
         }
         Relationships: []
       }
+      referral_codes: {
+        Row: {
+          code: string
+          created_at: string
+          current_uses: number | null
+          id: string
+          is_active: boolean | null
+          max_uses: number | null
+          referee_reward_value: number
+          reward_type: string
+          reward_value: number
+          user_id: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          current_uses?: number | null
+          id?: string
+          is_active?: boolean | null
+          max_uses?: number | null
+          referee_reward_value?: number
+          reward_type?: string
+          reward_value?: number
+          user_id: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          current_uses?: number | null
+          id?: string
+          is_active?: boolean | null
+          max_uses?: number | null
+          referee_reward_value?: number
+          reward_type?: string
+          reward_value?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      referral_rewards: {
+        Row: {
+          created_at: string
+          id: string
+          order_id: string | null
+          referee_email: string | null
+          referee_id: string
+          referee_reward: number | null
+          referral_code_id: string
+          referrer_id: string
+          referrer_reward: number | null
+          status: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          order_id?: string | null
+          referee_email?: string | null
+          referee_id: string
+          referee_reward?: number | null
+          referral_code_id: string
+          referrer_id: string
+          referrer_reward?: number | null
+          status?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          order_id?: string | null
+          referee_email?: string | null
+          referee_id?: string
+          referee_reward?: number | null
+          referral_code_id?: string
+          referrer_id?: string
+          referrer_reward?: number | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referral_rewards_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referral_rewards_referral_code_id_fkey"
+            columns: ["referral_code_id"]
+            isOneToOne: false
+            referencedRelation: "referral_codes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       returns: {
         Row: {
           created_at: string
@@ -967,6 +1368,56 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      shipment_tracking: {
+        Row: {
+          carrier: string
+          created_at: string
+          estimated_delivery: string | null
+          events: Json | null
+          id: string
+          order_id: string
+          status: string | null
+          tracking_number: string
+          tracking_url: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          carrier?: string
+          created_at?: string
+          estimated_delivery?: string | null
+          events?: Json | null
+          id?: string
+          order_id: string
+          status?: string | null
+          tracking_number: string
+          tracking_url?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          carrier?: string
+          created_at?: string
+          estimated_delivery?: string | null
+          events?: Json | null
+          id?: string
+          order_id?: string
+          status?: string | null
+          tracking_number?: string
+          tracking_url?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shipment_tracking_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       stock_notifications: {
         Row: {

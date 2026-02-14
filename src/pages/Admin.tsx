@@ -23,6 +23,16 @@ const PaybackManagement = lazy(() => import('@/components/admin/PaybackManagemen
 const LiveChatManagement = lazy(() => import('@/components/admin/LiveChatManagement'));
 const SettingsManagement = lazy(() => import('@/components/admin/SettingsManagement'));
 const PerformanceDashboard = lazy(() => import('@/components/admin/PerformanceDashboard'));
+const ReferralManagement = lazy(() => import('@/components/admin/ReferralManagement'));
+const FraudDetection = lazy(() => import('@/components/admin/FraudDetection'));
+const CSATManagement = lazy(() => import('@/components/admin/CSATManagement'));
+const EmailSequenceManagement = lazy(() => import('@/components/admin/EmailSequenceManagement'));
+const ABTestingManagement = lazy(() => import('@/components/admin/ABTestingManagement'));
+const ConversionFunnel = lazy(() => import('@/components/admin/ConversionFunnel'));
+const ShipmentTrackingManagement = lazy(() => import('@/components/admin/ShipmentTrackingManagement'));
+const AbandonedCartManagement = lazy(() => import('@/components/admin/AbandonedCartManagement'));
+const CLVDashboard = lazy(() => import('@/components/admin/CLVDashboard'));
+const GDPRExport = lazy(() => import('@/components/admin/GDPRExport'));
 
 function AdminContentLoader() {
   return (
@@ -121,6 +131,26 @@ export default function Admin() {
           return <SettingsManagement />;
         case 'performance':
           return <PerformanceDashboard />;
+        case 'referrals':
+          return <ReferralManagement />;
+        case 'fraud':
+          return <FraudDetection />;
+        case 'csat':
+          return <CSATManagement />;
+        case 'email-sequences':
+          return <EmailSequenceManagement />;
+        case 'ab-testing':
+          return <ABTestingManagement />;
+        case 'conversion-funnel':
+          return <ConversionFunnel />;
+        case 'shipments':
+          return <ShipmentTrackingManagement />;
+        case 'abandoned-carts':
+          return <AbandonedCartManagement />;
+        case 'clv':
+          return <CLVDashboard />;
+        case 'gdpr-export':
+          return <GDPRExport />;
         default:
           return <AdminDashboardContent />;
       }
