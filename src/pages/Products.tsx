@@ -379,7 +379,7 @@ export default function Products() {
 
       {/* Filters Panel */}
       {showFilters && (
-        <section className="border-b border-border bg-secondary/50 animate-fade-in">
+        <section className="border-b border-border bg-background animate-fade-in">
           <div className="container-premium py-6">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
               <div>

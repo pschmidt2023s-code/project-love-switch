@@ -108,7 +108,7 @@ export default function About() {
       </section>
 
       {/* Timeline - editorial */}
-      <section className="py-16 lg:py-24 bg-secondary/30">
+      <section className="py-16 lg:py-24 border-t border-border">
         <div className="container-premium">
           <div className="grid lg:grid-cols-12 gap-12 lg:gap-16">
             <div className="lg:col-span-4">

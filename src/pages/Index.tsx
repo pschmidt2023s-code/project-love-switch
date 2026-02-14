@@ -64,7 +64,7 @@ export default function Index() {
       </section>
 
       {/* AI Recommendations Section */}
-      <section className="py-8 lg:py-12 bg-secondary/30">
+      <section className="py-8 lg:py-12 border-t border-border">
         <div className="container-premium">
           <ProductRecommendations />
         </div>

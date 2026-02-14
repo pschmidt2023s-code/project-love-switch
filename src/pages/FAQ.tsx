@@ -154,7 +154,7 @@ export default function FAQ() {
       </section>
 
       {/* CTA */}
-      <section className="py-16 lg:py-20 bg-secondary/30">
+      <section className="py-16 lg:py-20 border-t border-border">
         <div className="container-premium text-center">
           <h2 className="font-display text-2xl lg:text-3xl text-foreground mb-4">
             Noch Fragen?

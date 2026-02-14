@@ -52,11 +52,7 @@ export function PremiumFooter() {
     { to: '/imprint', label: 'Impressum' },
   ];
 
-  const socialLinks = [
-    { href: 'https://instagram.com/aldenair', label: 'Instagram', icon: InstagramIcon },
-    { href: 'https://tiktok.com/@aldenair', label: 'TikTok', icon: TikTokIcon },
-    { href: 'https://pinterest.com/aldenair', label: 'Pinterest', icon: PinterestIcon },
-  ];
+  const socialLinks: { href: string; label: string; icon: typeof InstagramIcon }[] = [];
 
   return (
     <footer className="bg-background text-foreground border-t border-border">
