@@ -10,6 +10,7 @@ import {
   MapPin, CreditCard
 } from 'lucide-react';
 import { OrderStatusTracker } from '@/components/OrderStatusTracker';
+import { ShipmentTracker } from '@/components/ShipmentTracker';
 import { ReorderButton } from '@/components/ReorderButton';
 
 interface OrderItem {
@@ -195,6 +196,11 @@ export default function Orders() {
                   ))}
                 </div>
               </div>
+
+              {/* Shipment Tracking */}
+              {(order.status === 'shipped' || order.status === 'delivered') && (
+                <ShipmentTracker orderId={order.id} />
+              )}
 
               {/* Shipping Address */}
               {shippingAddress && (
