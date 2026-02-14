@@ -1,18 +1,15 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Heart, ShoppingCart, Trash2, ArrowLeft } from 'lucide-react';
+import { Heart, ShoppingBag, Trash2, ArrowRight } from 'lucide-react';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProducts } from '@/hooks/useProducts';
-import Navigation from '@/components/Navigation';
-import { Footer } from '@/components/Footer';
-import { MobileBottomNav } from '@/components/MobileBottomNav';
-import { LoadingSpinner } from '@/components/LoadingSpinner';
+import { PremiumPageLayout } from '@/components/premium/PremiumPageLayout';
+import { Breadcrumb } from '@/components/Breadcrumb';
+import { Seo } from '@/components/Seo';
 import { AuthModal } from '@/components/AuthModal';
+import { toast } from 'sonner';
 
 interface FavoriteWithProduct {
   id: string;
@@ -64,116 +61,128 @@ export default function Favorites() {
       quantity: 1,
       image: favorite.productImage,
     });
+    toast.success('Zum Warenkorb hinzugefügt');
   };
 
   if (!user) {
     return (
-      <>
-        <Navigation />
-        <div className="min-h-screen bg-background pb-20 md:pb-0">
-          <div className="container mx-auto px-4 py-16 text-center">
-            <Heart className="w-16 h-16 mx-auto mb-6 text-muted-foreground" />
-            <h1 className="text-2xl font-bold mb-4">Melde dich an, um Favoriten zu speichern</h1>
-            <p className="text-muted-foreground mb-8">
-              Erstelle ein Konto oder melde dich an, um deine Lieblingsdüfte zu speichern.
+      <PremiumPageLayout>
+        <section className="section-spacing">
+          <div className="container-premium text-center max-w-md mx-auto">
+            <div className="w-16 h-16 mx-auto mb-6 flex items-center justify-center bg-accent/10">
+              <Heart className="w-7 h-7 text-accent" strokeWidth={1.5} />
+            </div>
+            <h1 className="font-display text-2xl text-foreground mb-3">
+              Favoriten speichern
+            </h1>
+            <p className="text-sm text-muted-foreground mb-8">
+              Melde dich an, um deine Lieblingsdüfte zu speichern und jederzeit wiederzufinden.
             </p>
             <AuthModal>
-              <Button size="lg">Jetzt anmelden</Button>
+              <button className="inline-flex items-center px-8 py-4 bg-foreground text-background text-[11px] tracking-[0.15em] uppercase font-medium hover:bg-foreground/90 transition-colors">
+                Jetzt anmelden
+                <ArrowRight className="ml-2 w-4 h-4" strokeWidth={1.5} />
+              </button>
             </AuthModal>
           </div>
-        </div>
-        <Footer />
-        <MobileBottomNav />
-      </>
+        </section>
+      </PremiumPageLayout>
     );
   }
 
   return (
-    <>
-      <Navigation />
-      <div className="min-h-screen bg-background pb-20 md:pb-0">
-        <div className="container mx-auto px-4 py-8">
-          <div className="max-w-6xl mx-auto">
-            <Button
-              onClick={() => window.history.back()}
-              variant="outline"
-              className="mb-8"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Zurück
-            </Button>
+    <PremiumPageLayout>
+      <Seo title="Favoriten | ALDENAIR" description="Deine gespeicherten Lieblingsdüfte bei ALDENAIR." canonicalPath="/favorites" />
 
-            <div className="flex items-center gap-4 mb-8">
-              <Heart className="w-8 h-8 text-primary" />
-              <div>
-                <h1 className="text-3xl font-bold text-foreground">Meine Favoriten</h1>
-                <p className="text-muted-foreground">
-                  {favoritesWithDetails.length} Düfte gespeichert
-                </p>
-              </div>
-            </div>
-
-            {isLoading ? (
-              <div className="flex justify-center py-16">
-                <LoadingSpinner size="lg" />
-              </div>
-            ) : favoritesWithDetails.length === 0 ? (
-              <Card className="text-center py-16">
-                <CardContent>
-                  <Heart className="w-16 h-16 mx-auto mb-6 text-muted-foreground" />
-                  <h2 className="text-xl font-semibold mb-2">Noch keine Favoriten</h2>
-                  <p className="text-muted-foreground mb-6">
-                    Entdecke unsere Düfte und speichere deine Lieblinge.
-                  </p>
-                  <Button asChild>
-                    <Link to="/products">Düfte entdecken</Link>
-                  </Button>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {favoritesWithDetails.map((favorite) => (
-                  <Card key={favorite.id} className="overflow-hidden group">
-                    <div className="aspect-square relative bg-muted">
-                      <img
-                        src={favorite.productImage}
-                        alt={favorite.productName}
-                        className="w-full h-full object-cover"
-                      />
-                      <Button
-                        variant="destructive"
-                        size="icon"
-                        className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() => removeFromFavorites(favorite.product_id)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                    <CardContent className="p-4">
-                      <h3 className="font-semibold text-lg mb-1">{favorite.productName}</h3>
-                      <div className="flex items-center justify-between">
-                        <span className="text-lg font-bold text-primary">
-                          {favorite.productPrice.toFixed(2)} €
-                        </span>
-                        <Badge variant="secondary">Auf Lager</Badge>
-                      </div>
-                      <Button
-                        className="w-full mt-4"
-                        onClick={() => handleAddToCart(favorite)}
-                      >
-                        <ShoppingCart className="w-4 h-4 mr-2" />
-                        In den Warenkorb
-                      </Button>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </div>
+      {/* Header */}
+      <section className="border-b border-border">
+        <div className="container-premium py-8 lg:py-12">
+          <Breadcrumb className="mb-6" />
+          <span className="inline-block text-[10px] tracking-[0.3em] uppercase text-accent mb-3">Meine Auswahl</span>
+          <h1 className="font-display text-3xl lg:text-4xl text-foreground mb-3">Favoriten</h1>
+          <p className="text-muted-foreground text-sm">
+            {favoritesWithDetails.length} {favoritesWithDetails.length === 1 ? 'Duft' : 'Düfte'} gespeichert
+          </p>
         </div>
-      </div>
-      <Footer />
-      <MobileBottomNav />
-    </>
+      </section>
+
+      {/* Content */}
+      <section className="section-spacing">
+        <div className="container-premium">
+          {isLoading ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="space-y-4">
+                  <div className="aspect-[3/4] bg-muted animate-pulse" />
+                  <div className="h-4 w-3/4 bg-muted animate-pulse" />
+                  <div className="h-4 w-1/2 bg-muted animate-pulse" />
+                </div>
+              ))}
+            </div>
+          ) : favoritesWithDetails.length === 0 ? (
+            <div className="text-center py-16 max-w-md mx-auto">
+              <div className="w-16 h-16 mx-auto mb-6 flex items-center justify-center bg-muted">
+                <Heart className="w-7 h-7 text-muted-foreground" strokeWidth={1.5} />
+              </div>
+              <h2 className="font-display text-xl text-foreground mb-3">Noch keine Favoriten</h2>
+              <p className="text-sm text-muted-foreground mb-8">
+                Entdecke unsere Düfte und speichere deine Lieblinge.
+              </p>
+              <Link
+                to="/products"
+                className="inline-flex items-center px-6 py-3 bg-foreground text-background text-[11px] tracking-[0.15em] uppercase font-medium hover:bg-foreground/90 transition-colors"
+              >
+                Düfte entdecken
+                <ArrowRight className="ml-2 w-4 h-4" strokeWidth={1.5} />
+              </Link>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 lg:gap-8">
+              {favoritesWithDetails.map((favorite) => (
+                <article key={favorite.id} className="group relative">
+                  <Link to={`/products/${favorite.product_id}`} className="block relative aspect-[3/4] overflow-hidden bg-muted mb-4">
+                    <img
+                      src={favorite.productImage}
+                      alt={favorite.productName}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                      loading="lazy"
+                    />
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        removeFromFavorites(favorite.product_id);
+                      }}
+                      className="absolute top-3 right-3 w-10 h-10 flex items-center justify-center bg-background/90 backdrop-blur-sm text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                      aria-label="Aus Favoriten entfernen"
+                    >
+                      <Trash2 className="w-4 h-4" strokeWidth={1.5} />
+                    </button>
+                  </Link>
+
+                  <div className="space-y-2">
+                    <Link to={`/products/${favorite.product_id}`}>
+                      <h3 className="font-display text-lg text-foreground hover:text-accent transition-colors line-clamp-1">
+                        {favorite.productName}
+                      </h3>
+                    </Link>
+                    <p className="text-lg font-medium text-foreground">
+                      {favorite.productPrice.toFixed(2).replace('.', ',')} €
+                    </p>
+                    <button
+                      onClick={() => handleAddToCart(favorite)}
+                      className="w-full flex items-center justify-center gap-2 py-3 border border-border text-[10px] tracking-[0.1em] uppercase font-medium text-foreground hover:bg-foreground hover:text-background transition-colors"
+                    >
+                      <ShoppingBag className="w-3.5 h-3.5" strokeWidth={1.5} />
+                      In den Warenkorb
+                    </button>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+    </PremiumPageLayout>
   );
 }
