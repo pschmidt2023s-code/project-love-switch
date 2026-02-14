@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Gift, Sparkles, PartyPopper } from 'lucide-react';
+import { X, Gift, Sparkles, PartyPopper, Copy, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
@@ -21,6 +21,8 @@ export function SpinWheel() {
   const [spinning, setSpinning] = useState(false);
   const [rotation, setRotation] = useState(0);
   const [wonPrize, setWonPrize] = useState<Prize | null>(null);
+  const [couponCode, setCouponCode] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
   const [hasSpun, setHasSpun] = useState(() => {
     return localStorage.getItem('aldenair_spun') === 'true';
   });
@@ -86,6 +88,17 @@ export function SpinWheel() {
         ? `SPIN-${prize.label.replace(/[^A-Z0-9]/gi, '').toUpperCase().slice(0, 6)}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`
         : undefined;
 
+      setCouponCode(code || null);
+
+      // Auto-copy to clipboard
+      if (code) {
+        try {
+          await navigator.clipboard.writeText(code);
+          setCopied(true);
+          setTimeout(() => setCopied(false), 3000);
+        } catch { /* clipboard not available */ }
+      }
+
       // Save to DB
       await supabase.from('spin_results').insert({
         email,
@@ -99,10 +112,6 @@ export function SpinWheel() {
         { email, is_active: true },
         { onConflict: 'email' }
       );
-
-      if (code) {
-        toast.success(`Dein Code: ${code}`, { duration: 10000 });
-      }
     }, 4000);
   };
 
@@ -241,17 +250,38 @@ export function SpinWheel() {
                   <h2 className="font-display text-2xl text-foreground mb-2">
                     {wonPrize.discount_type === 'nothing' ? 'Beim nächsten Mal!' : 'Glückwunsch! 🎉'}
                   </h2>
-                  <p className="text-lg font-medium text-accent mb-2">
+                  <p className="text-lg font-medium text-accent mb-4">
                     {wonPrize.label}
                   </p>
-                  {wonPrize.discount_type !== 'nothing' && (
-                    <p className="text-sm text-muted-foreground">
-                      Dein Rabattcode wurde dir per E-Mail zugesendet!
-                    </p>
+                  {couponCode && (
+                    <div className="mb-4">
+                      <p className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-2">
+                        Dein Rabattcode {copied && '· Kopiert!'}
+                      </p>
+                      <button
+                        onClick={async () => {
+                          try {
+                            await navigator.clipboard.writeText(couponCode);
+                            setCopied(true);
+                            toast.success('Code kopiert!');
+                            setTimeout(() => setCopied(false), 3000);
+                          } catch {
+                            toast.error('Kopieren fehlgeschlagen');
+                          }
+                        }}
+                        className="inline-flex items-center gap-2 px-6 py-3 bg-secondary border border-border text-foreground font-mono text-lg tracking-wider hover:bg-muted transition-colors"
+                      >
+                        {couponCode}
+                        {copied ? <Check className="w-4 h-4 text-success" /> : <Copy className="w-4 h-4 text-muted-foreground" />}
+                      </button>
+                      <p className="text-xs text-muted-foreground mt-2">
+                        Klicke zum Kopieren · Auch per E-Mail zugesendet
+                      </p>
+                    </div>
                   )}
                   <Button
                     onClick={() => setIsOpen(false)}
-                    className="mt-6"
+                    className="mt-2"
                     variant="outline"
                   >
                     Weiter shoppen
