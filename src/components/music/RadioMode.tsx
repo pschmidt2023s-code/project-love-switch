@@ -1,13 +1,15 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Track, useMusicPlayer } from '@/contexts/MusicPlayerContext';
-import { calculateRadioState, extractYouTubeId } from '@/lib/radio-sync';
+import { calculateRadioState, extractYouTubeId, getScheduledTrack, ScheduleEntry } from '@/lib/radio-sync';
 import { YouTubePlayer } from './YouTubePlayer';
+import { RadioScheduleManager } from './RadioScheduleManager';
 import { useAdminRole } from '@/hooks/useAdminRole';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Radio, Disc3, Wifi, WifiOff } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -18,6 +20,7 @@ export function RadioMode() {
   const player = useMusicPlayer();
   const [radioActive, setRadioActive] = useState(false);
   const [ytVideoId, setYtVideoId] = useState<string | null>(null);
+  const [currentRadioTrack, setCurrentRadioTrack] = useState<Track | null>(null);
 
   // Fetch radio config
   const { data: radioConfig } = useQuery({
@@ -29,11 +32,11 @@ export function RadioMode() {
         .eq('id', 'default')
         .single();
       if (error) throw error;
-      return data;
+      return data as { id: string; is_live: boolean; loop_start_epoch: number; mode: string };
     },
   });
 
-  // Fetch all tracks for radio rotation
+  // Fetch all tracks
   const { data: tracks = [] } = useQuery({
     queryKey: ['tracks'],
     queryFn: async () => {
@@ -47,15 +50,25 @@ export function RadioMode() {
     },
   });
 
-  // Toggle radio live status (admin only)
+  // Fetch schedule
+  const { data: schedule = [] } = useQuery({
+    queryKey: ['radio-schedule'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('radio_schedule')
+        .select('*')
+        .eq('is_active', true);
+      if (error) throw error;
+      return data as ScheduleEntry[];
+    },
+  });
+
+  // Toggle radio
   const toggleRadioMutation = useMutation({
     mutationFn: async (isLive: boolean) => {
       const { error } = await supabase
         .from('radio_config')
-        .update({ 
-          is_live: isLive, 
-          loop_start_epoch: Math.floor(Date.now() / 1000),
-        })
+        .update({ is_live: isLive, loop_start_epoch: Math.floor(Date.now() / 1000) })
         .eq('id', 'default');
       if (error) throw error;
     },
@@ -65,47 +78,66 @@ export function RadioMode() {
     },
   });
 
-  // Calculate current radio state every second
+  // Change mode
+  const modeMutation = useMutation({
+    mutationFn: async (mode: string) => {
+      const { error } = await supabase
+        .from('radio_config')
+        .update({ mode })
+        .eq('id', 'default');
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['radio-config'] }),
+  });
+
+  // Sync loop
   useEffect(() => {
     if (!radioActive || !radioConfig?.is_live || tracks.length === 0) return;
 
     const tick = () => {
-      const state = calculateRadioState(tracks, radioConfig.loop_start_epoch);
-      if (!state) return;
+      let track: (Track & { youtube_url?: string }) | null = null;
 
-      const track = state.currentTrack as Track & { youtube_url?: string };
-      
-      // Check if it's a YouTube track
+      // Check scheduled tracks first (if mode is 'scheduled' or 'hybrid')
+      if (radioConfig.mode !== 'rotation') {
+        const scheduled = getScheduledTrack(schedule, tracks);
+        if (scheduled) track = scheduled as Track & { youtube_url?: string };
+      }
+
+      // Fallback to rotation
+      if (!track) {
+        const state = calculateRadioState(tracks, radioConfig.loop_start_epoch);
+        if (state) track = state.currentTrack as Track & { youtube_url?: string };
+      }
+
+      if (!track) return;
+      setCurrentRadioTrack(track);
+
       const ytId = track.youtube_url ? extractYouTubeId(track.youtube_url) : null;
-      
       if (ytId) {
         setYtVideoId(ytId);
-        // Pause native audio if YouTube track
-        if (player.isPlaying && player.currentTrack?.id !== track.id) {
-          player.pause();
-        }
+        if (player.isPlaying) player.pause();
       } else {
         setYtVideoId(null);
-        // Use native audio player
         if (player.currentTrack?.id !== track.id) {
           player.setQueue(tracks);
           player.play(track);
-          // Seek to correct position
-          setTimeout(() => player.seek(state.positionInTrack), 200);
+          const state = calculateRadioState(tracks, radioConfig.loop_start_epoch);
+          if (state) setTimeout(() => player.seek(state.positionInTrack), 200);
         }
       }
     };
 
     tick();
-    const interval = setInterval(tick, 5000); // Check every 5 seconds
+    const interval = setInterval(tick, 5000);
     return () => clearInterval(interval);
-  }, [radioActive, radioConfig, tracks]);
+  }, [radioActive, radioConfig, tracks, schedule]);
 
   const isLive = radioConfig?.is_live ?? false;
 
   return (
-    <div className="p-6 rounded-xl bg-card border border-border">
-      <div className="flex items-center justify-between mb-4">
+    <div className="p-6 rounded-xl bg-card border border-border space-y-4">
+      {/* Header */}
+      <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className={cn(
             "w-10 h-10 rounded-full flex items-center justify-center",
@@ -118,7 +150,7 @@ export function RadioMode() {
             <p className="text-sm text-muted-foreground">
               {isLive ? (
                 <span className="flex items-center gap-1">
-                  <Wifi className="h-3 w-3 text-destructive" /> LIVE – {tracks.length} Tracks in Rotation
+                  <Wifi className="h-3 w-3 text-destructive" /> LIVE · {radioConfig?.mode === 'scheduled' ? 'Sendeplan' : 'Rotation'} · {tracks.length} Tracks
                 </span>
               ) : (
                 <span className="flex items-center gap-1">
@@ -154,36 +186,47 @@ export function RadioMode() {
         </div>
       </div>
 
-      {/* Hidden YouTube player for audio */}
+      {/* Admin: Mode selector */}
+      {isAdmin && (
+        <div className="flex items-center gap-3 pt-2 border-t border-border">
+          <Label className="text-sm text-muted-foreground">Modus:</Label>
+          <Select value={radioConfig?.mode || 'rotation'} onValueChange={v => modeMutation.mutate(v)}>
+            <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="rotation">Playlist-Rotation</SelectItem>
+              <SelectItem value="scheduled">Sendeplan (Uhrzeiten)</SelectItem>
+              <SelectItem value="hybrid">Hybrid (Sendeplan + Rotation)</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      {/* Admin: Schedule manager */}
+      {isAdmin && radioConfig?.mode !== 'rotation' && (
+        <div className="pt-2 border-t border-border">
+          <RadioScheduleManager />
+        </div>
+      )}
+
+      {/* Hidden YouTube player */}
       {radioActive && ytVideoId && (
         <YouTubePlayer
           videoId={ytVideoId}
           isPlaying={radioActive}
           volume={player.volume}
           isMuted={player.isMuted}
-          onEnded={() => {
-            // Radio sync will pick up next track automatically
-          }}
+          onEnded={() => {}}
         />
       )}
 
-      {/* Currently playing info */}
-      {radioActive && isLive && tracks.length > 0 && (
-        <div className="mt-4 pt-4 border-t border-border">
-          {(() => {
-            const state = calculateRadioState(tracks, radioConfig!.loop_start_epoch);
-            if (!state) return null;
-            return (
-              <div className="flex items-center gap-3">
-                <div className="w-2 h-2 rounded-full bg-destructive animate-pulse" />
-                <span className="text-sm font-medium">Jetzt: {state.currentTrack.title}</span>
-                <span className="text-xs text-muted-foreground">von {state.currentTrack.artist}</span>
-                <span className="text-xs text-muted-foreground ml-auto">
-                  Nächster: {tracks[(state.currentTrackIndex + 1) % tracks.length]?.title}
-                </span>
-              </div>
-            );
-          })()}
+      {/* Currently playing */}
+      {radioActive && isLive && currentRadioTrack && (
+        <div className="pt-3 border-t border-border">
+          <div className="flex items-center gap-3">
+            <div className="w-2 h-2 rounded-full bg-destructive animate-pulse" />
+            <span className="text-sm font-medium">Jetzt: {currentRadioTrack.title}</span>
+            <span className="text-xs text-muted-foreground">von {currentRadioTrack.artist}</span>
+          </div>
         </div>
       )}
     </div>
