@@ -20,6 +20,7 @@ import { OfflineIndicator } from '@/components/pwa/OfflineIndicator';
 import { ChatWidget } from '@/components/ChatWidget';
 import { ReviewPrompt } from '@/components/ReviewPrompt';
 import { PushNotificationPrompt } from '@/components/PushNotificationPrompt';
+import { ScrollToTop } from '@/components/ScrollToTop';
 
 const ProductDetail = React.lazy(() => import('@/pages/ProductDetail'));
 const Products = React.lazy(() => import('@/pages/Products'));
@@ -83,7 +84,7 @@ function App() {
                     <GlobalGestures />
                     <TouchOptimizations />
                     <ProductComparison />
-                    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+                    <div className="min-h-screen bg-background">
                       <Routes>
                         <Route path="/" element={<Index />} />
                         <Route path="/about" element={<Suspense fallback={<LoadingSpinner />}><About /></Suspense>} />
@@ -128,6 +129,7 @@ function App() {
                     <ChatWidget />
                     <ReviewPrompt />
                     <PushNotificationPrompt />
+                    <ScrollToTop />
                     <Toaster />
                     <Sonner />
                   </BrowserRouter>

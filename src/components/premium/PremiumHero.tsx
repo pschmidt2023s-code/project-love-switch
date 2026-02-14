@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, Truck, Shield, Clock, Play } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { VideoModal } from './VideoModal';
+import heroBg from '@/assets/hero-bg.jpg';
 
 export function PremiumHero() {
   const [isVisible, setIsVisible] = useState(false);
@@ -19,21 +20,18 @@ export function PremiumHero() {
         data-header-dark
         className="relative min-h-[85vh] lg:min-h-[90vh] bg-black overflow-hidden flex items-center"
       >
-        {/* Static gradient background */}
+        {/* Background Image */}
         <div className="absolute inset-0">
-          <div className="absolute inset-0 bg-gradient-to-br from-black via-neutral-900 to-black" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(180,140,70,0.15)_0%,transparent_50%)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,rgba(180,140,70,0.1)_0%,transparent_50%)]" />
-          
-          {/* Subtle grain effect */}
-          <div className="absolute inset-0 opacity-20 mix-blend-overlay">
-            <div 
-              className="absolute inset-0" 
-              style={{
-                backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
-              }} 
-            />
-          </div>
+          <img 
+            src={heroBg} 
+            alt="" 
+            className="absolute inset-0 w-full h-full object-cover opacity-40"
+            loading="eager"
+            fetchPriority="high"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-black/30" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/30" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(180,140,70,0.12)_0%,transparent_50%)]" />
         </div>
         
         {/* Static accent lines */}
@@ -57,7 +55,6 @@ export function PremiumHero() {
                   <span className="italic bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 bg-clip-text text-transparent">
                     begeistern
                   </span>
-                  {/* Underline accent */}
                   <span className="absolute -bottom-2 left-0 w-full h-px bg-gradient-to-r from-amber-500/50 via-amber-500 to-amber-500/50" />
                 </span>
               </h1>
@@ -97,7 +94,6 @@ export function PremiumHero() {
             {/* Stats Card with Glass Effect */}
             <div className={`col-span-12 lg:col-span-5 transition-all duration-1000 delay-200 ${isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-10'}`}>
               <div className="relative bg-white/5 backdrop-blur-xl border border-white/10 p-8 lg:p-10">
-                {/* Glowing corner accents */}
                 <div className="absolute top-0 left-0 w-20 h-px bg-gradient-to-r from-amber-500 to-transparent" />
                 <div className="absolute top-0 left-0 w-px h-20 bg-gradient-to-b from-amber-500 to-transparent" />
                 <div className="absolute bottom-0 right-0 w-20 h-px bg-gradient-to-l from-amber-500 to-transparent" />
@@ -138,7 +134,6 @@ export function PremiumHero() {
         </div>
       </section>
 
-      {/* Video Modal */}
       <VideoModal isOpen={showVideo} onClose={() => setShowVideo(false)} />
     </>
   );
