@@ -23,6 +23,7 @@ import {
   Warehouse,
   FileText,
   Shield,
+  Activity,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdminRole } from '@/hooks/useAdminRole';
@@ -64,6 +65,7 @@ export default function AdminSidebar({ activeTab, onTabChange }: AdminSidebarPro
   ].filter(item => item.show);
 
   const systemItems = [
+    { id: 'performance', label: 'Performance', icon: Activity, show: permissions.canViewAnalytics },
     { id: 'audit', label: 'Audit Logs', icon: FileText, show: permissions.canViewAuditLogs },
     { id: 'settings', label: 'Einstellungen', icon: Settings, show: permissions.canManageSettings },
   ].filter(item => item.show);

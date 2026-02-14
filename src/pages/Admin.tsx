@@ -22,6 +22,7 @@ const PartnerManagement = lazy(() => import('@/components/admin/PartnerManagemen
 const PaybackManagement = lazy(() => import('@/components/admin/PaybackManagement'));
 const LiveChatManagement = lazy(() => import('@/components/admin/LiveChatManagement'));
 const SettingsManagement = lazy(() => import('@/components/admin/SettingsManagement'));
+const PerformanceDashboard = lazy(() => import('@/components/admin/PerformanceDashboard'));
 
 function AdminContentLoader() {
   return (
@@ -118,6 +119,8 @@ export default function Admin() {
           return <AuditLogs />;
         case 'settings':
           return <SettingsManagement />;
+        case 'performance':
+          return <PerformanceDashboard />;
         default:
           return <AdminDashboardContent />;
       }
