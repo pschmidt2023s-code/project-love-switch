@@ -24,8 +24,7 @@ interface MusicPlayerContextType {
   duration: number;
   volume: number;
   isMuted: boolean;
-  queue: Track[];
-  playTrack: (track: Track, queue?: Track[]) => void;
+  playTrack: (track: Track, playlist?: Track[]) => void;
   pause: () => void;
   resume: () => void;
   toggle: () => void;
@@ -48,92 +47,71 @@ export function useMusicPlayer() {
 
 export function MusicPlayerProvider({ children }: { children: ReactNode }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  
-  // Use refs for mutable state that the audio element needs - avoids stale closures
-  const queueRef = useRef<Track[]>([]);
+  const playlistRef = useRef<Track[]>([]);
   const currentIndexRef = useRef(-1);
-  
-  // React state for UI rendering only
+
   const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolumeState] = useState(0.8);
   const [isMuted, setIsMuted] = useState(false);
-  const [queue, setQueue] = useState<Track[]>([]);
   const [isMinimized, setIsMinimized] = useState(true);
 
-  // Core play function - takes track AND queue to avoid stale closures
-  const playTrack = useCallback((track: Track, newQueue?: Track[]) => {
+  const attemptPlay = useCallback((audio: HTMLAudioElement) => {
+    const p = audio.play();
+    if (p) {
+      p.then(() => {
+        setIsPlaying(true);
+      }).catch(() => {
+        // Mobile fallback: try muted first
+        audio.muted = true;
+        audio.play().then(() => {
+          setIsPlaying(true);
+          setTimeout(() => { audio.muted = false; }, 300);
+        }).catch(() => {
+          setIsPlaying(false);
+        });
+      });
+    }
+  }, []);
+
+  const playTrack = useCallback((track: Track, playlist?: Track[]) => {
     const audio = audioRef.current;
-    if (!audio) {
-      console.error('[MusicPlayer] No audio element!');
-      return;
+    if (!audio) return;
+
+    if (playlist) {
+      playlistRef.current = playlist;
     }
 
-    // Update queue if provided
-    if (newQueue) {
-      queueRef.current = newQueue;
-      setQueue(newQueue);
-    }
-
-    // Find index in queue
-    const q = queueRef.current;
-    const idx = q.findIndex(t => t.id === track.id);
+    const idx = playlistRef.current.findIndex(t => t.id === track.id);
     currentIndexRef.current = idx >= 0 ? idx : 0;
 
-    // Update UI state
     setCurrentTrack(track);
     setCurrentTime(0);
 
-    console.log('[MusicPlayer] playTrack:', track.title, 'url:', track.audio_url?.substring(0, 60));
-
-    // Remove any previous canplay listener
     audio.oncanplay = null;
+    audio.src = track.audio_url;
+    audio.load();
 
-    try {
-      audio.src = track.audio_url;
-      audio.load();
+    attemptPlay(audio);
 
-      // Try immediate play first (works on desktop & when data is cached)
-      const tryPlay = () => {
-        const playPromise = audio.play();
-        if (playPromise) {
-          playPromise.then(() => {
-            console.log('[MusicPlayer] ✅ Play succeeded');
-            setIsPlaying(true);
-          }).catch((err) => {
-            console.warn('[MusicPlayer] Play failed:', err.message);
-            // On mobile, try muted fallback
-            audio.muted = true;
-            audio.play().then(() => {
-              console.log('[MusicPlayer] ✅ Muted play succeeded');
-              setIsPlaying(true);
-              setTimeout(() => { audio.muted = false; }, 300);
-            }).catch((err2) => {
-              console.error('[MusicPlayer] ❌ All play attempts failed:', err2.message);
-              setIsPlaying(false);
-            });
-          });
-        }
-      };
+    // Backup: if browser needs to buffer first
+    audio.oncanplay = () => {
+      audio.oncanplay = null;
+      if (audio.paused && audio.src) {
+        attemptPlay(audio);
+      }
+    };
+  }, [attemptPlay]);
 
-      // Attempt immediate play
-      tryPlay();
-
-      // ALSO set up canplay handler as backup - if the browser couldn't play immediately
-      // because data wasn't ready, this fires when enough data is buffered
-      audio.oncanplay = () => {
-        audio.oncanplay = null; // only fire once
-        if (audio.paused && audio.src) {
-          console.log('[MusicPlayer] 🔄 canplay fired, retrying play...');
-          tryPlay();
-        }
-      };
-    } catch (e) {
-      console.error('[MusicPlayer] ❌ Exception during play:', e);
+  const playByIndex = useCallback((index: number) => {
+    const pl = playlistRef.current;
+    if (index >= 0 && index < pl.length) {
+      currentIndexRef.current = index;
+      playTrack(pl[index]);
     }
-  }, []);
+  }, [playTrack]);
 
   const pause = useCallback(() => {
     audioRef.current?.pause();
@@ -158,18 +136,13 @@ export function MusicPlayerProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const playByIndex = useCallback((index: number) => {
-    const q = queueRef.current;
-    if (index >= 0 && index < q.length) {
-      currentIndexRef.current = index;
-      playTrack(q[index]);
-    }
-  }, [playTrack]);
-
   const next = useCallback(() => {
     const nextIdx = currentIndexRef.current + 1;
-    if (nextIdx < queueRef.current.length) {
+    // Loop back to start for 24/7 mode
+    if (nextIdx < playlistRef.current.length) {
       playByIndex(nextIdx);
+    } else if (playlistRef.current.length > 0) {
+      playByIndex(0); // Loop!
     }
   }, [playByIndex]);
 
@@ -182,6 +155,8 @@ export function MusicPlayerProvider({ children }: { children: ReactNode }) {
       const prevIdx = currentIndexRef.current - 1;
       if (prevIdx >= 0) {
         playByIndex(prevIdx);
+      } else if (playlistRef.current.length > 0) {
+        playByIndex(playlistRef.current.length - 1); // Loop to end
       }
     }
   }, [playByIndex]);
@@ -206,48 +181,25 @@ export function MusicPlayerProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // Audio element event handlers - defined as stable callbacks
-  const handleTimeUpdate = useCallback(() => {
-    if (audioRef.current) setCurrentTime(audioRef.current.currentTime);
-  }, []);
-
-  const handleDurationChange = useCallback(() => {
-    if (audioRef.current) setDuration(audioRef.current.duration || 0);
-  }, []);
-
   const handleEnded = useCallback(() => {
-    const nextIdx = currentIndexRef.current + 1;
-    if (nextIdx < queueRef.current.length) {
-      playByIndex(nextIdx);
-    } else {
-      setIsPlaying(false);
-    }
-  }, [playByIndex]);
-
-  const handleError = useCallback(() => {
-    const err = audioRef.current?.error;
-    console.error('[MusicPlayer] Audio error:', err?.code, err?.message);
-    setIsPlaying(false);
-  }, []);
+    // Auto-advance to next track, loop at end
+    next();
+  }, [next]);
 
   return (
     <MusicPlayerContext.Provider value={{
-      currentTrack, isPlaying, currentTime, duration, volume, isMuted, queue,
+      currentTrack, isPlaying, currentTime, duration, volume, isMuted,
       playTrack, pause, resume, toggle, next, previous, seek, setVolume, toggleMute,
       isMinimized, setIsMinimized,
     }}>
-      {/* Real DOM audio element - critical for iOS/mobile playback */}
       <audio
         ref={audioRef}
         preload="none"
         playsInline
-        onTimeUpdate={handleTimeUpdate}
-        onDurationChange={handleDurationChange}
+        onTimeUpdate={() => { if (audioRef.current) setCurrentTime(audioRef.current.currentTime); }}
+        onDurationChange={() => { if (audioRef.current) setDuration(audioRef.current.duration || 0); }}
         onEnded={handleEnded}
-        onError={handleError}
-        onStalled={() => console.warn('[MusicPlayer] ⚠️ Stalled - network too slow')}
-        onWaiting={() => console.log('[MusicPlayer] ⏳ Waiting for data...')}
-        onCanPlay={() => console.log('[MusicPlayer] ✅ Can play')}
+        onError={() => { setIsPlaying(false); }}
         style={{ position: 'absolute', width: 0, height: 0, opacity: 0 }}
       />
       {children}
