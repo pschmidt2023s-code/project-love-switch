@@ -3,16 +3,25 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Package, CheckCircle, Loader2, RotateCcw, Clock, FileText } from 'lucide-react';
+import { Package, CheckCircle, Loader2, RotateCcw, Clock, FileText, AlertTriangle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { Link } from 'react-router-dom';
 import { PremiumPageLayout } from '@/components/premium/PremiumPageLayout';
 import { Breadcrumb } from '@/components/Breadcrumb';
 import { Seo } from '@/components/Seo';
+import { supabase } from '@/integrations/supabase/client';
+
+interface ReturnResult {
+  autoApproved: boolean;
+  daysSinceOrder: number;
+  message: string;
+  returnId: string;
+}
 
 export default function Returns() {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [result, setResult] = useState<ReturnResult | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     orderNumber: '',
     firstName: '',
@@ -30,63 +39,105 @@ export default function Returns() {
       ...prev,
       [e.target.name]: e.target.value
     }));
+    setFormError(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setFormError(null);
 
-    const emailBody = `
-Retouren-Anfrage
+    try {
+      const { data, error } = await supabase.functions.invoke('process-return', {
+        body: {
+          orderNumber: formData.orderNumber,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: formData.email,
+          street: formData.street,
+          postalCode: formData.postalCode,
+          city: formData.city,
+          items: formData.items,
+          reason: formData.reason,
+        },
+      });
 
-Bestellnummer: ${formData.orderNumber}
-Name: ${formData.firstName} ${formData.lastName}
-E-Mail: ${formData.email}
+      if (error) {
+        throw new Error(error.message || 'Fehler beim Einreichen der Retoure');
+      }
 
-Adresse:
-${formData.street}
-${formData.postalCode} ${formData.city}
+      if (data?.error) {
+        setFormError(data.error);
+        toast({
+          title: 'Fehler',
+          description: data.error,
+          variant: 'destructive',
+        });
+        return;
+      }
 
-Zu retournierende Artikel:
-${formData.items}
-
-Grund für die Retoure:
-${formData.reason}
-    `;
-
-    const mailtoLink = `mailto:support@aldenairperfumes.de?subject=Retouren-Anfrage - Bestellung ${formData.orderNumber}&body=${encodeURIComponent(emailBody)}`;
-
-    setTimeout(() => {
-      window.location.href = mailtoLink;
-      setIsSubmitted(true);
-      setIsSubmitting(false);
+      setResult({
+        autoApproved: data.autoApproved,
+        daysSinceOrder: data.daysSinceOrder,
+        message: data.message,
+        returnId: data.returnId,
+      });
 
       toast({
-        title: 'Retouren-Anfrage eingereicht',
-        description: 'Ihre E-Mail wird geöffnet. Wir bearbeiten Ihre Anfrage innerhalb von 24 Stunden.',
+        title: data.autoApproved ? 'Retoure genehmigt ✅' : 'Retoure eingereicht 📋',
+        description: data.message,
       });
-    }, 1000);
+    } catch (err: any) {
+      console.error('Return submission error:', err);
+      setFormError(err.message || 'Ein unerwarteter Fehler ist aufgetreten.');
+      toast({
+        title: 'Fehler',
+        description: err.message || 'Bitte versuchen Sie es erneut.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  if (isSubmitted) {
+  if (result) {
     return (
       <PremiumPageLayout>
         <Seo title="Retoure bestätigt | ALDENAIR" description="Ihre Retouren-Anfrage wurde erfolgreich eingereicht." canonicalPath="/returns" />
         <div className="container mx-auto px-4 lg:px-8 py-24 lg:py-32 flex items-center justify-center min-h-[60vh]">
           <div className="max-w-md w-full text-center space-y-8">
             <div className="w-20 h-20 mx-auto flex items-center justify-center border border-border">
-              <CheckCircle className="w-10 h-10 text-accent" strokeWidth={1.5} />
+              {result.autoApproved ? (
+                <CheckCircle className="w-10 h-10 text-green-500" strokeWidth={1.5} />
+              ) : (
+                <Clock className="w-10 h-10 text-amber-500" strokeWidth={1.5} />
+              )}
             </div>
             <div className="space-y-4">
-              <h2 className="font-display text-3xl text-foreground">Anfrage gesendet</h2>
+              <h2 className="font-display text-3xl text-foreground">
+                {result.autoApproved ? 'Retoure genehmigt' : 'Retoure in Prüfung'}
+              </h2>
               <p className="text-muted-foreground leading-relaxed">
-                Ihre Retouren-Anfrage wurde erfolgreich eingereicht. 
-                Wir melden uns innerhalb von 24 Stunden bei Ihnen.
+                {result.message}
               </p>
+              {result.autoApproved && (
+                <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
+                  <p className="text-sm text-green-700 dark:text-green-400">
+                    📧 Ihr kostenloser Retourenschein wird Ihnen innerhalb von 24 Stunden per E-Mail zugesendet.
+                  </p>
+                </div>
+              )}
+              {!result.autoApproved && (
+                <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+                  <p className="text-sm text-amber-700 dark:text-amber-400">
+                    ⏳ Ihre Anfrage liegt außerhalb der 14-Tage-Frist ({result.daysSinceOrder} Tage). Unser Team prüft Ihre Anfrage und meldet sich innerhalb von 24 Stunden.
+                  </p>
+                </div>
+              )}
             </div>
             <div className="space-y-3 pt-4">
-              <Button 
-                onClick={() => setIsSubmitted(false)} 
+              <Button
+                onClick={() => { setResult(null); setFormData({ orderNumber: '', firstName: '', lastName: '', email: '', street: '', postalCode: '', city: '', reason: '', items: '' }); }}
                 className="w-full h-12"
               >
                 Weitere Retoure anmelden
@@ -113,7 +164,7 @@ ${formData.reason}
 
       <div className="container mx-auto px-4 lg:px-8">
         <Breadcrumb />
-        
+
         {/* Hero Section */}
         <header className="py-16 lg:py-24 border-b border-border">
           <p className="text-[10px] tracking-[0.3em] uppercase text-muted-foreground mb-4">
@@ -123,7 +174,7 @@ ${formData.reason}
             Retoure & Widerruf
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl leading-relaxed">
-            Unkompliziert und kundenfreundlich. Erfahren Sie, wie Sie Ihre Bestellung 
+            Unkompliziert und kundenfreundlich. Erfahren Sie, wie Sie Ihre Bestellung
             zurückgeben können.
           </p>
         </header>
@@ -139,7 +190,7 @@ ${formData.reason}
                 14 Tage Widerrufsrecht
               </h3>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                Sie haben 14 Tage ab Erhalt der Ware Zeit, um eine Retoure anzumelden.
+                Innerhalb von 14 Tagen wird Ihre Retoure automatisch genehmigt. Danach erfolgt eine manuelle Prüfung.
               </p>
             </div>
 
@@ -151,7 +202,7 @@ ${formData.reason}
                 Kostenloser Rückversand
               </h3>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                Wir senden Ihnen ein kostenloses Retourenlabel per E-Mail.
+                Nach Genehmigung erhalten Sie innerhalb von 24 Stunden einen kostenlosen Retourenschein per E-Mail.
               </p>
             </div>
 
@@ -177,18 +228,18 @@ ${formData.reason}
             </h2>
             <div className="space-y-6 text-sm text-muted-foreground leading-relaxed">
               <p>
-                <strong className="text-foreground">Originalverpackung:</strong> Parfüms müssen 
-                ungeöffnet und in originalverpacktem Zustand sein. Das Widerrufsrecht erlischt 
+                <strong className="text-foreground">Originalverpackung:</strong> Parfüms müssen
+                ungeöffnet und in originalverpacktem Zustand sein. Das Widerrufsrecht erlischt
                 bei entsiegelten Hygieneprodukten gemäß § 312g Abs. 2 Nr. 3 BGB.
               </p>
               <p>
-                <strong className="text-foreground">Widerrufsfrist:</strong> Die Frist beginnt 
-                mit dem Tag, an dem Sie oder ein von Ihnen benannter Dritter die Ware in 
-                Besitz genommen haben.
+                <strong className="text-foreground">Widerrufsfrist:</strong> Innerhalb von 14 Tagen
+                wird Ihre Retoure automatisch genehmigt. Nach Ablauf der Frist prüfen wir Ihre Anfrage
+                individuell.
               </p>
               <p>
-                <strong className="text-foreground">Widerrufsfolgen:</strong> Wenn Sie von 
-                diesem Widerrufsrecht Gebrauch machen, erstatten wir alle von Ihnen erhaltenen 
+                <strong className="text-foreground">Widerrufsfolgen:</strong> Wenn Sie von
+                diesem Widerrufsrecht Gebrauch machen, erstatten wir alle von Ihnen erhaltenen
                 Zahlungen einschließlich der Lieferkosten unverzüglich.
               </p>
             </div>
@@ -207,10 +258,17 @@ ${formData.reason}
                   Retoure anmelden
                 </h2>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Wir bearbeiten Ihre Anfrage innerhalb von 24 Stunden.
+                  Bestellnummer eingeben — wir prüfen automatisch die 14-Tage-Frist.
                 </p>
               </div>
             </div>
+
+            {formError && (
+              <div className="mb-8 p-4 bg-destructive/10 border border-destructive/20 rounded-lg flex items-start gap-3">
+                <AlertTriangle className="w-5 h-5 text-destructive mt-0.5 flex-shrink-0" />
+                <p className="text-sm text-destructive">{formError}</p>
+              </div>
+            )}
 
             <form onSubmit={handleSubmit} className="space-y-8">
               <div className="space-y-2">
@@ -226,6 +284,9 @@ ${formData.reason}
                   className="h-12 border-border"
                   required
                 />
+                <p className="text-xs text-muted-foreground">
+                  Die Bestellnummer finden Sie in Ihrer Bestellbestätigung.
+                </p>
               </div>
 
               <div className="grid grid-cols-2 gap-6">
@@ -351,10 +412,17 @@ ${formData.reason}
                 />
               </div>
 
-              <div className="p-6 bg-muted/30 border border-border text-sm text-muted-foreground">
-                <strong className="text-foreground">Hinweis:</strong> Nach Absenden wird Ihr 
-                E-Mail-Programm geöffnet. Bitte senden Sie die E-Mail ab, um Ihre 
-                Retouren-Anfrage einzureichen.
+              <div className="p-6 bg-muted/30 border border-border text-sm text-muted-foreground space-y-2">
+                <p>
+                  <strong className="text-foreground">Automatische Prüfung:</strong> Wir prüfen
+                  Ihre Bestellnummer und ob die 14-Tage-Frist eingehalten wurde.
+                </p>
+                <p>
+                  ✅ <strong>Innerhalb 14 Tage:</strong> Sofortige Genehmigung + Retourenschein per E-Mail innerhalb 24h
+                </p>
+                <p>
+                  ⏳ <strong>Nach 14 Tagen:</strong> Manuelle Prüfung — Rückmeldung innerhalb 24h
+                </p>
               </div>
 
               <Button
@@ -365,7 +433,7 @@ ${formData.reason}
                 {isSubmitting ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Wird gesendet...
+                    Wird geprüft...
                   </>
                 ) : (
                   'Retoure einreichen'

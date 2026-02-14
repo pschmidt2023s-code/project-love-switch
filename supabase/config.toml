@@ -32,3 +32,6 @@ verify_jwt = false
 
 [functions.submit-contact-ticket]
 verify_jwt = false
+
+[functions.process-return]
+verify_jwt = false
