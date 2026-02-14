@@ -190,7 +190,33 @@ export function RadioMode() {
           {isLive && (
             <Button
               variant={radioActive ? 'default' : 'outline'}
-              onClick={() => setRadioActive(!radioActive)}
+              onClick={() => {
+                if (!radioActive) {
+                  // Start playback immediately on user gesture (mobile autoplay policy)
+                  setRadioActive(true);
+                  // Find track to play right now
+                  const nonHidden = tracks.filter(t => !(t as any).is_hidden);
+                  let track: (Track & { youtube_url?: string; is_hidden?: boolean }) | null = null;
+                  if (radioConfig?.mode !== 'rotation') {
+                    const scheduled = getScheduledTrack(schedule, tracks);
+                    if (scheduled) track = scheduled as any;
+                  }
+                  if (!track) {
+                    const rotationTracks = nonHidden.length > 0 ? nonHidden : tracks;
+                    if (rotationTracks.length > 0) {
+                      const s = calculateRadioState(rotationTracks, radioConfig?.loop_start_epoch || 0);
+                      if (s) track = s.currentTrack as any;
+                    }
+                  }
+                  if (track) {
+                    player.setQueue(nonHidden.length > 0 ? nonHidden : [track]);
+                    player.play(track);
+                  }
+                } else {
+                  setRadioActive(false);
+                  player.pause();
+                }
+              }}
               className="gap-2"
             >
               <Disc3 className={cn("h-4 w-4", radioActive && "animate-spin")} style={{ animationDuration: '3s' }} />

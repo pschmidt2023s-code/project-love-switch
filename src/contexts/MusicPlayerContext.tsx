@@ -124,10 +124,12 @@ export function MusicPlayerProvider({ children }: { children: ReactNode }) {
       if (audioRef.current && track.audio_url) {
         audioRef.current.src = track.audio_url;
         audioRef.current.volume = state.volume;
-        audioRef.current.play().catch((e) => {
+        audioRef.current.play().then(() => {
+          setState(s => ({ ...s, isPlaying: true }));
+        }).catch((e) => {
           console.warn('[MusicPlayer] Audio play failed:', e.message);
+          setState(s => ({ ...s, isPlaying: false }));
         });
-        setState(s => ({ ...s, isPlaying: true }));
       }
     }
   }, [queueIndex, state.queue]);
