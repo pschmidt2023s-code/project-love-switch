@@ -42,6 +42,7 @@ interface MusicPlayerContextType extends MusicPlayerState {
   setCrossfadeDuration: (seconds: number) => void;
   isMinimized: boolean;
   setIsMinimized: (v: boolean) => void;
+  audioRef: React.RefObject<HTMLAudioElement | null>;
 }
 
 const MusicPlayerContext = createContext<MusicPlayerContextType | null>(null);
@@ -54,7 +55,6 @@ export function useMusicPlayer() {
 
 export function MusicPlayerProvider({ children }: { children: ReactNode }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const nextAudioRef = useRef<HTMLAudioElement | null>(null);
   const [state, setState] = useState<MusicPlayerState>({
     currentTrack: null,
     queue: [],
@@ -68,29 +68,19 @@ export function MusicPlayerProvider({ children }: { children: ReactNode }) {
   const [isMinimized, setIsMinimized] = useState(true);
   const [queueIndex, setQueueIndex] = useState(-1);
 
-  // Initialize audio element
+  // Bind events to the DOM audio element
   useEffect(() => {
-    const audio = new Audio();
-    audio.preload = 'auto';
-    audio.crossOrigin = 'anonymous';
-    audio.volume = state.volume;
-    audioRef.current = audio;
+    const audio = audioRef.current;
+    if (!audio) return;
 
     const onTimeUpdate = () => {
       setState(s => ({ ...s, currentTime: audio.currentTime }));
-      
-      // Crossfade logic: preload next track near end
-      if (audio.duration && audio.currentTime > audio.duration - state.crossfadeDuration) {
-        const remaining = audio.duration - audio.currentTime;
-        const fadeRatio = remaining / state.crossfadeDuration;
-        audio.volume = state.volume * fadeRatio;
-      }
     };
-    
+
     const onDurationChange = () => {
       setState(s => ({ ...s, duration: audio.duration || 0 }));
     };
-    
+
     const onEnded = () => {
       setQueueIndex(prev => {
         const nextIdx = prev + 1;
@@ -102,23 +92,29 @@ export function MusicPlayerProvider({ children }: { children: ReactNode }) {
       });
     };
 
-    const onError = (e: Event) => {
-      const mediaError = audio.error;
-      console.error('[MusicPlayer] Audio error:', mediaError?.code, mediaError?.message);
+    const onPlay = () => {
+      console.log('[MusicPlayer] Playing');
+      setState(s => ({ ...s, isPlaying: true }));
+    };
+
+    const onPause = () => {
       setState(s => ({ ...s, isPlaying: false }));
     };
 
-    const onWaiting = () => {
-      console.log('[MusicPlayer] Buffering...');
+    const onError = () => {
+      const err = audio.error;
+      console.error('[MusicPlayer] Audio error:', err?.code, err?.message);
+      setState(s => ({ ...s, isPlaying: false }));
     };
 
-    const onCanPlay = () => {
-      console.log('[MusicPlayer] Can play through');
-    };
+    const onWaiting = () => console.log('[MusicPlayer] Buffering...');
+    const onCanPlay = () => console.log('[MusicPlayer] Can play');
 
     audio.addEventListener('timeupdate', onTimeUpdate);
     audio.addEventListener('durationchange', onDurationChange);
     audio.addEventListener('ended', onEnded);
+    audio.addEventListener('play', onPlay);
+    audio.addEventListener('pause', onPause);
     audio.addEventListener('error', onError);
     audio.addEventListener('waiting', onWaiting);
     audio.addEventListener('canplaythrough', onCanPlay);
@@ -127,99 +123,62 @@ export function MusicPlayerProvider({ children }: { children: ReactNode }) {
       audio.removeEventListener('timeupdate', onTimeUpdate);
       audio.removeEventListener('durationchange', onDurationChange);
       audio.removeEventListener('ended', onEnded);
+      audio.removeEventListener('play', onPlay);
+      audio.removeEventListener('pause', onPause);
       audio.removeEventListener('error', onError);
       audio.removeEventListener('waiting', onWaiting);
       audio.removeEventListener('canplaythrough', onCanPlay);
-      audio.pause();
     };
-  }, []);
+  }, [state.queue.length]);
 
-  // Update audio src when queue index changes (only for non-gesture triggered changes like next/prev)
+  // Auto-advance when queueIndex changes (for next/prev)
   useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
     if (queueIndex >= 0 && queueIndex < state.queue.length) {
       const track = state.queue[queueIndex];
-      const alreadyPlaying = audioRef.current?.src?.includes(track.audio_url?.split('/').pop() || '__none__');
-      if (alreadyPlaying) return; // Already set by direct play()
+      // Check if this track is already loaded
+      if (state.currentTrack?.id === track.id && audio.src) return;
       
       setState(s => ({ ...s, currentTrack: track, currentTime: 0 }));
-      
-      if (audioRef.current && track.audio_url) {
-        audioRef.current.src = track.audio_url;
-        audioRef.current.volume = state.volume;
-        audioRef.current.play().then(() => {
-          setState(s => ({ ...s, isPlaying: true }));
-        }).catch((e) => {
-          console.warn('[MusicPlayer] Auto-play failed (expected on mobile):', e.message);
-          setState(s => ({ ...s, isPlaying: false }));
-        });
-      }
-    }
-  }, [queueIndex, state.queue]);
-
-  // Direct play: starts audio SYNCHRONOUSLY to preserve user gesture on mobile
-  const playDirect = useCallback((track: Track, queue: Track[]) => {
-    if (!audioRef.current) return;
-    const audio = audioRef.current;
-    
-    // Stop any current playback first
-    audio.pause();
-    audio.currentTime = 0;
-    
-    // Set source and load
-    audio.src = track.audio_url;
-    audio.volume = state.volume;
-    audio.load(); // Force load on mobile
-    
-    console.log('[MusicPlayer] Direct play:', track.title, track.audio_url?.substring(0, 80));
-    
-    // Play immediately (synchronous in user gesture context)
-    const playPromise = audio.play();
-    if (playPromise !== undefined) {
-      playPromise.then(() => {
-        console.log('[MusicPlayer] Play succeeded');
-        setState(s => ({ ...s, isPlaying: true }));
-      }).catch((e) => {
-        console.warn('[MusicPlayer] Play failed, retrying after canplaythrough:', e.message);
-        // Retry on canplaythrough for mobile devices that need buffering first
-        const retryPlay = () => {
-          audio.play().then(() => {
-            console.log('[MusicPlayer] Retry play succeeded');
-            setState(s => ({ ...s, isPlaying: true }));
-          }).catch((e2) => {
-            console.error('[MusicPlayer] Retry also failed:', e2.message);
-            setState(s => ({ ...s, isPlaying: false }));
-          });
-          audio.removeEventListener('canplaythrough', retryPlay);
-        };
-        audio.addEventListener('canplaythrough', retryPlay);
+      audio.src = track.audio_url;
+      audio.load();
+      audio.play().catch((e) => {
+        console.warn('[MusicPlayer] Auto-advance play failed:', e.message);
       });
     }
-    
-    const idx = queue.indexOf(track);
-    setQueueIndex(idx >= 0 ? idx : 0);
-    setState(s => ({ ...s, currentTrack: track, currentTime: 0, queue }));
-  }, [state.volume]);
+  }, [queueIndex]);
 
   const play = useCallback((track?: Track) => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
     if (track) {
-      // Play directly and synchronously to preserve mobile user gesture
+      console.log('[MusicPlayer] Play track:', track.title);
+      // Set source and play - MUST happen synchronously in user gesture
+      audio.src = track.audio_url;
+      audio.load();
+      audio.play().catch((e) => {
+        console.warn('[MusicPlayer] Play failed:', e.message);
+      });
+      
       const currentQueue = state.queue;
       const idx = currentQueue.findIndex(t => t.id === track.id);
       if (idx >= 0) {
-        playDirect(track, currentQueue);
+        setQueueIndex(idx);
       } else {
         const newQueue = [...currentQueue, track];
-        playDirect(track, newQueue);
+        setState(s => ({ ...s, queue: newQueue }));
+        setQueueIndex(newQueue.length - 1);
       }
-    } else if (audioRef.current && state.currentTrack) {
-      audioRef.current.play().catch(() => {});
-      setState(s => ({ ...s, isPlaying: true }));
+      setState(s => ({ ...s, currentTrack: track, currentTime: 0 }));
+    } else if (state.currentTrack) {
+      audio.play().catch(() => {});
     }
-  }, [state.currentTrack]);
+  }, [state.queue, state.currentTrack]);
 
   const pause = useCallback(() => {
     audioRef.current?.pause();
-    setState(s => ({ ...s, isPlaying: false }));
   }, []);
 
   const toggle = useCallback(() => {
@@ -276,7 +235,16 @@ export function MusicPlayerProvider({ children }: { children: ReactNode }) {
       play, pause, toggle, next, previous, seek,
       setVolume, toggleMute, setQueue, addToQueue,
       setCrossfadeDuration, isMinimized, setIsMinimized,
+      audioRef,
     }}>
+      {/* DOM-based audio element - critical for mobile playback */}
+      <audio
+        ref={audioRef}
+        preload="auto"
+        playsInline
+        webkit-playsinline="true"
+        style={{ display: 'none' }}
+      />
       {children}
     </MusicPlayerContext.Provider>
   );
