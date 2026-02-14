@@ -143,7 +143,7 @@ export default function CartPage() {
                     </span>
                   </div>
                   {total < 50 && (
-                    <div className="p-3 bg-secondary/50 text-xs text-muted-foreground">
+                    <div className="p-3 bg-muted/50 text-xs text-muted-foreground">
                       🚚 Noch <strong className="text-foreground">{(50 - total).toFixed(2).replace('.', ',')} €</strong> bis zum kostenlosen Versand
                       <div className="mt-2 h-1 bg-muted overflow-hidden">
                         <div className="h-full bg-accent transition-all duration-500" style={{ width: `${Math.min((total / 50) * 100, 100)}%` }} />

@@ -178,11 +178,11 @@ export default function Profile() {
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="p-4 bg-secondary/30 border border-border text-center">
+                  <div className="p-4 border border-border text-center">
                     <p className="font-display text-2xl text-foreground">{(profile?.payback_balance || 0).toFixed(2)} €</p>
                     <p className="text-[10px] tracking-[0.1em] uppercase text-muted-foreground mt-1">Guthaben</p>
                   </div>
-                  <div className="p-4 bg-secondary/30 border border-border text-center">
+                  <div className="p-4 border border-border text-center">
                     <p className="font-display text-2xl text-foreground">{(profile?.total_spent || 0).toFixed(2)} €</p>
                     <p className="text-[10px] tracking-[0.1em] uppercase text-muted-foreground mt-1">Gesamtausgaben</p>
                   </div>
