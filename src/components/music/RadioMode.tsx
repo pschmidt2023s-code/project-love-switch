@@ -99,6 +99,7 @@ export function RadioMode() {
     const tick = () => {
       let track: (Track & { youtube_url?: string; is_hidden?: boolean }) | null = null;
       let isFromSchedule = false;
+      const nonHiddenTracks = tracks.filter(t => !(t as any).is_hidden);
 
       // Check scheduled tracks first (if mode is 'scheduled' or 'hybrid')
       if (radioConfig.mode !== 'rotation') {
@@ -109,41 +110,37 @@ export function RadioMode() {
         }
       }
 
-      // If the scheduled track is a leak that was already played, skip it
-      if (track && (track as any).is_hidden && playedLeaks.has(track.id)) {
+      // If the scheduled track is a leak that was already played,
+      // only skip if there are public tracks to fall back to
+      if (track && (track as any).is_hidden && playedLeaks.has(track.id) && nonHiddenTracks.length > 0) {
         track = null;
         isFromSchedule = false;
       }
 
       // Fallback to rotation (only non-hidden tracks)
-      if (!track) {
-        const nonHiddenTracks = tracks.filter(t => !(t as any).is_hidden);
-        if (nonHiddenTracks.length > 0) {
-          const state = calculateRadioState(nonHiddenTracks, radioConfig.loop_start_epoch);
-          if (state) track = state.currentTrack as Track & { youtube_url?: string };
-        }
+      if (!track && nonHiddenTracks.length > 0) {
+        const state = calculateRadioState(nonHiddenTracks, radioConfig.loop_start_epoch);
+        if (state) track = state.currentTrack as Track & { youtube_url?: string };
       }
 
       if (!track) return;
       setCurrentRadioTrack(track);
 
-      // Mark leak as played after first play
+      // Mark leak as played after first play (for future skipping when alternatives exist)
       if (isFromSchedule && (track as any).is_hidden && !playedLeaks.has(track.id)) {
         setPlayedLeaks(prev => new Set(prev).add(track!.id));
       }
 
-      const ytId = track.youtube_url ? extractYouTubeId(track.youtube_url) : null;
-      if (ytId) {
-        setYtVideoId(ytId);
-        if (player.isPlaying) player.pause();
-      } else {
-        setYtVideoId(null);
-        if (player.currentTrack?.id !== track.id) {
-          player.setQueue(tracks.filter(t => !(t as any).is_hidden));
-          player.play(track);
-          const nonHiddenTracks = tracks.filter(t => !(t as any).is_hidden);
+      // Play the track via HTML Audio
+      setYtVideoId(null);
+      if (player.currentTrack?.id !== track.id) {
+        // Set queue: if we have public tracks use those, otherwise just the current track
+        player.setQueue(nonHiddenTracks.length > 0 ? nonHiddenTracks : [track]);
+        player.play(track);
+        // Sync position for rotation tracks (not for scheduled leaks)
+        if (!isFromSchedule && nonHiddenTracks.length > 0) {
           const state = calculateRadioState(nonHiddenTracks, radioConfig.loop_start_epoch);
-          if (state && !(track as any).is_hidden) {
+          if (state) {
             setTimeout(() => player.seek(state.positionInTrack), 200);
           }
         }
