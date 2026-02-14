@@ -123,7 +123,10 @@ export function RadioMode() {
         if (state) track = state.currentTrack as Track & { youtube_url?: string };
       }
 
-      if (!track) return;
+      if (!track) {
+        return;
+      }
+      console.log('[Radio] Playing track:', track.title, 'audio_url:', track.audio_url?.substring(0, 60));
       setCurrentRadioTrack(track);
 
       // Mark leak as played after first play (for future skipping when alternatives exist)
@@ -131,13 +134,12 @@ export function RadioMode() {
         setPlayedLeaks(prev => new Set(prev).add(track!.id));
       }
 
-      // Play the track via HTML Audio
+      // Play the track via HTML Audio - use track.id to avoid restarting
       setYtVideoId(null);
-      if (player.currentTrack?.id !== track.id) {
-        // Set queue: if we have public tracks use those, otherwise just the current track
+      const alreadyPlaying = player.currentTrack?.id === track.id && player.isPlaying;
+      if (!alreadyPlaying) {
         player.setQueue(nonHiddenTracks.length > 0 ? nonHiddenTracks : [track]);
         player.play(track);
-        // Sync position for rotation tracks (not for scheduled leaks)
         if (!isFromSchedule && nonHiddenTracks.length > 0) {
           const state = calculateRadioState(nonHiddenTracks, radioConfig.loop_start_epoch);
           if (state) {
@@ -170,7 +172,7 @@ export function RadioMode() {
             <p className="text-sm text-muted-foreground">
               {isLive ? (
                 <span className="flex items-center gap-1">
-                  <Wifi className="h-3 w-3 text-destructive" /> LIVE · {radioConfig?.mode === 'scheduled' ? 'Sendeplan' : 'Rotation'} · {tracks.length} Tracks
+                  <Wifi className="h-3 w-3 text-destructive" /> LIVE · {radioConfig?.mode === 'scheduled' ? 'Sendeplan' : radioConfig?.mode === 'hybrid' ? 'Hybrid' : 'Rotation'} · {tracks.length} Tracks
                 </span>
               ) : (
                 <span className="flex items-center gap-1">
@@ -244,8 +246,14 @@ export function RadioMode() {
         <div className="pt-3 border-t border-border">
           <div className="flex items-center gap-3">
             <div className="w-2 h-2 rounded-full bg-destructive animate-pulse" />
-            <span className="text-sm font-medium">Jetzt: {currentRadioTrack.title}</span>
-            <span className="text-xs text-muted-foreground">von {currentRadioTrack.artist}</span>
+            <span className="text-sm font-medium">
+              {(currentRadioTrack as any).is_hidden && !isAdmin
+                ? 'Exklusiver Leak läuft...'
+                : `Jetzt: ${currentRadioTrack.title}`}
+            </span>
+            {(!((currentRadioTrack as any).is_hidden) || isAdmin) && (
+              <span className="text-xs text-muted-foreground">von {currentRadioTrack.artist}</span>
+            )}
           </div>
         </div>
       )}

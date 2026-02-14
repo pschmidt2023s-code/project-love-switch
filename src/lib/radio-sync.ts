@@ -32,10 +32,11 @@ export interface ScheduleEntry {
 function matchesSchedule(entry: ScheduleEntry, now: Date): boolean {
   if (!entry.is_active) return false;
 
-  const currentDay = now.getDay();
+  // Use UTC to match DB time values (stored without timezone)
+  const currentDay = now.getUTCDay();
   if (entry.day_of_week !== null && entry.day_of_week !== currentDay) return false;
 
-  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+  const currentMinutes = now.getUTCHours() * 60 + now.getUTCMinutes();
   const [startH, startM] = entry.start_time.split(':').map(Number);
   const [endH, endM] = entry.end_time.split(':').map(Number);
   const startMinutes = startH * 60 + startM;
