@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { PremiumPageLayout } from '@/components/premium/PremiumPageLayout';
@@ -13,8 +14,12 @@ import { ProductComparison } from '@/components/ProductComparison';
 import { ProductRecommendations } from '@/components/ai/ProductRecommendations';
 import { RecentlyViewed } from '@/components/RecentlyViewed';
 import { PromoBanner } from '@/components/PromoBanner';
+import { useWarmProductCache } from '@/hooks/useQueryCache';
 
 export default function Index() {
+  // Warm the product cache on homepage load for instant /products navigation
+  const { warmCache } = useWarmProductCache();
+  useEffect(() => { warmCache(); }, [warmCache]);
   return (
     <PremiumPageLayout>
       <Seo 
