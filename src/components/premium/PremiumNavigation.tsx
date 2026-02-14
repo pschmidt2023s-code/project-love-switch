@@ -335,7 +335,7 @@ export function PremiumNavigation() {
 
         {/* Mobile Menu */}
         {showMobileMenu && (
-          <div className="lg:hidden absolute top-full left-0 right-0 bg-background border-b border-border animate-fade-in z-50">
+          <div className="lg:hidden absolute top-full left-0 right-0 bg-background border-b border-border animate-fade-in z-50 nav-mobile-menu">
             <div className="container-premium py-8">
               <nav className="space-y-1">
                 {navLinks.map((link) => (

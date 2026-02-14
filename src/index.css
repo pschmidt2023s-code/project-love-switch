@@ -375,6 +375,24 @@
   color: #000000 !important;
 }
 
+/* Mobile menu must always use normal (non-inverted) colors */
+.nav-header[data-inverted="true"] .nav-mobile-menu,
+.nav-header[data-inverted="true"] .nav-mobile-menu a,
+.nav-header[data-inverted="true"] .nav-mobile-menu button,
+.nav-header[data-inverted="true"] .nav-mobile-menu span,
+.nav-header[data-inverted="true"] .nav-mobile-menu p {
+  color: hsl(var(--foreground)) !important;
+}
+
+.nav-header[data-inverted="true"] .nav-mobile-menu svg {
+  color: hsl(var(--foreground)) !important;
+  stroke: hsl(var(--foreground)) !important;
+}
+
+.nav-header[data-inverted="true"] .nav-mobile-menu .text-muted-foreground {
+  color: hsl(var(--muted-foreground)) !important;
+}
+
 /* ─────────────────────────────────────────────────────────────────────────────
    COMPONENT CLASSES
    ───────────────────────────────────────────────────────────────────────────── */
