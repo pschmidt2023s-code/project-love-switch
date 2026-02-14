@@ -51,6 +51,7 @@ export function YouTubePlayer({
   const playerRef = useRef<any>(null);
   const timerRef = useRef<number>(0);
   const [playerReady, setPlayerReady] = useState(false);
+  const [errorCode, setErrorCode] = useState<number | null>(null);
   const currentVideoRef = useRef<string | null>(null);
 
   const startTimeUpdates = useCallback(() => {
@@ -115,6 +116,7 @@ export function YouTubePlayer({
           },
           onError: (e: any) => {
             console.error('[YouTubePlayer] Error:', e.data);
+            setErrorCode(e.data);
           },
         },
       });
@@ -135,6 +137,7 @@ export function YouTubePlayer({
     if (videoId && videoId !== currentVideoRef.current) {
       console.log('[YouTubePlayer] Loading video:', videoId);
       currentVideoRef.current = videoId;
+      setErrorCode(null);
       // Start muted to bypass autoplay restriction, unmute in onStateChange PLAYING
       playerRef.current.mute();
       playerRef.current.loadVideoById({
@@ -175,10 +178,30 @@ export function YouTubePlayer({
   }, [isMuted, playerReady]);
 
   return (
-    <div
-      ref={containerRef}
-      className="w-full aspect-video rounded-lg overflow-hidden bg-black"
-      style={{ maxWidth: 480 }}
-    />
+    <div className="relative">
+      <div
+        ref={containerRef}
+        className="w-full aspect-video rounded-lg overflow-hidden bg-black"
+        style={{ maxWidth: 480 }}
+      />
+      {errorCode && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 rounded-lg text-white text-center p-4">
+          <p className="text-sm font-medium mb-1">YouTube-Wiedergabe blockiert</p>
+          <p className="text-xs text-white/60">
+            {errorCode === 150 || errorCode === 101
+              ? 'Dieses Video erlaubt keine Einbettung.'
+              : `Fehlercode: ${errorCode}`}
+          </p>
+          <a
+            href={`https://youtube.com/watch?v=${videoId}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-2 text-xs underline text-accent hover:text-accent/80"
+          >
+            Auf YouTube öffnen ↗
+          </a>
+        </div>
+      )}
+    </div>
   );
 }
