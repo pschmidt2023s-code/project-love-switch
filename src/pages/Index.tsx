@@ -15,6 +15,10 @@ import { ProductRecommendations } from '@/components/ai/ProductRecommendations';
 import { RecentlyViewed } from '@/components/RecentlyViewed';
 import { PromoBanner } from '@/components/PromoBanner';
 import { useWarmProductCache } from '@/hooks/useQueryCache';
+import { ScentQuizTeaser } from '@/components/engagement/ScentQuizTeaser';
+import { VIPDrops } from '@/components/engagement/VIPDrops';
+import { UnboxingGallery } from '@/components/engagement/UnboxingGallery';
+import { SpinWheel } from '@/components/engagement/SpinWheel';
 
 export default function Index() {
   // Warm the product cache on homepage load for instant /products navigation
@@ -69,8 +73,17 @@ export default function Index() {
         </div>
       </section>
 
+      {/* Scent Quiz Teaser */}
+      <ScentQuizTeaser />
+
+      {/* VIP Drops & Countdown */}
+      <VIPDrops />
+
       {/* Recently Viewed */}
       <RecentlyViewed />
+
+      {/* Unboxing Gallery */}
+      <UnboxingGallery />
 
       {/* AI Recommendations Section */}
       <section className="py-8 lg:py-12 border-t border-border">
@@ -83,6 +96,9 @@ export default function Index() {
       <PremiumNewsletter />
 
       <ProductComparison />
+
+      {/* Spin Wheel */}
+      <SpinWheel />
     </PremiumPageLayout>
   );
 }

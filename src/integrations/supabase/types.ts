@@ -1621,6 +1621,74 @@ export type Database = {
           },
         ]
       }
+      spin_prizes: {
+        Row: {
+          color: string | null
+          created_at: string
+          discount_type: string | null
+          discount_value: number | null
+          id: string
+          is_active: boolean | null
+          label: string
+          probability: number
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          discount_type?: string | null
+          discount_value?: number | null
+          id?: string
+          is_active?: boolean | null
+          label: string
+          probability?: number
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          discount_type?: string | null
+          discount_value?: number | null
+          id?: string
+          is_active?: boolean | null
+          label?: string
+          probability?: number
+        }
+        Relationships: []
+      }
+      spin_results: {
+        Row: {
+          coupon_code: string | null
+          created_at: string
+          email: string
+          id: string
+          prize_id: string | null
+          prize_label: string
+        }
+        Insert: {
+          coupon_code?: string | null
+          created_at?: string
+          email: string
+          id?: string
+          prize_id?: string | null
+          prize_label: string
+        }
+        Update: {
+          coupon_code?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          prize_id?: string | null
+          prize_label?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "spin_results_prize_id_fkey"
+            columns: ["prize_id"]
+            isOneToOne: false
+            referencedRelation: "spin_prizes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stock_notifications: {
         Row: {
           created_at: string
@@ -1893,6 +1961,63 @@ export type Database = {
         }
         Relationships: []
       }
+      unboxing_gallery: {
+        Row: {
+          caption: string | null
+          created_at: string
+          customer_name: string
+          id: string
+          image_url: string
+          is_approved: boolean | null
+          product_name: string | null
+          user_id: string | null
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string
+          customer_name?: string
+          id?: string
+          image_url: string
+          is_approved?: boolean | null
+          product_name?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          customer_name?: string
+          id?: string
+          image_url?: string
+          is_approved?: boolean | null
+          product_name?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      user_badges: {
+        Row: {
+          badge_name: string
+          badge_type: string
+          earned_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          badge_name: string
+          badge_type: string
+          earned_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          badge_name?: string
+          badge_type?: string
+          earned_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -1913,6 +2038,47 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      vip_drops: {
+        Row: {
+          created_at: string
+          description: string | null
+          drop_date: string
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          product_id: string | null
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          drop_date: string
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          product_id?: string | null
+          title: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          drop_date?: string
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          product_id?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vip_drops_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       wishlist: {
         Row: {

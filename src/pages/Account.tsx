@@ -12,6 +12,7 @@ import {
   User, Package, MapPin, LogOut, Edit2, Plus, Trash2, ChevronRight, Award, Gift
 } from 'lucide-react';
 import { LoyaltyProgress } from '@/components/LoyaltyProgress';
+import { GamificationBadges } from '@/components/engagement/GamificationBadges';
 
 interface Profile {
   id: string;
@@ -254,6 +255,12 @@ export default function Account() {
                   totalSpent={Number(profile?.total_spent) || 0}
                   paybackBalance={Number(profile?.payback_balance) || 0}
                 />
+                
+                {/* Gamification Badges */}
+                <div className="pt-6 border-t border-border">
+                  <h2 className="text-[10px] tracking-[0.2em] uppercase text-accent mb-6">Deine Badges</h2>
+                  <GamificationBadges />
+                </div>
               </div>
             )}
 
