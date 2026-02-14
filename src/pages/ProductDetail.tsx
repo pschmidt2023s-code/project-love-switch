@@ -15,41 +15,66 @@ import { ProductSchema, BreadcrumbSchema } from '@/components/seo';
 import { SocialShare } from '@/components/SocialShare';
 import { toast } from 'sonner';
 
-// Reusable scent layer component
-function ScentLayer({ 
-  label, 
-  sublabel, 
-  notes, 
-  icon: Icon, 
-  accentClass 
-}: { 
-  label: string; 
-  sublabel: string; 
-  notes: string[]; 
-  icon: React.ElementType; 
-  accentClass: string;
-}) {
-  if (!notes || notes.length === 0) return null;
+// Visual pyramid scent layer with staircase widths
+function ScentPyramid({ topNotes, middleNotes, baseNotes }: { topNotes: string[]; middleNotes: string[]; baseNotes: string[] }) {
+  const layers = [
+    { label: 'Kopfnote', sublabel: 'Erster Eindruck · 0–30 Min', notes: topNotes, Icon: Droplet, width: 'max-w-[60%]', accent: 'border-amber-300 dark:border-amber-600/50', iconColor: 'text-amber-500', tagBg: 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-700/40', tagText: 'text-amber-700 dark:text-amber-400' },
+    { label: 'Herznote', sublabel: 'Charakter · 30 Min – 3 Std', notes: middleNotes, Icon: Heart, width: 'max-w-[80%]', accent: 'border-rose-300 dark:border-rose-600/50', iconColor: 'text-rose-500', tagBg: 'bg-rose-50 dark:bg-rose-900/20 border-rose-200 dark:border-rose-700/40', tagText: 'text-rose-700 dark:text-rose-400' },
+    { label: 'Basisnote', sublabel: 'Fondation · 3+ Stunden', notes: baseNotes, Icon: Anchor, width: 'max-w-full', accent: 'border-stone-400 dark:border-stone-500/50', iconColor: 'text-stone-500', tagBg: 'bg-stone-100 dark:bg-stone-800/20 border-stone-300 dark:border-stone-600/40', tagText: 'text-stone-700 dark:text-stone-300' },
+  ];
+
   return (
-    <div className="space-y-3">
-      <div className="flex items-center gap-2.5">
-        <div className={`w-8 h-8 flex items-center justify-center border border-border ${accentClass}`}>
-          <Icon className="w-4 h-4" strokeWidth={1.5} />
-        </div>
-        <div>
-          <p className="text-xs font-medium text-foreground">{label}</p>
-          <p className="text-[10px] text-muted-foreground">{sublabel}</p>
-        </div>
+    <div className="space-y-4">
+      {/* Pyramid header */}
+      <div className="text-center mb-2">
+        <p className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground">Duftentwicklung über Zeit</p>
       </div>
-      <div className="flex flex-wrap gap-1.5 pl-[42px]">
-        {notes.map((note, i) => (
-          <span
-            key={i}
-            className="px-2.5 py-1 bg-muted text-muted-foreground text-[11px] border border-border"
-          >
-            {typeof note === 'string' ? note : (note as any).name || note}
-          </span>
-        ))}
+      
+      {/* Staircase layers — each wider than the last */}
+      <div className="flex flex-col items-center gap-3">
+        {layers.map((layer, index) => {
+          if (!layer.notes || layer.notes.length === 0) return null;
+          return (
+            <motion.div
+              key={layer.label}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35, delay: index * 0.1 }}
+              className={`w-full ${layer.width} mx-auto`}
+            >
+              <div className={`border ${layer.accent} p-4`}>
+                {/* Layer header */}
+                <div className="flex items-center gap-2.5 mb-3">
+                  <div className={`w-7 h-7 flex items-center justify-center border border-border ${layer.iconColor}`}>
+                    <layer.Icon className="w-3.5 h-3.5" strokeWidth={1.5} />
+                  </div>
+                  <div>
+                    <p className={`text-xs font-medium ${layer.tagText}`}>{layer.label}</p>
+                    <p className="text-[9px] text-muted-foreground">{layer.sublabel}</p>
+                  </div>
+                </div>
+                {/* Notes tags */}
+                <div className="flex flex-wrap gap-1.5">
+                  {layer.notes.map((note, i) => (
+                    <span
+                      key={i}
+                      className={`px-2.5 py-1 text-[10px] border ${layer.tagBg} ${layer.tagText}`}
+                    >
+                      {typeof note === 'string' ? note : (note as any).name || note}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          );
+        })}
+      </div>
+      
+      {/* Visual pyramid bars */}
+      <div className="flex flex-col items-center gap-1 pt-2">
+        <div className="w-12 h-0.5 bg-gradient-to-r from-amber-400 to-amber-500" />
+        <div className="w-20 h-0.5 bg-gradient-to-r from-rose-400 to-rose-500" />
+        <div className="w-28 h-0.5 bg-gradient-to-r from-stone-400 to-stone-500" />
       </div>
     </div>
   );
@@ -247,7 +272,7 @@ export default function ProductDetail() {
               <div className="grid grid-cols-3 gap-3">
                 <div className="flex flex-col items-center py-3 border border-border">
                   <Clock className="w-4 h-4 text-accent mb-1.5" strokeWidth={1.5} />
-                  <span className="text-[10px] font-medium text-foreground">6-8 Std.</span>
+                  <span className="text-[10px] font-medium text-foreground">8+ Std.</span>
                   <span className="text-[9px] text-muted-foreground">Haltbarkeit</span>
                 </div>
                 <div className="flex flex-col items-center py-3 border border-border">
@@ -324,11 +349,7 @@ export default function ProductDetail() {
               {/* Scent Pyramid */}
               {hasNotes && (
                 <InfoSection title="Duftpyramide" defaultOpen={true}>
-                  <div className="space-y-5">
-                    <ScentLayer label="Kopfnote" sublabel="Erster Eindruck · 0-30 Min" notes={topNotes} icon={Droplet} accentClass="text-amber-500 dark:text-amber-400" />
-                    <ScentLayer label="Herznote" sublabel="Charakter · 30 Min - 3 Std" notes={middleNotes} icon={Heart} accentClass="text-rose-500 dark:text-rose-400" />
-                    <ScentLayer label="Basisnote" sublabel="Fondation · 3+ Stunden" notes={baseNotes} icon={Anchor} accentClass="text-stone-500 dark:text-stone-400" />
-                  </div>
+                  <ScentPyramid topNotes={topNotes} middleNotes={middleNotes} baseNotes={baseNotes} />
                 </InfoSection>
               )}
 
@@ -539,7 +560,7 @@ export default function ProductDetail() {
             <div className="grid grid-cols-3 gap-3">
               <div className="flex flex-col items-center py-3 border border-border">
                 <Clock className="w-4 h-4 text-accent mb-1.5" strokeWidth={1.5} />
-                <span className="text-[10px] font-medium text-foreground">6-8 Std.</span>
+                <span className="text-[10px] font-medium text-foreground">8+ Std.</span>
                 <span className="text-[9px] text-muted-foreground">Haltbarkeit</span>
               </div>
               <div className="flex flex-col items-center py-3 border border-border">
@@ -633,11 +654,7 @@ export default function ProductDetail() {
             {/* Scent Pyramid */}
             {hasNotes && (
               <InfoSection title="Duftpyramide" defaultOpen={true}>
-                <div className="space-y-5">
-                  <ScentLayer label="Kopfnote" sublabel="Erster Eindruck · 0-30 Min" notes={topNotes} icon={Droplet} accentClass="text-amber-500 dark:text-amber-400" />
-                  <ScentLayer label="Herznote" sublabel="Charakter · 30 Min - 3 Std" notes={middleNotes} icon={Heart} accentClass="text-rose-500 dark:text-rose-400" />
-                  <ScentLayer label="Basisnote" sublabel="Fondation · 3+ Stunden" notes={baseNotes} icon={Anchor} accentClass="text-stone-500 dark:text-stone-400" />
-                </div>
+                <ScentPyramid topNotes={topNotes} middleNotes={middleNotes} baseNotes={baseNotes} />
               </InfoSection>
             )}
 

@@ -2,33 +2,9 @@ import { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { PremiumPageLayout } from '@/components/premium/PremiumPageLayout';
 import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
-import { 
-  Package, 
-  Calendar, 
-  Pause, 
-  Play, 
-  XCircle, 
-  ArrowLeft, 
-  Mail,
-  CheckCircle2,
-  RefreshCw,
-  AlertTriangle
+  Package, Calendar, Pause, Play, XCircle, ArrowLeft, Mail,
+  CheckCircle2, RefreshCw, AlertTriangle, ArrowRight
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -58,11 +34,10 @@ export default function ManageSubscription() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
-  
-  // For requesting a new magic link
   const [email, setEmail] = useState('');
   const [linkRequested, setLinkRequested] = useState(false);
   const [requestLoading, setRequestLoading] = useState(false);
+  const [confirmCancel, setConfirmCancel] = useState(false);
 
   useEffect(() => {
     if (subscriptionId && token) {
@@ -77,16 +52,9 @@ export default function ManageSubscription() {
       const { data, error: invokeError } = await supabase.functions.invoke('manage-subscription', {
         body: { action: 'validate', subscriptionId, token }
       });
-
       if (invokeError) throw invokeError;
-
-      if (data.error) {
-        setError(data.error);
-      } else {
-        setSubscription(data.subscription);
-      }
-    } catch (err) {
-      console.error('Error validating subscription:', err);
+      if (data.error) { setError(data.error); } else { setSubscription(data.subscription); }
+    } catch {
       setError('Ungültiger oder abgelaufener Link');
     } finally {
       setLoading(false);
@@ -99,28 +67,14 @@ export default function ManageSubscription() {
       const { data, error: invokeError } = await supabase.functions.invoke('manage-subscription', {
         body: { action, subscriptionId, token }
       });
-
       if (invokeError) throw invokeError;
-
-      if (data.error) {
-        toast.error(data.error);
-      } else {
-        const messages = {
-          pause: 'Abo wurde pausiert',
-          resume: 'Abo wurde fortgesetzt',
-          cancel: 'Abo wurde gekündigt'
-        };
+      if (data.error) { toast.error(data.error); } else {
+        const messages = { pause: 'Abo wurde pausiert', resume: 'Abo wurde fortgesetzt', cancel: 'Abo wurde gekündigt' };
         toast.success(messages[action]);
-        
-        // Update local state
-        setSubscription(prev => prev ? { 
-          ...prev, 
-          status: data.newStatus,
-          next_delivery: data.nextDelivery || prev.next_delivery
-        } : null);
+        setSubscription(prev => prev ? { ...prev, status: data.newStatus, next_delivery: data.nextDelivery || prev.next_delivery } : null);
+        setConfirmCancel(false);
       }
-    } catch (err) {
-      console.error('Error performing action:', err);
+    } catch {
       toast.error('Aktion konnte nicht ausgeführt werden');
     } finally {
       setActionLoading(false);
@@ -130,112 +84,96 @@ export default function ManageSubscription() {
   const handleRequestLink = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim()) return;
-
     setRequestLoading(true);
     try {
       const { data, error: invokeError } = await supabase.functions.invoke('manage-subscription', {
         body: { action: 'generate_link', email: email.trim() }
       });
-
       if (invokeError) throw invokeError;
-
-      if (data.error) {
-        toast.error(data.error);
-      } else {
-        setLinkRequested(true);
-        toast.success('Verwaltungslink wurde an deine E-Mail gesendet');
-      }
-    } catch (err) {
-      console.error('Error requesting link:', err);
+      if (data.error) { toast.error(data.error); } else { setLinkRequested(true); toast.success('Verwaltungslink wurde an deine E-Mail gesendet'); }
+    } catch {
       toast.error('Link konnte nicht gesendet werden');
     } finally {
       setRequestLoading(false);
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    const config: Record<string, { label: string; variant: 'default' | 'success' | 'warning' | 'destructive' | 'outline' }> = {
-      active: { label: 'Aktiv', variant: 'success' },
-      paused: { label: 'Pausiert', variant: 'warning' },
-      cancelled: { label: 'Gekündigt', variant: 'destructive' },
-    };
-    const { label, variant } = config[status] || { label: status, variant: 'outline' as const };
-    return <Badge variant={variant}>{label}</Badge>;
-  };
-
   const frequencyLabels: Record<string, string> = {
-    monthly: 'Monatlich',
-    bimonthly: 'Alle 2 Monate',
-    quarterly: 'Alle 3 Monate',
+    monthly: 'Monatlich', bimonthly: 'Alle 2 Monate', quarterly: 'Alle 3 Monate',
   };
 
-  // Show request form if no valid subscription
+  const statusConfig: Record<string, { label: string; style: string }> = {
+    active: { label: 'Aktiv', style: 'bg-accent/10 text-accent' },
+    paused: { label: 'Pausiert', style: 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400' },
+    cancelled: { label: 'Gekündigt', style: 'bg-destructive/10 text-destructive' },
+  };
+
+  // Request link / error state
   if (!subscriptionId || !token || error) {
     return (
       <PremiumPageLayout>
-      <div className="min-h-[60vh] flex items-center justify-center p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <div className="w-12 h-12 bg-muted mx-auto mb-4 flex items-center justify-center">
-              <Package className="w-6 h-6 text-foreground" strokeWidth={1.5} />
-            </div>
-            <CardTitle className="font-display text-2xl">Abo-Verwaltung</CardTitle>
-            <CardDescription>
-              {error ? error : 'Gib deine E-Mail-Adresse ein, um einen Verwaltungslink zu erhalten'}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {linkRequested ? (
-              <div className="text-center space-y-4">
-                <div className="w-16 h-16 bg-success/10 mx-auto flex items-center justify-center">
-                  <CheckCircle2 className="w-8 h-8 text-success" />
+        <section className="py-24 lg:py-32">
+          <div className="container-premium flex items-center justify-center">
+            <div className="w-full max-w-md space-y-8">
+              <div className="text-center">
+                <div className="w-14 h-14 mx-auto mb-6 flex items-center justify-center border border-border">
+                  <Package className="w-6 h-6 text-accent" strokeWidth={1.5} />
                 </div>
+                <h1 className="font-display text-2xl text-foreground mb-2">Abo-Verwaltung</h1>
                 <p className="text-sm text-muted-foreground">
-                  Wir haben dir einen Verwaltungslink per E-Mail geschickt. 
-                  Bitte überprüfe deinen Posteingang.
+                  {error || 'Gib deine E-Mail-Adresse ein, um einen Verwaltungslink zu erhalten'}
                 </p>
-                <Button variant="outline" onClick={() => setLinkRequested(false)}>
-                  Erneut senden
-                </Button>
               </div>
-            ) : (
-              <form onSubmit={handleRequestLink} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">E-Mail-Adresse</Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="deine@email.de"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="pl-10"
-                      required
-                    />
-                  </div>
+
+              {linkRequested ? (
+                <div className="text-center space-y-6 p-8 border border-border">
+                  <CheckCircle2 className="w-10 h-10 text-accent mx-auto" strokeWidth={1.5} />
+                  <p className="text-sm text-muted-foreground">
+                    Wir haben dir einen Verwaltungslink per E-Mail geschickt. Bitte überprüfe deinen Posteingang.
+                  </p>
+                  <button onClick={() => setLinkRequested(false)} className="px-6 py-3 border border-border text-foreground text-[11px] tracking-[0.15em] uppercase font-medium hover:bg-muted transition-colors">
+                    Erneut senden
+                  </button>
                 </div>
-                <Button type="submit" className="w-full" disabled={requestLoading}>
-                  {requestLoading ? (
-                    <>
-                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                      Wird gesendet...
-                    </>
-                  ) : (
-                    'Verwaltungslink anfordern'
-                  )}
-                </Button>
-              </form>
-            )}
-            <div className="mt-6 pt-4 border-t border-border text-center">
-              <Link to="/" className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-2">
-                <ArrowLeft className="w-4 h-4" />
-                Zurück zum Shop
-              </Link>
+              ) : (
+                <form onSubmit={handleRequestLink} className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] tracking-[0.15em] uppercase text-muted-foreground">E-Mail-Adresse</label>
+                    <div className="relative">
+                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" strokeWidth={1.5} />
+                      <input
+                        type="email"
+                        placeholder="deine@email.de"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                        className="w-full pl-11 pr-4 py-4 bg-background border border-border text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-accent"
+                      />
+                    </div>
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={requestLoading}
+                    className="w-full py-4 bg-foreground text-background text-[11px] tracking-[0.15em] uppercase font-medium hover:bg-foreground/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    {requestLoading ? (
+                      <><RefreshCw className="w-4 h-4 animate-spin" /> Wird gesendet...</>
+                    ) : (
+                      <>Verwaltungslink anfordern <ArrowRight className="w-4 h-4" strokeWidth={1.5} /></>
+                    )}
+                  </button>
+                </form>
+              )}
+
+              <div className="text-center pt-4 border-t border-border">
+                <Link to="/" className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-2">
+                  <ArrowLeft className="w-4 h-4" strokeWidth={1.5} />
+                  Zurück zum Shop
+                </Link>
+              </div>
             </div>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </section>
       </PremiumPageLayout>
     );
   }
@@ -244,10 +182,7 @@ export default function ManageSubscription() {
     return (
       <PremiumPageLayout>
         <div className="min-h-[60vh] flex items-center justify-center">
-          <div className="text-center">
-            <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-4 text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">Lade Abo-Details...</p>
-          </div>
+          <div className="w-8 h-8 border-2 border-accent border-t-transparent animate-spin" />
         </div>
       </PremiumPageLayout>
     );
@@ -256,207 +191,202 @@ export default function ManageSubscription() {
   if (!subscription) {
     return (
       <PremiumPageLayout>
-        <div className="min-h-[60vh] flex items-center justify-center p-4">
-          <Card className="w-full max-w-md text-center">
-            <CardContent className="pt-8">
-              <AlertTriangle className="w-12 h-12 text-warning mx-auto mb-4" />
-              <h2 className="text-xl font-medium mb-2">Abo nicht gefunden</h2>
-              <p className="text-sm text-muted-foreground mb-6">
-                Das angeforderte Abo konnte nicht gefunden werden.
-              </p>
-              <Link to="/">
-                <Button>Zurück zum Shop</Button>
-              </Link>
-            </CardContent>
-          </Card>
-        </div>
+        <section className="py-24 lg:py-32">
+          <div className="container-premium text-center max-w-md mx-auto space-y-6">
+            <AlertTriangle className="w-12 h-12 text-amber-500 mx-auto" strokeWidth={1.5} />
+            <h1 className="font-display text-2xl text-foreground">Abo nicht gefunden</h1>
+            <p className="text-sm text-muted-foreground">Das angeforderte Abo konnte nicht gefunden werden.</p>
+            <Link to="/" className="inline-flex items-center px-6 py-3 bg-foreground text-background text-[11px] tracking-[0.15em] uppercase font-medium hover:bg-foreground/90 transition-colors">
+              Zurück zum Shop
+            </Link>
+          </div>
+        </section>
       </PremiumPageLayout>
     );
   }
 
+  const status = statusConfig[subscription.status] || { label: subscription.status, style: 'bg-muted text-muted-foreground' };
+
   return (
     <PremiumPageLayout>
-    <div className="container-premium py-12">
-      <div className="max-w-2xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <Link to="/" className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-2 mb-4">
-            <ArrowLeft className="w-4 h-4" />
+      {/* Header */}
+      <section className="border-b border-border">
+        <div className="container-premium py-8 lg:py-12">
+          <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6">
+            <ArrowLeft className="w-4 h-4" strokeWidth={1.5} />
             Zurück zum Shop
           </Link>
-          <h1 className="text-3xl font-display tracking-tight">Mein Abo verwalten</h1>
-          <p className="text-muted-foreground mt-1">
+          <span className="inline-block text-[10px] tracking-[0.3em] uppercase text-accent mb-3">Abonnement</span>
+          <h1 className="font-display text-3xl lg:text-4xl text-foreground">Mein Abo verwalten</h1>
+          <p className="text-muted-foreground text-sm mt-2">
             Hallo {subscription.guest_name}, hier kannst du dein Parfüm-Abo verwalten.
           </p>
         </div>
+      </section>
 
-        {/* Subscription Card */}
-        <Card className="mb-6">
-          <CardHeader className="flex flex-row items-start gap-4">
-            {subscription.image ? (
-              <img 
-                src={subscription.image} 
-                alt={subscription.product} 
-                className="w-20 h-20 object-cover bg-muted"
-              />
-            ) : (
-              <div className="w-20 h-20 bg-muted flex items-center justify-center">
-                <Package className="w-8 h-8 text-muted-foreground" />
-              </div>
-            )}
-            <div className="flex-1">
-              <div className="flex items-start justify-between">
-                <div>
-                  <CardTitle className="text-lg">{subscription.product}</CardTitle>
-                  {subscription.variant && (
-                    <CardDescription>{subscription.variant}</CardDescription>
-                  )}
+      <section className="section-spacing">
+        <div className="container-premium max-w-2xl">
+          {/* Subscription overview */}
+          <div className="border border-border p-6 lg:p-8 mb-6">
+            <div className="flex items-start gap-5">
+              {subscription.image ? (
+                <img src={subscription.image} alt={subscription.product} className="w-20 h-20 object-cover bg-muted flex-shrink-0" />
+              ) : (
+                <div className="w-20 h-20 bg-muted flex items-center justify-center flex-shrink-0">
+                  <Package className="w-8 h-8 text-muted-foreground" strokeWidth={1} />
                 </div>
-                {getStatusBadge(subscription.status)}
-              </div>
-              {subscription.price && (
-                <p className="text-lg font-medium mt-2">
-                  {subscription.price.toFixed(2)} €
-                  {subscription.discount_percent && (
-                    <span className="text-sm text-success ml-2">-{subscription.discount_percent}%</span>
-                  )}
-                </p>
               )}
+              <div className="flex-1">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h2 className="font-display text-lg text-foreground">{subscription.product}</h2>
+                    {subscription.variant && <p className="text-xs text-muted-foreground mt-0.5">{subscription.variant}</p>}
+                  </div>
+                  <span className={`px-3 py-1 text-[10px] tracking-[0.1em] uppercase font-medium ${status.style}`}>
+                    {status.label}
+                  </span>
+                </div>
+                {subscription.price && (
+                  <p className="text-lg font-display text-foreground mt-3">
+                    {subscription.price.toFixed(2)} €
+                    {subscription.discount_percent && (
+                      <span className="text-xs text-accent ml-2">-{subscription.discount_percent}%</span>
+                    )}
+                  </p>
+                )}
+              </div>
             </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Details Grid */}
-            <div className="grid grid-cols-2 gap-4 py-4 border-t border-border">
+
+            {/* Details */}
+            <div className="grid grid-cols-2 gap-4 mt-6 pt-6 border-t border-border">
               <div>
-                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Intervall</p>
-                <p className="text-sm font-medium flex items-center gap-2">
-                  <Calendar className="w-4 h-4" />
+                <p className="text-[10px] tracking-[0.15em] uppercase text-muted-foreground mb-1">Intervall</p>
+                <p className="text-sm font-medium text-foreground flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-accent" strokeWidth={1.5} />
                   {frequencyLabels[subscription.frequency] || subscription.frequency}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Lieferungen</p>
-                <p className="text-sm font-medium">{subscription.delivery_count}</p>
+                <p className="text-[10px] tracking-[0.15em] uppercase text-muted-foreground mb-1">Lieferungen</p>
+                <p className="text-sm font-medium text-foreground">{subscription.delivery_count}</p>
               </div>
               {subscription.next_delivery && subscription.status === 'active' && (
                 <div className="col-span-2">
-                  <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Nächste Lieferung</p>
-                  <p className="text-sm font-medium">
+                  <p className="text-[10px] tracking-[0.15em] uppercase text-muted-foreground mb-1">Nächste Lieferung</p>
+                  <p className="text-sm font-medium text-foreground">
                     {format(new Date(subscription.next_delivery), 'dd. MMMM yyyy', { locale: de })}
                   </p>
                 </div>
               )}
             </div>
+          </div>
 
-            {/* Actions */}
-            <div className="pt-4 border-t border-border space-y-3">
-              {subscription.status === 'active' && (
-                <>
-                  <Button 
-                    variant="outline" 
-                    className="w-full justify-start"
-                    onClick={() => handleAction('pause')}
-                    disabled={actionLoading}
+          {/* Actions */}
+          <div className="border border-border p-6 lg:p-8 space-y-4">
+            <h3 className="text-[10px] tracking-[0.2em] uppercase text-accent mb-2">Aktionen</h3>
+
+            {subscription.status === 'active' && (
+              <>
+                <button
+                  onClick={() => handleAction('pause')}
+                  disabled={actionLoading}
+                  className="w-full flex items-center gap-3 px-5 py-4 border border-border text-foreground hover:bg-muted transition-colors disabled:opacity-50"
+                >
+                  <Pause className="w-4 h-4 text-accent" strokeWidth={1.5} />
+                  <span className="text-sm">Abo pausieren</span>
+                </button>
+
+                {!confirmCancel ? (
+                  <button
+                    onClick={() => setConfirmCancel(true)}
+                    className="w-full flex items-center gap-3 px-5 py-4 border border-border text-destructive hover:bg-destructive/5 transition-colors"
                   >
-                    <Pause className="w-4 h-4 mr-2" />
-                    Abo pausieren
-                  </Button>
-                  
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="outline" className="w-full justify-start text-destructive hover:text-destructive">
-                        <XCircle className="w-4 h-4 mr-2" />
-                        Abo kündigen
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Abo wirklich kündigen?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Diese Aktion kann nicht rückgängig gemacht werden. Du erhältst keine weiteren 
-                          Lieferungen mehr und verlierst deinen Abo-Rabatt.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-                        <AlertDialogAction 
-                          onClick={() => handleAction('cancel')}
-                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        >
-                          Ja, kündigen
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </>
-              )}
+                    <XCircle className="w-4 h-4" strokeWidth={1.5} />
+                    <span className="text-sm">Abo kündigen</span>
+                  </button>
+                ) : (
+                  <div className="p-5 border border-destructive/30 bg-destructive/5 space-y-4">
+                    <p className="text-sm text-foreground font-medium">Abo wirklich kündigen?</p>
+                    <p className="text-xs text-muted-foreground">
+                      Du erhältst keine weiteren Lieferungen mehr und verlierst deinen Abo-Rabatt. Diese Aktion kann nicht rückgängig gemacht werden.
+                    </p>
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => setConfirmCancel(false)}
+                        className="px-5 py-3 border border-border text-foreground text-[11px] tracking-[0.15em] uppercase font-medium hover:bg-muted transition-colors"
+                      >
+                        Abbrechen
+                      </button>
+                      <button
+                        onClick={() => handleAction('cancel')}
+                        disabled={actionLoading}
+                        className="px-5 py-3 bg-destructive text-destructive-foreground text-[11px] tracking-[0.15em] uppercase font-medium hover:bg-destructive/90 transition-colors disabled:opacity-50"
+                      >
+                        Ja, kündigen
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
 
-              {subscription.status === 'paused' && (
-                <>
-                  <Button 
-                    className="w-full justify-start"
-                    onClick={() => handleAction('resume')}
-                    disabled={actionLoading}
+            {subscription.status === 'paused' && (
+              <>
+                <button
+                  onClick={() => handleAction('resume')}
+                  disabled={actionLoading}
+                  className="w-full py-4 bg-foreground text-background text-[11px] tracking-[0.15em] uppercase font-medium hover:bg-foreground/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  <Play className="w-4 h-4" strokeWidth={1.5} />
+                  Abo fortsetzen
+                </button>
+
+                {!confirmCancel ? (
+                  <button
+                    onClick={() => setConfirmCancel(true)}
+                    className="w-full flex items-center gap-3 px-5 py-4 border border-border text-destructive hover:bg-destructive/5 transition-colors"
                   >
-                    <Play className="w-4 h-4 mr-2" />
-                    Abo fortsetzen
-                  </Button>
-                  
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="outline" className="w-full justify-start text-destructive hover:text-destructive">
-                        <XCircle className="w-4 h-4 mr-2" />
-                        Abo kündigen
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Abo wirklich kündigen?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Diese Aktion kann nicht rückgängig gemacht werden.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-                        <AlertDialogAction 
-                          onClick={() => handleAction('cancel')}
-                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        >
-                          Ja, kündigen
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </>
-              )}
+                    <XCircle className="w-4 h-4" strokeWidth={1.5} />
+                    <span className="text-sm">Abo kündigen</span>
+                  </button>
+                ) : (
+                  <div className="p-5 border border-destructive/30 bg-destructive/5 space-y-4">
+                    <p className="text-sm text-foreground font-medium">Abo wirklich kündigen?</p>
+                    <p className="text-xs text-muted-foreground">Diese Aktion kann nicht rückgängig gemacht werden.</p>
+                    <div className="flex gap-3">
+                      <button onClick={() => setConfirmCancel(false)} className="px-5 py-3 border border-border text-foreground text-[11px] tracking-[0.15em] uppercase font-medium hover:bg-muted transition-colors">
+                        Abbrechen
+                      </button>
+                      <button onClick={() => handleAction('cancel')} disabled={actionLoading} className="px-5 py-3 bg-destructive text-destructive-foreground text-[11px] tracking-[0.15em] uppercase font-medium hover:bg-destructive/90 transition-colors disabled:opacity-50">
+                        Ja, kündigen
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
 
-              {subscription.status === 'cancelled' && (
-                <div className="text-center py-4">
-                  <p className="text-muted-foreground text-sm">
-                    Dieses Abo wurde gekündigt. 
-                    <Link to="/products" className="text-foreground underline ml-1">
-                      Neues Abo starten
-                    </Link>
-                  </p>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+            {subscription.status === 'cancelled' && (
+              <div className="text-center py-6">
+                <p className="text-sm text-muted-foreground">
+                  Dieses Abo wurde gekündigt.{' '}
+                  <Link to="/products" className="text-accent hover:underline">Neues Abo starten</Link>
+                </p>
+              </div>
+            )}
+          </div>
 
-        {/* Help Section */}
-        <Card>
-          <CardContent className="pt-6">
+          {/* Help */}
+          <div className="mt-6 p-5 border border-border">
             <p className="text-sm text-muted-foreground">
               Fragen zu deinem Abo? Kontaktiere uns unter{' '}
-              <a href="mailto:support@aldenairperfumes.de" className="text-foreground underline">
+              <a href="mailto:support@aldenairperfumes.de" className="text-accent hover:underline">
                 support@aldenairperfumes.de
               </a>
             </p>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+          </div>
+        </div>
+      </section>
     </PremiumPageLayout>
   );
 }
