@@ -58,27 +58,14 @@ export function MusicPlayerProvider({ children }: { children: ReactNode }) {
   const [isMuted, setIsMuted] = useState(false);
   const [isMinimized, setIsMinimized] = useState(true);
 
-  const attemptPlay = useCallback((audio: HTMLAudioElement) => {
-    const p = audio.play();
-    if (p) {
-      p.then(() => {
-        setIsPlaying(true);
-      }).catch(() => {
-        // Mobile fallback: try muted first
-        audio.muted = true;
-        audio.play().then(() => {
-          setIsPlaying(true);
-          setTimeout(() => { audio.muted = false; }, 300);
-        }).catch(() => {
-          setIsPlaying(false);
-        });
-      });
-    }
-  }, []);
-
   const playTrack = useCallback((track: Track, playlist?: Track[]) => {
     const audio = audioRef.current;
-    if (!audio) return;
+    console.log('[Player] playTrack called:', track.title, 'audioRef exists:', !!audio);
+    
+    if (!audio) {
+      console.error('[Player] No audio element ref!');
+      return;
+    }
 
     if (playlist) {
       playlistRef.current = playlist;
@@ -89,21 +76,80 @@ export function MusicPlayerProvider({ children }: { children: ReactNode }) {
 
     setCurrentTrack(track);
     setCurrentTime(0);
+    setDuration(0);
 
+    // Reset handlers
     audio.oncanplay = null;
+    audio.onerror = null;
+
+    console.log('[Player] Setting src:', track.audio_url?.substring(0, 80));
     audio.src = track.audio_url;
     audio.load();
 
-    attemptPlay(audio);
+    // Error handler
+    audio.onerror = () => {
+      const e = audio.error;
+      console.error('[Player] Audio error:', e?.code, e?.message);
+      setIsPlaying(false);
+    };
 
-    // Backup: if browser needs to buffer first
+    // Try to play immediately
+    console.log('[Player] Attempting play...');
+    const p = audio.play();
+    if (p && typeof p.then === 'function') {
+      p.then(() => {
+        console.log('[Player] ✅ Play started!');
+        setIsPlaying(true);
+      }).catch((err) => {
+        console.warn('[Player] Play blocked:', err.name, err.message);
+        
+        // Try muted fallback (mobile browsers)
+        console.log('[Player] Trying muted fallback...');
+        audio.muted = true;
+        const p2 = audio.play();
+        if (p2 && typeof p2.then === 'function') {
+          p2.then(() => {
+            console.log('[Player] ✅ Muted play started, unmuting...');
+            setIsPlaying(true);
+            setTimeout(() => {
+              audio.muted = false;
+              console.log('[Player] Unmuted');
+            }, 500);
+          }).catch((err2) => {
+            console.error('[Player] ❌ Muted play also failed:', err2.name, err2.message);
+            setIsPlaying(false);
+            
+            // Last resort: wait for canplay event
+            console.log('[Player] Waiting for canplay event...');
+            audio.oncanplay = () => {
+              audio.oncanplay = null;
+              console.log('[Player] canplay fired, retrying...');
+              audio.play().then(() => {
+                console.log('[Player] ✅ Delayed play succeeded');
+                setIsPlaying(true);
+                audio.muted = false;
+              }).catch((err3) => {
+                console.error('[Player] ❌ Final attempt failed:', err3.message);
+                setIsPlaying(false);
+              });
+            };
+          });
+        }
+      });
+    }
+
+    // Also set canplay as backup for slow loads
     audio.oncanplay = () => {
-      audio.oncanplay = null;
-      if (audio.paused && audio.src) {
-        attemptPlay(audio);
+      console.log('[Player] canplay event fired');
+      if (audio.paused && audio.src && audio.readyState >= 2) {
+        console.log('[Player] Audio paused at canplay, retrying play...');
+        audio.play().then(() => {
+          console.log('[Player] ✅ canplay retry succeeded');
+          setIsPlaying(true);
+        }).catch(() => {});
       }
     };
-  }, [attemptPlay]);
+  }, []);
 
   const playByIndex = useCallback((index: number) => {
     const pl = playlistRef.current;
@@ -121,7 +167,9 @@ export function MusicPlayerProvider({ children }: { children: ReactNode }) {
   const resume = useCallback(() => {
     const audio = audioRef.current;
     if (audio && audio.src) {
-      audio.play().then(() => setIsPlaying(true)).catch(() => {});
+      audio.play().then(() => setIsPlaying(true)).catch((e) => {
+        console.warn('[Player] Resume failed:', e.message);
+      });
     }
   }, []);
 
@@ -129,20 +177,18 @@ export function MusicPlayerProvider({ children }: { children: ReactNode }) {
     const audio = audioRef.current;
     if (!audio) return;
     if (audio.paused) {
-      audio.play().then(() => setIsPlaying(true)).catch(() => {});
+      resume();
     } else {
-      audio.pause();
-      setIsPlaying(false);
+      pause();
     }
-  }, []);
+  }, [resume, pause]);
 
   const next = useCallback(() => {
     const nextIdx = currentIndexRef.current + 1;
-    // Loop back to start for 24/7 mode
     if (nextIdx < playlistRef.current.length) {
       playByIndex(nextIdx);
     } else if (playlistRef.current.length > 0) {
-      playByIndex(0); // Loop!
+      playByIndex(0);
     }
   }, [playByIndex]);
 
@@ -156,7 +202,7 @@ export function MusicPlayerProvider({ children }: { children: ReactNode }) {
       if (prevIdx >= 0) {
         playByIndex(prevIdx);
       } else if (playlistRef.current.length > 0) {
-        playByIndex(playlistRef.current.length - 1); // Loop to end
+        playByIndex(playlistRef.current.length - 1);
       }
     }
   }, [playByIndex]);
@@ -181,11 +227,6 @@ export function MusicPlayerProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const handleEnded = useCallback(() => {
-    // Auto-advance to next track, loop at end
-    next();
-  }, [next]);
-
   return (
     <MusicPlayerContext.Provider value={{
       currentTrack, isPlaying, currentTime, duration, volume, isMuted,
@@ -194,12 +235,22 @@ export function MusicPlayerProvider({ children }: { children: ReactNode }) {
     }}>
       <audio
         ref={audioRef}
-        preload="none"
+        preload="auto"
         playsInline
         onTimeUpdate={() => { if (audioRef.current) setCurrentTime(audioRef.current.currentTime); }}
         onDurationChange={() => { if (audioRef.current) setDuration(audioRef.current.duration || 0); }}
-        onEnded={handleEnded}
-        onError={() => { setIsPlaying(false); }}
+        onEnded={() => { console.log('[Player] Track ended, playing next'); next(); }}
+        onError={() => {
+          const e = audioRef.current?.error;
+          console.error('[Player] <audio> error event:', e?.code, e?.message);
+          setIsPlaying(false);
+        }}
+        onLoadStart={() => console.log('[Player] loadstart')}
+        onCanPlay={() => console.log('[Player] canplay (element event)')}
+        onPlaying={() => { console.log('[Player] playing event'); setIsPlaying(true); }}
+        onPause={() => { console.log('[Player] pause event'); }}
+        onStalled={() => console.warn('[Player] stalled')}
+        onWaiting={() => console.log('[Player] waiting for data')}
         style={{ position: 'absolute', width: 0, height: 0, opacity: 0 }}
       />
       {children}
