@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { 
@@ -42,11 +42,12 @@ export default function Music() {
 
   // Upload form state
   const [uploadForm, setUploadForm] = useState({
-    title: '', artist: 'ALDENAIR', genre: '', bpm: '',
-    mood: '', energy: '', audioFile: null as File | null,
+    title: '', artist: 'ALDENAIR',
+    audioFile: null as File | null,
     externalUrl: '', isExternal: false, youtubeUrl: '',
     sourceType: 'file' as 'file' | 'url' | 'youtube',
-    isHidden: false, // Leak mode
+    isHidden: false,
+    scheduleTime: '', // HH:MM for leak scheduling
   });
 
   // Fetch ALL tracks (admin sees hidden too)
@@ -95,10 +96,6 @@ export default function Music() {
         const inserts = data.tracks.map((t: any, i: number) => ({
           title: t.title,
           artist: uploadForm.artist || t.artist,
-          genre: uploadForm.genre || null,
-          bpm: uploadForm.bpm ? parseInt(uploadForm.bpm) : null,
-          mood: uploadForm.mood || null,
-          energy: uploadForm.energy || null,
           audio_url: `https://youtube.com/watch?v=${t.videoId}`,
           youtube_url: `https://youtube.com/watch?v=${t.videoId}`,
           cover_url: t.coverUrl || null,
@@ -112,13 +109,9 @@ export default function Music() {
         toast.success(`${data.tracks.length} Tracks ${uploadForm.isHidden ? 'als Leak ' : ''}hinzugefügt!`);
       } else {
         const t = data.tracks[0];
-        const { error: insertErr } = await supabase.from('tracks').insert({
+        const { data: inserted, error: insertErr } = await supabase.from('tracks').insert({
           title: uploadForm.title || t.title,
           artist: uploadForm.artist || t.artist,
-          genre: uploadForm.genre || null,
-          bpm: uploadForm.bpm ? parseInt(uploadForm.bpm) : null,
-          mood: uploadForm.mood || null,
-          energy: uploadForm.energy || null,
           audio_url: `https://youtube.com/watch?v=${t.videoId}`,
           youtube_url: `https://youtube.com/watch?v=${t.videoId}`,
           cover_url: t.coverUrl || null,
@@ -126,8 +119,21 @@ export default function Music() {
           is_external: true,
           is_hidden: uploadForm.isHidden,
           sort_order: allTracks.length,
-        });
+        }).select('id').single();
         if (insertErr) throw insertErr;
+
+        // Auto-create schedule entry for leak with time
+        if (uploadForm.isHidden && uploadForm.scheduleTime && inserted) {
+          const [h, m] = uploadForm.scheduleTime.split(':');
+          const endH = parseInt(h) + 1;
+          await supabase.from('radio_schedule').insert({
+            track_id: inserted.id,
+            start_time: uploadForm.scheduleTime,
+            end_time: `${String(endH % 24).padStart(2, '0')}:${m}`,
+            priority: 10,
+            is_active: true,
+          });
+        }
         toast.success(`YouTube Track ${uploadForm.isHidden ? 'als Leak ' : ''}hinzugefügt!`);
       }
       queryClient.invalidateQueries({ queryKey: ['tracks'] });
@@ -141,7 +147,7 @@ export default function Music() {
   };
 
   const resetForm = () => {
-    setUploadForm({ title: '', artist: 'ALDENAIR', genre: '', bpm: '', mood: '', energy: '', audioFile: null, externalUrl: '', isExternal: false, youtubeUrl: '', sourceType: 'file', isHidden: false });
+    setUploadForm({ title: '', artist: 'ALDENAIR', audioFile: null, externalUrl: '', isExternal: false, youtubeUrl: '', sourceType: 'file', isHidden: false, scheduleTime: '' });
   };
 
   // Upload track (file/url)
@@ -167,19 +173,28 @@ export default function Music() {
 
       if (!audioUrl) throw new Error('Keine Audio-URL');
 
-      const { error } = await supabase.from('tracks').insert({
+      const { data: inserted, error } = await supabase.from('tracks').insert({
         title: uploadForm.title,
         artist: uploadForm.artist,
-        genre: uploadForm.genre || null,
-        bpm: uploadForm.bpm ? parseInt(uploadForm.bpm) : null,
-        mood: uploadForm.mood || null,
-        energy: uploadForm.energy || null,
         audio_url: audioUrl,
         is_external: uploadForm.sourceType !== 'file',
         is_hidden: uploadForm.isHidden,
         sort_order: allTracks.length,
-      });
+      }).select('id').single();
       if (error) throw error;
+
+      // Auto-create schedule entry for leak with time
+      if (uploadForm.isHidden && uploadForm.scheduleTime && inserted) {
+        const [h, m] = uploadForm.scheduleTime.split(':');
+        const endH = parseInt(h) + 1;
+        await supabase.from('radio_schedule').insert({
+          track_id: inserted.id,
+          start_time: uploadForm.scheduleTime,
+          end_time: `${String(endH % 24).padStart(2, '0')}:${m}`,
+          priority: 10,
+          is_active: true,
+        });
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tracks'] });
@@ -357,31 +372,25 @@ export default function Music() {
                     </div>
                   )}
 
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label>Genre</Label>
-                      <Input value={uploadForm.genre} onChange={e => setUploadForm(f => ({ ...f, genre: e.target.value }))} placeholder="Hip-Hop, Trap..." />
+                  {/* Schedule time for leak mode */}
+                  {uploadForm.isHidden && (
+                    <div className="p-3 rounded-lg bg-muted/50 border border-border space-y-2">
+                      <Label className="flex items-center gap-2">
+                        <Clock className="h-4 w-4 text-muted-foreground" />
+                        Wann soll der Leak live gehen?
+                      </Label>
+                      <Input
+                        type="time"
+                        value={uploadForm.scheduleTime}
+                        onChange={e => setUploadForm(f => ({ ...f, scheduleTime: e.target.value }))}
+                        className="w-40"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Der Track wird automatisch zur eingestellten Zeit über das Radio abgespielt.
+                        {!uploadForm.scheduleTime && ' (Optional – du kannst den Zeitslot auch später im Sendeplan setzen)'}
+                      </p>
                     </div>
-                    <div>
-                      <Label>BPM</Label>
-                      <Input type="number" value={uploadForm.bpm} onChange={e => setUploadForm(f => ({ ...f, bpm: e.target.value }))} placeholder="140" />
-                    </div>
-                    <div>
-                      <Label>Mood</Label>
-                      <Input value={uploadForm.mood} onChange={e => setUploadForm(f => ({ ...f, mood: e.target.value }))} placeholder="Chill, Dark..." />
-                    </div>
-                    <div>
-                      <Label>Energy</Label>
-                      <Select value={uploadForm.energy} onValueChange={v => setUploadForm(f => ({ ...f, energy: v }))}>
-                        <SelectTrigger><SelectValue placeholder="Level" /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="low">Low</SelectItem>
-                          <SelectItem value="medium">Medium</SelectItem>
-                          <SelectItem value="high">High</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
+                  )}
 
                   <Button 
                     className="w-full" 
@@ -494,11 +503,9 @@ export default function Music() {
         </div>
       ) : (
         <div className="space-y-1">
-          <div className="grid grid-cols-[auto_1fr_auto_auto_auto] gap-4 px-4 py-2 text-xs text-muted-foreground font-medium uppercase tracking-wider">
+          <div className="grid grid-cols-[auto_1fr_auto] gap-4 px-4 py-2 text-xs text-muted-foreground font-medium uppercase tracking-wider">
             <span className="w-8">#</span>
             <span>Titel</span>
-            <span className="hidden sm:block w-20">Genre</span>
-            <span className="hidden sm:block w-16 text-right">BPM</span>
             <span className="w-16 text-right">
               <Clock className="h-3 w-3 inline" />
             </span>
@@ -514,7 +521,7 @@ export default function Music() {
                   player.play(track);
                 }}
                 className={cn(
-                  "w-full grid grid-cols-[auto_1fr_auto_auto_auto] gap-4 items-center px-4 py-3 rounded-lg text-left transition-colors group",
+                  "w-full grid grid-cols-[auto_1fr_auto] gap-4 items-center px-4 py-3 rounded-lg text-left transition-colors group",
                   isActive ? "bg-accent/10 text-accent" : "hover:bg-muted/50",
                   isHidden && "border border-dashed border-muted-foreground/30"
                 )}
@@ -550,10 +557,6 @@ export default function Music() {
                   </div>
                 </div>
 
-                <span className="hidden sm:block w-20 text-xs text-muted-foreground">{track.genre || '–'}</span>
-                <span className="hidden sm:block w-16 text-xs text-muted-foreground text-right tabular-nums">
-                  {track.bpm || '–'}
-                </span>
                 <div className="w-16 flex items-center justify-end gap-1">
                   <span className="text-xs text-muted-foreground tabular-nums">
                     {track.duration_seconds ? formatTime(track.duration_seconds) : '–'}

@@ -123,14 +123,22 @@ export function MusicPlayerProvider({ children }: { children: ReactNode }) {
       
       // Skip HTMLAudioElement for YouTube tracks - handled by YouTubePlayer component
       if (track.youtube_url) {
+        // Pause any playing HTML audio first
+        if (audioRef.current) {
+          audioRef.current.pause();
+          audioRef.current.src = '';
+        }
         setState(s => ({ ...s, isPlaying: true }));
+        console.log('[MusicPlayer] YouTube track selected:', track.title, track.youtube_url);
         return;
       }
       
       if (audioRef.current) {
         audioRef.current.src = track.audio_url;
         audioRef.current.volume = state.volume;
-        audioRef.current.play().catch(() => {});
+        audioRef.current.play().catch((e) => {
+          console.warn('[MusicPlayer] Audio play failed:', e.message);
+        });
         setState(s => ({ ...s, isPlaying: true }));
       }
     }
@@ -138,18 +146,27 @@ export function MusicPlayerProvider({ children }: { children: ReactNode }) {
 
   const play = useCallback((track?: Track) => {
     if (track) {
-      const idx = state.queue.findIndex(t => t.id === track.id);
-      if (idx >= 0) {
-        setQueueIndex(idx);
-      } else {
-        setState(s => ({ ...s, queue: [...s.queue, track], currentTrack: track }));
-        setQueueIndex(state.queue.length);
-      }
+      setState(s => {
+        const idx = s.queue.findIndex(t => t.id === track.id);
+        if (idx >= 0) {
+          // Use setTimeout to let state settle, then set index
+          setTimeout(() => setQueueIndex(idx), 0);
+          return s;
+        } else {
+          const newQueue = [...s.queue, track];
+          setTimeout(() => setQueueIndex(newQueue.length - 1), 0);
+          return { ...s, queue: newQueue };
+        }
+      });
     } else if (audioRef.current && state.currentTrack) {
-      audioRef.current.play().catch(() => {});
-      setState(s => ({ ...s, isPlaying: true }));
+      if (state.currentTrack.youtube_url) {
+        setState(s => ({ ...s, isPlaying: true }));
+      } else {
+        audioRef.current.play().catch(() => {});
+        setState(s => ({ ...s, isPlaying: true }));
+      }
     }
-  }, [state.queue, state.currentTrack]);
+  }, [state.currentTrack]);
 
   const pause = useCallback(() => {
     audioRef.current?.pause();
@@ -194,7 +211,6 @@ export function MusicPlayerProvider({ children }: { children: ReactNode }) {
 
   const setQueue = useCallback((tracks: Track[]) => {
     setState(s => ({ ...s, queue: tracks }));
-    if (tracks.length > 0) setQueueIndex(0);
   }, []);
 
   const addToQueue = useCallback((track: Track) => {
