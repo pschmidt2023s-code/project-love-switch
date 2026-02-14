@@ -19,6 +19,15 @@ serve(async (req) => {
     logStep("Function started");
     
     const { order_id } = await req.json();
+    
+    // Validate order_id format to prevent abuse
+    if (!order_id || typeof order_id !== 'string' || order_id.length > 50 || !/^[A-Za-z0-9]+$/.test(order_id)) {
+      return new Response(JSON.stringify({ error: "Invalid order_id" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+      });
+    }
+    
     logStep("Capturing PayPal order", { order_id });
 
     const clientId = Deno.env.get("PAYPAL_CLIENT_ID");
