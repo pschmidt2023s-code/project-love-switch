@@ -32,6 +32,7 @@ export default function Music() {
   const [showUpload, setShowUpload] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [automixing, setAutomixing] = useState(false);
+  const [resolving, setResolving] = useState(false);
 
   // Upload form state
   const [uploadForm, setUploadForm] = useState({
@@ -55,16 +56,88 @@ export default function Music() {
     },
   });
 
-  // Upload track
+  // Helper: extract YouTube video ID for thumbnail
+  const getYouTubeCover = (url: string): string | null => {
+    try {
+      const u = new URL(url);
+      let vid: string | null = null;
+      if (u.hostname.includes('youtu.be')) vid = u.pathname.slice(1).split('/')[0];
+      else vid = u.searchParams.get('v');
+      if (vid) return `https://img.youtube.com/vi/${vid}/hqdefault.jpg`;
+    } catch {}
+    return null;
+  };
+
+  // Resolve YouTube URL (single video or playlist)
+  const resolveYouTube = async (url: string) => {
+    setResolving(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('youtube-resolve', {
+        body: { url },
+      });
+      if (error) throw error;
+      if (!data?.tracks?.length) throw new Error('Keine Tracks gefunden');
+
+      if (data.type === 'playlist' && data.tracks.length > 1) {
+        // Playlist: insert all tracks at once
+        const inserts = data.tracks.map((t: any, i: number) => ({
+          title: t.title,
+          artist: uploadForm.artist || t.artist,
+          genre: uploadForm.genre || null,
+          bpm: uploadForm.bpm ? parseInt(uploadForm.bpm) : null,
+          mood: uploadForm.mood || null,
+          energy: uploadForm.energy || null,
+          audio_url: `https://youtube.com/watch?v=${t.videoId}`,
+          youtube_url: `https://youtube.com/watch?v=${t.videoId}`,
+          cover_url: t.coverUrl || null,
+          duration_seconds: t.durationSeconds || null,
+          is_external: true,
+          sort_order: tracks.length + i,
+        }));
+        const { error: insertErr } = await supabase.from('tracks').insert(inserts);
+        if (insertErr) throw insertErr;
+        toast.success(`${data.tracks.length} Tracks aus Playlist hinzugefügt!`);
+      } else {
+        // Single video
+        const t = data.tracks[0];
+        const { error: insertErr } = await supabase.from('tracks').insert({
+          title: uploadForm.title || t.title,
+          artist: uploadForm.artist || t.artist,
+          genre: uploadForm.genre || null,
+          bpm: uploadForm.bpm ? parseInt(uploadForm.bpm) : null,
+          mood: uploadForm.mood || null,
+          energy: uploadForm.energy || null,
+          audio_url: `https://youtube.com/watch?v=${t.videoId}`,
+          youtube_url: `https://youtube.com/watch?v=${t.videoId}`,
+          cover_url: t.coverUrl || null,
+          duration_seconds: t.durationSeconds || null,
+          is_external: true,
+          sort_order: tracks.length,
+        });
+        if (insertErr) throw insertErr;
+        toast.success('YouTube Track hinzugefügt!');
+      }
+      queryClient.invalidateQueries({ queryKey: ['tracks'] });
+      setShowUpload(false);
+      setUploadForm({ title: '', artist: 'ALDENAIR', genre: '', bpm: '', mood: '', energy: '', audioFile: null, externalUrl: '', isExternal: false, youtubeUrl: '', sourceType: 'file' });
+    } catch (e: any) {
+      toast.error(e.message || 'YouTube-Auflösung fehlgeschlagen');
+    } finally {
+      setResolving(false);
+    }
+  };
+
+  // Upload track (file/url)
   const uploadMutation = useMutation({
     mutationFn: async () => {
-      let audioUrl = uploadForm.externalUrl;
-      let youtubeUrl = uploadForm.youtubeUrl || null;
-
       if (uploadForm.sourceType === 'youtube') {
-        audioUrl = uploadForm.youtubeUrl; // Store YT URL as audio_url fallback
-      } else if (uploadForm.sourceType === 'file' && uploadForm.audioFile) {
-        const ext = uploadForm.audioFile.name.split('.').pop();
+        await resolveYouTube(uploadForm.youtubeUrl);
+        return;
+      }
+
+      let audioUrl = uploadForm.externalUrl;
+
+      if (uploadForm.sourceType === 'file' && uploadForm.audioFile) {
         const path = `tracks/${Date.now()}-${uploadForm.audioFile.name}`;
         const { error: uploadError } = await supabase.storage
           .from('audio')
@@ -75,7 +148,7 @@ export default function Music() {
         audioUrl = urlData.publicUrl;
       }
 
-      if (!audioUrl && !youtubeUrl) throw new Error('Keine Audio-URL');
+      if (!audioUrl) throw new Error('Keine Audio-URL');
 
       const { error } = await supabase.from('tracks').insert({
         title: uploadForm.title,
@@ -84,8 +157,7 @@ export default function Music() {
         bpm: uploadForm.bpm ? parseInt(uploadForm.bpm) : null,
         mood: uploadForm.mood || null,
         energy: uploadForm.energy || null,
-        audio_url: audioUrl || youtubeUrl || '',
-        youtube_url: youtubeUrl,
+        audio_url: audioUrl,
         is_external: uploadForm.sourceType !== 'file',
         sort_order: tracks.length,
       });
@@ -97,7 +169,9 @@ export default function Music() {
       setUploadForm({ title: '', artist: 'ALDENAIR', genre: '', bpm: '', mood: '', energy: '', audioFile: null, externalUrl: '', isExternal: false, youtubeUrl: '', sourceType: 'file' });
       toast.success('Track hochgeladen!');
     },
-    onError: (e) => toast.error(e.message),
+    onError: (e) => {
+      if (e.message) toast.error(e.message);
+    },
   });
 
   // Delete track
@@ -209,9 +283,9 @@ export default function Music() {
 
                   {uploadForm.sourceType === 'youtube' ? (
                     <div>
-                      <Label>YouTube URL *</Label>
-                      <Input placeholder="https://youtube.com/watch?v=..." value={uploadForm.youtubeUrl} onChange={e => setUploadForm(f => ({ ...f, youtubeUrl: e.target.value }))} />
-                      <p className="text-xs text-muted-foreground mt-1">Audio wird direkt von YouTube abgespielt</p>
+                      <Label>YouTube URL oder Playlist *</Label>
+                      <Input placeholder="https://youtube.com/watch?v=... oder Playlist-Link" value={uploadForm.youtubeUrl} onChange={e => setUploadForm(f => ({ ...f, youtubeUrl: e.target.value }))} />
+                      <p className="text-xs text-muted-foreground mt-1">Einzelvideos & ganze Playlists werden erkannt – Cover wird automatisch übernommen</p>
                     </div>
                   ) : uploadForm.sourceType === 'url' ? (
                     <div>
@@ -254,9 +328,9 @@ export default function Music() {
                   <Button 
                     className="w-full" 
                     onClick={() => uploadMutation.mutate()}
-                    disabled={uploadMutation.isPending || !uploadForm.title || (uploadForm.sourceType === 'file' && !uploadForm.audioFile) || (uploadForm.sourceType === 'url' && !uploadForm.externalUrl) || (uploadForm.sourceType === 'youtube' && !uploadForm.youtubeUrl)}
+                    disabled={uploadMutation.isPending || resolving || !uploadForm.title && uploadForm.sourceType !== 'youtube' || (uploadForm.sourceType === 'file' && !uploadForm.audioFile) || (uploadForm.sourceType === 'url' && !uploadForm.externalUrl) || (uploadForm.sourceType === 'youtube' && !uploadForm.youtubeUrl)}
                   >
-                    {uploadMutation.isPending ? 'Lädt hoch...' : 'Track speichern'}
+                    {resolving ? 'YouTube wird aufgelöst...' : uploadMutation.isPending ? 'Lädt hoch...' : uploadForm.sourceType === 'youtube' ? 'YouTube importieren' : 'Track speichern'}
                   </Button>
                 </div>
               </DialogContent>
