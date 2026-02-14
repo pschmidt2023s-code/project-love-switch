@@ -308,14 +308,13 @@ export default function Music() {
 
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <h2 className="text-xl font-bold truncate">{player.currentTrack.title}</h2>
-                {player.currentTrack.youtube_url && (
-                  <a href={player.currentTrack.youtube_url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-accent">
-                    <ExternalLink className="h-4 w-4" />
-                  </a>
-                )}
+                <h2 className="text-xl font-bold truncate">
+                  {(player.currentTrack as any)?.is_hidden && !isAdmin ? 'Exklusiver Leak' : player.currentTrack.title}
+                </h2>
               </div>
-              <p className="text-muted-foreground">{player.currentTrack.artist}</p>
+              <p className="text-muted-foreground">
+                {(player.currentTrack as any)?.is_hidden && !isAdmin ? 'ALDENAIR Radio' : player.currentTrack.artist}
+              </p>
               
               <div className="flex items-center gap-3 mt-3">
                 <span className="text-xs text-muted-foreground tabular-nums">{formatTime(player.currentTime)}</span>
@@ -454,8 +453,8 @@ export default function Music() {
                   isActive ? "bg-accent/10 text-accent" : "text-muted-foreground"
                 )}>
                   <span className="w-6 tabular-nums">{idx + 1}</span>
-                  <span className="flex-1 truncate">{track.title}</span>
-                  <span className="text-xs">{track.artist}</span>
+                  <span className="flex-1 truncate">{(track as any).is_hidden && !isAdmin ? 'Exklusiver Leak' : track.title}</span>
+                  <span className="text-xs">{(track as any).is_hidden && !isAdmin ? '' : track.artist}</span>
                 </div>
               );
             })}

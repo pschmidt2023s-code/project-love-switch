@@ -6,28 +6,63 @@ import { ScheduleEntry } from '@/lib/radio-sync';
 import { Clock, EyeOff, Flame } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-interface NextLeak {
+interface LeakInfo {
   track: Track;
   entry: ScheduleEntry;
-  startsIn: number; // seconds until start
+  isLive: boolean;
+  startsIn: number; // seconds until start (0 if live)
   dayLabel: string;
   timeLabel: string;
 }
 
 const DAY_NAMES = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
 
-function getNextLeakSlot(
+function isWithinTimeRange(entry: ScheduleEntry, now: Date): boolean {
+  const currentDay = now.getUTCDay();
+  if (entry.day_of_week !== null && entry.day_of_week !== currentDay) return false;
+
+  const currentMinutes = now.getUTCHours() * 60 + now.getUTCMinutes();
+  const [startH, startM] = entry.start_time.split(':').map(Number);
+  const [endH, endM] = entry.end_time.split(':').map(Number);
+  const startMinutes = startH * 60 + startM;
+  const endMinutes = endH * 60 + endM;
+
+  if (endMinutes <= startMinutes) {
+    return currentMinutes >= startMinutes || currentMinutes < endMinutes;
+  }
+  return currentMinutes >= startMinutes && currentMinutes < endMinutes;
+}
+
+function getLeakInfo(
   schedule: ScheduleEntry[],
   tracks: (Track & { is_hidden?: boolean })[],
   now: Date
-): NextLeak | null {
+): LeakInfo | null {
   const hiddenIds = new Set(tracks.filter(t => t.is_hidden).map(t => t.id));
   const leakEntries = schedule.filter(e => e.is_active && hiddenIds.has(e.track_id));
   if (leakEntries.length === 0) return null;
 
-  const currentDay = now.getDay();
-  const currentMinutes = now.getHours() * 60 + now.getMinutes();
-  const currentSeconds = now.getSeconds();
+  // First check: is any leak currently LIVE?
+  for (const entry of leakEntries) {
+    if (isWithinTimeRange(entry, now)) {
+      const track = tracks.find(t => t.id === entry.track_id);
+      if (!track) continue;
+      const [startH, startM] = entry.start_time.split(':').map(Number);
+      return {
+        track,
+        entry,
+        isLive: true,
+        startsIn: 0,
+        dayLabel: 'Heute',
+        timeLabel: `${String(startH).padStart(2, '0')}:${String(startM).padStart(2, '0')}`,
+      };
+    }
+  }
+
+  // Otherwise find the next upcoming leak
+  const currentDay = now.getUTCDay();
+  const currentMinutes = now.getUTCHours() * 60 + now.getUTCMinutes();
+  const currentSeconds = now.getUTCSeconds();
 
   let best: { entry: ScheduleEntry; minutesUntil: number } | null = null;
 
@@ -35,17 +70,22 @@ function getNextLeakSlot(
     const [startH, startM] = entry.start_time.split(':').map(Number);
     const startMinutes = startH * 60 + startM;
 
-    // Check each of the next 7 days
     for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
       const checkDay = (currentDay + dayOffset) % 7;
-
-      // If entry is pinned to a specific day, skip non-matching
       if (entry.day_of_week !== null && entry.day_of_week !== checkDay) continue;
 
       let minutesUntil: number;
       if (dayOffset === 0) {
         minutesUntil = startMinutes - currentMinutes;
-        if (minutesUntil <= 0) continue; // Already passed today
+        if (minutesUntil <= 0) {
+          // Already passed today, try next occurrence
+          if (entry.day_of_week === null) {
+            // Runs every day, so try tomorrow
+            minutesUntil = (24 * 60) - currentMinutes + startMinutes;
+          } else {
+            continue;
+          }
+        }
       } else {
         minutesUntil = (dayOffset * 24 * 60) + startMinutes - currentMinutes;
       }
@@ -53,7 +93,7 @@ function getNextLeakSlot(
       if (!best || minutesUntil < best.minutesUntil) {
         best = { entry, minutesUntil };
       }
-      break; // Found the nearest occurrence for this entry
+      break;
     }
   }
 
@@ -64,7 +104,7 @@ function getNextLeakSlot(
 
   const startsInSeconds = best.minutesUntil * 60 - currentSeconds;
   const [startH, startM] = best.entry.start_time.split(':').map(Number);
-  const targetDay = best.minutesUntil > 24 * 60
+  const targetDay = best.minutesUntil >= 24 * 60
     ? DAY_NAMES[(currentDay + Math.floor(best.minutesUntil / (24 * 60))) % 7]
     : best.minutesUntil > (24 * 60 - currentMinutes)
       ? 'Morgen'
@@ -73,6 +113,7 @@ function getNextLeakSlot(
   return {
     track,
     entry: best.entry,
+    isLive: false,
     startsIn: Math.max(0, startsInSeconds),
     dayLabel: targetDay,
     timeLabel: `${String(startH).padStart(2, '0')}:${String(startM).padStart(2, '0')}`,
@@ -91,7 +132,6 @@ function formatCountdown(seconds: number): string {
 export function LeakCountdown() {
   const [now, setNow] = useState(new Date());
 
-  // Tick every second
   useEffect(() => {
     const iv = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(iv);
@@ -122,16 +162,15 @@ export function LeakCountdown() {
     },
   });
 
-  const nextLeak = getNextLeakSlot(schedule, tracks, now);
-  if (!nextLeak) return null;
+  const leakInfo = getLeakInfo(schedule, tracks, now);
+  if (!leakInfo) return null;
 
-  const isImminent = nextLeak.startsIn < 300; // < 5 min
-  const isLive = nextLeak.startsIn <= 0;
+  const isImminent = !leakInfo.isLive && leakInfo.startsIn < 300;
 
   return (
     <div className={cn(
       "relative overflow-hidden rounded-xl border p-4 transition-all",
-      isLive
+      leakInfo.isLive
         ? "bg-destructive/10 border-destructive/30 animate-pulse"
         : isImminent
           ? "bg-accent/10 border-accent/30"
@@ -140,26 +179,26 @@ export function LeakCountdown() {
       <div className="flex items-center gap-4">
         <div className={cn(
           "w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0",
-          isLive ? "bg-destructive/20 text-destructive" : "bg-muted text-muted-foreground"
+          leakInfo.isLive ? "bg-destructive/20 text-destructive" : "bg-muted text-muted-foreground"
         )}>
-          {isLive ? <Flame className="h-6 w-6" /> : <EyeOff className="h-5 w-5" />}
+          {leakInfo.isLive ? <Flame className="h-6 w-6" /> : <EyeOff className="h-5 w-5" />}
         </div>
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <span className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-              {isLive ? '🔥 Leak ist LIVE' : 'Nächster Leak'}
+              {leakInfo.isLive ? '🔥 Leak ist LIVE' : 'Nächster Leak'}
             </span>
           </div>
           <p className="font-bold text-lg">
-            {isLive ? 'Jetzt reinhören!' : `in ${formatCountdown(nextLeak.startsIn)}`}
+            {leakInfo.isLive ? 'Jetzt reinhören! Schalte das Radio ein.' : `in ${formatCountdown(leakInfo.startsIn)}`}
           </p>
         </div>
 
         <div className="text-right flex-shrink-0">
           <div className="flex items-center gap-1 justify-end text-sm text-muted-foreground">
             <Clock className="h-3 w-3" />
-            <span>{nextLeak.dayLabel} {nextLeak.timeLabel}</span>
+            <span>{leakInfo.dayLabel} {leakInfo.timeLabel}</span>
           </div>
         </div>
       </div>
