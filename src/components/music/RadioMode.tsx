@@ -117,10 +117,13 @@ export function RadioMode() {
         isFromSchedule = false;
       }
 
-      // Fallback to rotation (only non-hidden tracks)
-      if (!track && nonHiddenTracks.length > 0) {
-        const state = calculateRadioState(nonHiddenTracks, radioConfig.loop_start_epoch);
-        if (state) track = state.currentTrack as Track & { youtube_url?: string };
+      // Fallback to rotation
+      if (!track) {
+        const rotationTracks = nonHiddenTracks.length > 0 ? nonHiddenTracks : tracks;
+        if (rotationTracks.length > 0) {
+          const state = calculateRadioState(rotationTracks, radioConfig.loop_start_epoch);
+          if (state) track = state.currentTrack as Track & { youtube_url?: string; is_hidden?: boolean };
+        }
       }
 
       if (!track) {
