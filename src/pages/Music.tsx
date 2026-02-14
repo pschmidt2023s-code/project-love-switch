@@ -4,10 +4,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { useMusicPlayer, Track } from '@/contexts/MusicPlayerContext';
 import { useAdminRole } from '@/hooks/useAdminRole';
 import { PageLayout } from '@/components/PageLayout';
+import { RadioMode } from '@/components/music/RadioMode';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
-import { Progress } from '@/components/ui/progress';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
@@ -15,7 +15,7 @@ import { toast } from 'sonner';
 import { 
   Play, Pause, SkipForward, SkipBack, Volume2, VolumeX, 
   Upload, Plus, Trash2, Sparkles, Music as MusicIcon, 
-  ListMusic, Clock, Disc3, Shuffle
+  ListMusic, Clock, Disc3, Shuffle, Youtube
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -37,7 +37,8 @@ export default function Music() {
   const [uploadForm, setUploadForm] = useState({
     title: '', artist: 'ALDENAIR', genre: '', bpm: '',
     mood: '', energy: '', audioFile: null as File | null,
-    externalUrl: '', isExternal: false,
+    externalUrl: '', isExternal: false, youtubeUrl: '',
+    sourceType: 'file' as 'file' | 'url' | 'youtube',
   });
 
   // Fetch tracks
@@ -58,8 +59,11 @@ export default function Music() {
   const uploadMutation = useMutation({
     mutationFn: async () => {
       let audioUrl = uploadForm.externalUrl;
+      let youtubeUrl = uploadForm.youtubeUrl || null;
 
-      if (!uploadForm.isExternal && uploadForm.audioFile) {
+      if (uploadForm.sourceType === 'youtube') {
+        audioUrl = uploadForm.youtubeUrl; // Store YT URL as audio_url fallback
+      } else if (uploadForm.sourceType === 'file' && uploadForm.audioFile) {
         const ext = uploadForm.audioFile.name.split('.').pop();
         const path = `tracks/${Date.now()}-${uploadForm.audioFile.name}`;
         const { error: uploadError } = await supabase.storage
@@ -71,7 +75,7 @@ export default function Music() {
         audioUrl = urlData.publicUrl;
       }
 
-      if (!audioUrl) throw new Error('Keine Audio-URL');
+      if (!audioUrl && !youtubeUrl) throw new Error('Keine Audio-URL');
 
       const { error } = await supabase.from('tracks').insert({
         title: uploadForm.title,
@@ -80,8 +84,9 @@ export default function Music() {
         bpm: uploadForm.bpm ? parseInt(uploadForm.bpm) : null,
         mood: uploadForm.mood || null,
         energy: uploadForm.energy || null,
-        audio_url: audioUrl,
-        is_external: uploadForm.isExternal,
+        audio_url: audioUrl || youtubeUrl || '',
+        youtube_url: youtubeUrl,
+        is_external: uploadForm.sourceType !== 'file',
         sort_order: tracks.length,
       });
       if (error) throw error;
@@ -89,7 +94,7 @@ export default function Music() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tracks'] });
       setShowUpload(false);
-      setUploadForm({ title: '', artist: 'ALDENAIR', genre: '', bpm: '', mood: '', energy: '', audioFile: null, externalUrl: '', isExternal: false });
+      setUploadForm({ title: '', artist: 'ALDENAIR', genre: '', bpm: '', mood: '', energy: '', audioFile: null, externalUrl: '', isExternal: false, youtubeUrl: '', sourceType: 'file' });
       toast.success('Track hochgeladen!');
     },
     onError: (e) => toast.error(e.message),
@@ -174,16 +179,22 @@ export default function Music() {
                 <div className="space-y-4 mt-4">
                   <div className="flex gap-2">
                     <Button 
-                      variant={!uploadForm.isExternal ? 'default' : 'outline'} size="sm"
-                      onClick={() => setUploadForm(f => ({ ...f, isExternal: false }))}
+                      variant={uploadForm.sourceType === 'file' ? 'default' : 'outline'} size="sm"
+                      onClick={() => setUploadForm(f => ({ ...f, sourceType: 'file' }))}
                     >
-                      <Upload className="h-3 w-3 mr-1" /> Datei hochladen
+                      <Upload className="h-3 w-3 mr-1" /> Datei
                     </Button>
                     <Button 
-                      variant={uploadForm.isExternal ? 'default' : 'outline'} size="sm"
-                      onClick={() => setUploadForm(f => ({ ...f, isExternal: true }))}
+                      variant={uploadForm.sourceType === 'url' ? 'default' : 'outline'} size="sm"
+                      onClick={() => setUploadForm(f => ({ ...f, sourceType: 'url' }))}
                     >
-                      <Plus className="h-3 w-3 mr-1" /> Externe URL
+                      <Plus className="h-3 w-3 mr-1" /> URL
+                    </Button>
+                    <Button 
+                      variant={uploadForm.sourceType === 'youtube' ? 'default' : 'outline'} size="sm"
+                      onClick={() => setUploadForm(f => ({ ...f, sourceType: 'youtube' }))}
+                    >
+                      <Youtube className="h-3 w-3 mr-1" /> YouTube
                     </Button>
                   </div>
 
@@ -196,7 +207,13 @@ export default function Music() {
                     <Input value={uploadForm.artist} onChange={e => setUploadForm(f => ({ ...f, artist: e.target.value }))} />
                   </div>
 
-                  {uploadForm.isExternal ? (
+                  {uploadForm.sourceType === 'youtube' ? (
+                    <div>
+                      <Label>YouTube URL *</Label>
+                      <Input placeholder="https://youtube.com/watch?v=..." value={uploadForm.youtubeUrl} onChange={e => setUploadForm(f => ({ ...f, youtubeUrl: e.target.value }))} />
+                      <p className="text-xs text-muted-foreground mt-1">Audio wird direkt von YouTube abgespielt</p>
+                    </div>
+                  ) : uploadForm.sourceType === 'url' ? (
                     <div>
                       <Label>Audio URL *</Label>
                       <Input placeholder="https://..." value={uploadForm.externalUrl} onChange={e => setUploadForm(f => ({ ...f, externalUrl: e.target.value }))} />
@@ -237,7 +254,7 @@ export default function Music() {
                   <Button 
                     className="w-full" 
                     onClick={() => uploadMutation.mutate()}
-                    disabled={uploadMutation.isPending || !uploadForm.title || (!uploadForm.isExternal && !uploadForm.audioFile) || (uploadForm.isExternal && !uploadForm.externalUrl)}
+                    disabled={uploadMutation.isPending || !uploadForm.title || (uploadForm.sourceType === 'file' && !uploadForm.audioFile) || (uploadForm.sourceType === 'url' && !uploadForm.externalUrl) || (uploadForm.sourceType === 'youtube' && !uploadForm.youtubeUrl)}
                   >
                     {uploadMutation.isPending ? 'Lädt hoch...' : 'Track speichern'}
                   </Button>
@@ -246,6 +263,11 @@ export default function Music() {
             </Dialog>
           )}
         </div>
+      </div>
+
+      {/* Radio Mode */}
+      <div className="mb-8">
+        <RadioMode />
       </div>
 
       {/* Now Playing */}
