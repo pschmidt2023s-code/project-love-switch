@@ -111,9 +111,8 @@ export function EmailLogsManagement() {
         return;
       }
 
-      const { data, error } = await supabase.functions.invoke('resend-email', {
-        body: { emailLogId: logId }
-      });
+      const error = new Error('E-Mail-Versand ist derzeit deaktiviert');
+      const data = { error: error.message };
 
       if (error) throw error;
 
