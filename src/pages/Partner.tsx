@@ -1,27 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { PremiumPageLayout } from '@/components/premium/PremiumPageLayout';
+import { Breadcrumb } from '@/components/Breadcrumb';
+import { Seo } from '@/components/Seo';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import {
-  Users,
-  Euro,
-  Copy,
-  Check,
-  TrendingUp,
-  Share2,
-  ArrowLeft
-} from 'lucide-react';
-import Navigation from '@/components/Navigation';
-import { Footer } from '@/components/Footer';
-import { MobileBottomNav } from '@/components/MobileBottomNav';
+import { Users, Euro, Copy, Check, TrendingUp, Share2, ArrowRight } from 'lucide-react';
 import { AuthModal } from '@/components/AuthModal';
 
 interface Partner {
@@ -36,7 +20,6 @@ interface Partner {
 
 export default function Partner() {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const { toast } = useToast();
   const [partner, setPartner] = useState<Partner | null>(null);
   const [loading, setLoading] = useState(true);
@@ -78,10 +61,7 @@ export default function Partner() {
       navigator.clipboard.writeText(partner.partner_code);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-      toast({
-        title: "Code kopiert!",
-        description: "Dein Partner-Code wurde in die Zwischenablage kopiert.",
-      });
+      toast({ title: "Code kopiert!", description: "Dein Partner-Code wurde in die Zwischenablage kopiert." });
     }
   };
 
@@ -92,7 +72,6 @@ export default function Partner() {
     setSubmitting(true);
     try {
       const partnerCode = `ALD${Date.now().toString(36).toUpperCase()}`;
-      
       const { error } = await supabase
         .from('partners')
         .insert({
@@ -103,20 +82,11 @@ export default function Partner() {
         });
 
       if (error) throw error;
-
-      toast({
-        title: "Bewerbung eingereicht!",
-        description: "Wir werden deine Bewerbung prüfen und uns bei dir melden.",
-      });
-      
+      toast({ title: "Bewerbung eingereicht!", description: "Wir werden deine Bewerbung prüfen und uns bei dir melden." });
       loadPartnerData();
     } catch (error) {
       console.error('Error submitting application:', error);
-      toast({
-        title: "Fehler",
-        description: "Ein Fehler ist aufgetreten. Bitte versuche es später erneut.",
-        variant: "destructive",
-      });
+      toast({ title: "Fehler", description: "Ein Fehler ist aufgetreten.", variant: "destructive" });
     } finally {
       setSubmitting(false);
     }
@@ -124,168 +94,141 @@ export default function Partner() {
 
   if (!user) {
     return (
-      <>
-        <Navigation />
-        <div className="min-h-screen bg-background pb-20 md:pb-0">
-          <div className="container mx-auto px-4 py-16 text-center">
-            <Users className="w-16 h-16 mx-auto mb-6 text-muted-foreground" />
-            <h1 className="text-2xl font-bold mb-4">Partner-Programm</h1>
-            <p className="text-muted-foreground mb-8">
+      <PremiumPageLayout>
+        <Seo title="Partner-Programm | ALDENAIR" description="Werde ALDENAIR Partner und verdiene bis zu 10% Provision." canonicalPath="/partner" />
+        <section className="section-spacing">
+          <div className="container-premium text-center max-w-md mx-auto">
+            <div className="w-16 h-16 mx-auto mb-6 flex items-center justify-center bg-accent/10">
+              <Users className="w-7 h-7 text-accent" strokeWidth={1.5} />
+            </div>
+            <h1 className="font-display text-2xl text-foreground mb-3">Partner-Programm</h1>
+            <p className="text-sm text-muted-foreground mb-8">
               Melde dich an, um Partner zu werden und bis zu 10% Provision zu verdienen.
             </p>
             <AuthModal>
-              <Button size="lg">Jetzt anmelden</Button>
+              <button className="inline-flex items-center px-8 py-4 bg-foreground text-background text-[11px] tracking-[0.15em] uppercase font-medium hover:bg-foreground/90 transition-colors">
+                Jetzt anmelden
+                <ArrowRight className="ml-2 w-4 h-4" strokeWidth={1.5} />
+              </button>
             </AuthModal>
           </div>
-        </div>
-        <Footer />
-        <MobileBottomNav />
-      </>
+        </section>
+      </PremiumPageLayout>
     );
   }
 
   return (
-    <>
-      <Navigation />
-      <div className="min-h-screen bg-background pb-20 md:pb-0">
-        <div className="container mx-auto px-4 py-8">
-          <div className="max-w-4xl mx-auto">
-            <Button
-              onClick={() => navigate(-1)}
-              variant="outline"
-              className="mb-8"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Zurück
-            </Button>
+    <PremiumPageLayout>
+      <Seo title="Partner-Programm | ALDENAIR" description="Dein ALDENAIR Partner Dashboard." canonicalPath="/partner" />
 
-            <h1 className="text-3xl font-bold mb-8">Partner-Programm</h1>
+      {/* Header */}
+      <section className="border-b border-border">
+        <div className="container-premium py-8 lg:py-12">
+          <Breadcrumb className="mb-6" />
+          <span className="inline-block text-[10px] tracking-[0.3em] uppercase text-accent mb-3">Partner</span>
+          <h1 className="font-display text-3xl lg:text-4xl text-foreground">Partner-Programm</h1>
+        </div>
+      </section>
 
-            {loading ? (
-              <Card>
-                <CardContent className="p-8 text-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto" />
-                </CardContent>
-              </Card>
-            ) : partner ? (
-              <div className="space-y-6">
-                {/* Status Card */}
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h2 className="text-xl font-semibold">Partner-Status</h2>
-                        <p className="text-muted-foreground">Code: {partner.partner_code}</p>
-                      </div>
-                      <Badge variant={partner.status === 'approved' ? 'default' : 'secondary'}>
-                        {partner.status === 'approved' ? 'Aktiv' : 
-                         partner.status === 'pending' ? 'Ausstehend' : partner.status}
-                      </Badge>
-                    </div>
-                    {partner.status === 'approved' && (
-                      <Button onClick={handleCopyCode} className="mt-4" variant="outline">
-                        {copied ? <Check className="w-4 h-4 mr-2" /> : <Copy className="w-4 h-4 mr-2" />}
-                        {copied ? 'Kopiert!' : 'Code kopieren'}
-                      </Button>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* Stats Cards */}
-                {partner.status === 'approved' && (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <Card>
-                      <CardContent className="p-6">
-                        <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                            <TrendingUp className="w-6 h-6 text-primary" />
-                          </div>
-                          <div>
-                            <p className="text-sm text-muted-foreground">Umsatz</p>
-                            <p className="text-2xl font-bold">{partner.total_sales?.toFixed(2) || '0.00'} €</p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                    <Card>
-                      <CardContent className="p-6">
-                        <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 rounded-lg bg-green-500/10 flex items-center justify-center">
-                            <Euro className="w-6 h-6 text-green-500" />
-                          </div>
-                          <div>
-                            <p className="text-sm text-muted-foreground">Verdient</p>
-                            <p className="text-2xl font-bold">{partner.total_commission?.toFixed(2) || '0.00'} €</p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                    <Card>
-                      <CardContent className="p-6">
-                        <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                            <Share2 className="w-6 h-6 text-blue-500" />
-                          </div>
-                          <div>
-                            <p className="text-sm text-muted-foreground">Provision</p>
-                            <p className="text-2xl font-bold">{partner.commission_rate || 5}%</p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
+      <section className="section-spacing">
+        <div className="container-premium max-w-3xl mx-auto">
+          {loading ? (
+            <div className="text-center py-16">
+              <div className="w-8 h-8 border-2 border-accent border-t-transparent animate-spin mx-auto" />
+            </div>
+          ) : partner ? (
+            <div className="space-y-6">
+              {/* Status */}
+              <div className="p-6 border border-border">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h2 className="font-display text-xl text-foreground">Partner-Status</h2>
+                    <p className="text-sm text-muted-foreground">Code: {partner.partner_code}</p>
                   </div>
+                  <span className={`px-3 py-1 text-[10px] tracking-[0.1em] uppercase font-medium ${
+                    partner.status === 'approved' ? 'bg-accent/10 text-accent' : 'bg-muted text-muted-foreground'
+                  }`}>
+                    {partner.status === 'approved' ? 'Aktiv' : partner.status === 'pending' ? 'Ausstehend' : partner.status}
+                  </span>
+                </div>
+                {partner.status === 'approved' && (
+                  <button onClick={handleCopyCode} className="flex items-center gap-2 px-4 py-2 border border-border text-sm text-foreground hover:bg-muted transition-colors">
+                    {copied ? <Check className="w-4 h-4 text-accent" /> : <Copy className="w-4 h-4" />}
+                    {copied ? 'Kopiert!' : 'Code kopieren'}
+                  </button>
                 )}
               </div>
-            ) : (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Partner werden</CardTitle>
-                  <CardDescription>
-                    Verdiene bis zu 10% Provision auf alle Verkäufe, die über deinen Partner-Link getätigt werden.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <form onSubmit={handleApply} className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label>Vorname</Label>
-                        <Input
-                          value={applicationData.first_name}
-                          onChange={(e) => setApplicationData({ ...applicationData, first_name: e.target.value })}
-                          required
-                        />
+
+              {/* Stats */}
+              {partner.status === 'approved' && (
+                <div className="grid grid-cols-3 gap-4">
+                  {[
+                    { icon: TrendingUp, label: 'Umsatz', value: `${partner.total_sales?.toFixed(2) || '0.00'} €` },
+                    { icon: Euro, label: 'Verdient', value: `${partner.total_commission?.toFixed(2) || '0.00'} €` },
+                    { icon: Share2, label: 'Provision', value: `${partner.commission_rate || 5}%` },
+                  ].map((stat) => (
+                    <div key={stat.label} className="p-6 border border-border text-center">
+                      <div className="w-10 h-10 mx-auto mb-3 flex items-center justify-center bg-accent/10">
+                        <stat.icon className="w-5 h-5 text-accent" strokeWidth={1.5} />
                       </div>
-                      <div>
-                        <Label>Nachname</Label>
-                        <Input
-                          value={applicationData.last_name}
-                          onChange={(e) => setApplicationData({ ...applicationData, last_name: e.target.value })}
-                          required
-                        />
-                      </div>
+                      <p className="font-display text-2xl text-foreground mb-1">{stat.value}</p>
+                      <p className="text-[10px] tracking-[0.15em] uppercase text-muted-foreground">{stat.label}</p>
                     </div>
-                    <div>
-                      <Label>Warum möchtest du Partner werden?</Label>
-                      <Textarea
-                        value={applicationData.motivation}
-                        onChange={(e) => setApplicationData({ ...applicationData, motivation: e.target.value })}
-                        placeholder="Erzähle uns etwas über dich und warum du ALDENAIR bewerben möchtest..."
-                        rows={4}
-                        required
-                      />
-                    </div>
-                    <Button type="submit" className="w-full" disabled={submitting}>
-                      {submitting ? 'Wird eingereicht...' : 'Bewerbung einreichen'}
-                    </Button>
-                  </form>
-                </CardContent>
-              </Card>
-            )}
-          </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            /* Application Form */
+            <div className="border border-border p-6 lg:p-8">
+              <h2 className="font-display text-xl text-foreground mb-2">Partner werden</h2>
+              <p className="text-sm text-muted-foreground mb-6">
+                Verdiene bis zu 10% Provision auf alle Verkäufe, die über deinen Partner-Link getätigt werden.
+              </p>
+              <form onSubmit={handleApply} className="space-y-5">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] tracking-[0.1em] uppercase text-muted-foreground mb-2">Vorname</label>
+                    <input
+                      value={applicationData.first_name}
+                      onChange={(e) => setApplicationData({ ...applicationData, first_name: e.target.value })}
+                      required
+                      className="w-full px-4 py-3 bg-background border border-border text-sm focus:outline-none focus:border-accent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] tracking-[0.1em] uppercase text-muted-foreground mb-2">Nachname</label>
+                    <input
+                      value={applicationData.last_name}
+                      onChange={(e) => setApplicationData({ ...applicationData, last_name: e.target.value })}
+                      required
+                      className="w-full px-4 py-3 bg-background border border-border text-sm focus:outline-none focus:border-accent"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[10px] tracking-[0.1em] uppercase text-muted-foreground mb-2">Warum möchtest du Partner werden?</label>
+                  <textarea
+                    value={applicationData.motivation}
+                    onChange={(e) => setApplicationData({ ...applicationData, motivation: e.target.value })}
+                    placeholder="Erzähle uns etwas über dich..."
+                    rows={4}
+                    required
+                    className="w-full px-4 py-3 bg-background border border-border text-sm focus:outline-none focus:border-accent resize-none"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="w-full py-4 bg-foreground text-background text-[11px] tracking-[0.15em] uppercase font-medium hover:bg-foreground/90 transition-colors disabled:opacity-50"
+                >
+                  {submitting ? 'Wird eingereicht...' : 'Bewerbung einreichen'}
+                </button>
+              </form>
+            </div>
+          )}
         </div>
-      </div>
-      <Footer />
-      <MobileBottomNav />
-    </>
+      </section>
+    </PremiumPageLayout>
   );
 }

@@ -1,14 +1,13 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import Navigation from '@/components/Navigation';
-import { Footer } from '@/components/Footer';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
+import { PremiumPageLayout } from '@/components/premium/PremiumPageLayout';
+import { Breadcrumb } from '@/components/Breadcrumb';
+import { Seo } from '@/components/Seo';
 import { toast } from 'sonner';
-import { Loader2, ArrowLeft, ShoppingBag, CheckCircle } from 'lucide-react';
+import { Loader2, ArrowLeft, ShoppingBag, CheckCircle, ArrowRight } from 'lucide-react';
 import { AddressForm } from '@/components/checkout/AddressForm';
 import { OrderSummary } from '@/components/checkout/OrderSummary';
 import { PaymentMethodSelector } from '@/components/checkout/PaymentMethodSelector';
@@ -41,278 +40,185 @@ const Checkout = () => {
   const shippingCost = total >= 50 ? 0 : 4.95;
   const grandTotal = total + shippingCost;
 
-  // Scroll to top on mount and step change
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [step]);
 
   if (items.length === 0) {
     return (
-      <div className="min-h-screen bg-background">
-        <Navigation />
-        <main className="container mx-auto px-4 py-24 text-center">
-          <ShoppingBag className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-          <h1 className="text-2xl font-bold mb-4">Dein Warenkorb ist leer</h1>
-          <p className="text-muted-foreground mb-8">
-            Füge Produkte hinzu, um zur Kasse zu gehen.
-          </p>
-          <Button onClick={() => navigate('/products')}>
-            Jetzt einkaufen
-          </Button>
-        </main>
-        <Footer />
-      </div>
+      <PremiumPageLayout>
+        <Seo title="Checkout | ALDENAIR" description="Sichere Bestellung bei ALDENAIR." canonicalPath="/checkout" />
+        <section className="section-spacing">
+          <div className="container-premium text-center max-w-md mx-auto">
+            <div className="w-16 h-16 mx-auto mb-6 flex items-center justify-center bg-muted">
+              <ShoppingBag className="w-7 h-7 text-muted-foreground" strokeWidth={1.5} />
+            </div>
+            <h1 className="font-display text-2xl text-foreground mb-3">Dein Warenkorb ist leer</h1>
+            <p className="text-sm text-muted-foreground mb-8">Füge Produkte hinzu, um zur Kasse zu gehen.</p>
+            <Link
+              to="/products"
+              className="inline-flex items-center px-8 py-4 bg-foreground text-background text-[11px] tracking-[0.15em] uppercase font-medium hover:bg-foreground/90 transition-colors"
+            >
+              Jetzt einkaufen
+              <ArrowRight className="ml-2 w-4 h-4" strokeWidth={1.5} />
+            </Link>
+          </div>
+        </section>
+      </PremiumPageLayout>
     );
   }
 
   const isAddressValid = (address: Address | null): boolean => {
     if (!address) return false;
-    return (
-      address.first_name.trim() !== '' &&
-      address.last_name.trim() !== '' &&
-      address.street.trim() !== '' &&
-      address.postal_code.trim() !== '' &&
-      address.city.trim() !== '' &&
-      address.country !== ''
-    );
+    return address.first_name.trim() !== '' && address.last_name.trim() !== '' &&
+      address.street.trim() !== '' && address.postal_code.trim() !== '' &&
+      address.city.trim() !== '' && address.country !== '';
   };
 
   const isEmailValid = user?.email || (email && email.includes('@'));
-  
   const canProceedToPayment = isAddressValid(shippingAddress) && 
-    (useSameAsShipping || isAddressValid(billingAddress)) &&
-    isEmailValid;
+    (useSameAsShipping || isAddressValid(billingAddress)) && isEmailValid;
 
   const handleProceedToPayment = () => {
-    if (!canProceedToPayment) {
-      toast.error('Bitte fülle alle Pflichtfelder aus');
-      return;
-    }
+    if (!canProceedToPayment) { toast.error('Bitte fülle alle Pflichtfelder aus'); return; }
     setStep('payment');
   };
 
   const handleCheckout = async () => {
-    if (!isAddressValid(shippingAddress)) {
-      toast.error('Bitte gib eine gültige Lieferadresse ein');
-      setStep('address');
-      return;
-    }
+    if (!isAddressValid(shippingAddress)) { toast.error('Bitte gib eine gültige Lieferadresse ein'); setStep('address'); return; }
 
     setLoading(true);
     try {
       const finalBillingAddress = useSameAsShipping ? shippingAddress : billingAddress;
-
       const checkoutItems = items.map(item => ({
         name: `${item.productName} - ${item.variantSize}`,
-        price: item.price,
-        quantity: item.quantity,
-        image: item.image,
+        price: item.price, quantity: item.quantity, image: item.image,
       }));
 
-      // Add shipping if applicable
       if (shippingCost > 0) {
-        checkoutItems.push({
-          name: "Versandkosten",
-          price: shippingCost,
-          quantity: 1,
-          image: "",
-        });
+        checkoutItems.push({ name: "Versandkosten", price: shippingCost, quantity: 1, image: "" });
       }
 
-      console.log('[CHECKOUT] Sending request with payment_method:', paymentMethod);
-      
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: {
-          items: checkoutItems,
-          payment_method: paymentMethod,
-          shipping_address: shippingAddress,
-          billing_address: finalBillingAddress,
-          user_id: user?.id,
-          email: email || user?.email,
+          items: checkoutItems, payment_method: paymentMethod,
+          shipping_address: shippingAddress, billing_address: finalBillingAddress,
+          user_id: user?.id, email: email || user?.email,
         },
       });
 
-      console.log('[CHECKOUT] Response:', { data, error });
-
       if (error) throw error;
-      
-      if (!data) {
-        throw new Error('Keine Antwort vom Server erhalten');
-      }
+      if (!data) throw new Error('Keine Antwort vom Server erhalten');
 
-      // Handle bank transfer - navigate to bank details page instead of redirect
       if (data.payment_method === 'bank_transfer' && data.bank_details) {
-        console.log('[CHECKOUT] Navigating to bank transfer success page');
-        navigate('/checkout/bank-transfer', {
-          state: {
-            bank_details: data.bank_details,
-            total: data.total,
-            currency: data.currency,
-          }
-        });
+        navigate('/checkout/bank-transfer', { state: { bank_details: data.bank_details, total: data.total, currency: data.currency } });
         return;
       }
 
-      // For Stripe/PayPal, redirect to external URL
-      if (data.url) {
-        console.log('[CHECKOUT] Redirecting to:', data.url);
-        window.location.href = data.url;
-      } else {
-        throw new Error('Keine Weiterleitungs-URL erhalten');
-      }
+      if (data.url) { window.location.href = data.url; }
+      else { throw new Error('Keine Weiterleitungs-URL erhalten'); }
     } catch (error) {
       console.error('Checkout error:', error);
-      const message =
-        error instanceof Error
-          ? error.message
-          : typeof error === 'string'
-            ? error
-            : 'Unbekannter Fehler';
+      const message = error instanceof Error ? error.message : 'Unbekannter Fehler';
       toast.error(`Checkout fehlgeschlagen: ${message}`);
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navigation />
-      
-      <main className="container mx-auto px-4 py-8 lg:py-12">
-        {/* Header */}
-        <div className="max-w-6xl mx-auto">
-          <Button
-            variant="ghost"
-            onClick={() => step === 'payment' ? setStep('address') : navigate('/cart')}
-            className="mb-6 gap-2"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            {step === 'payment' ? 'Zurück zur Adresse' : 'Zurück zum Warenkorb'}
-          </Button>
+    <PremiumPageLayout>
+      <Seo title="Checkout | ALDENAIR" description="Sichere Bestellung bei ALDENAIR." canonicalPath="/checkout" />
 
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold mb-2">Checkout</h1>
-            <p className="text-muted-foreground">
-              {step === 'address' ? 'Schritt 1: Adresse eingeben' : 'Schritt 2: Zahlung'}
-            </p>
-          </div>
+      {/* Header */}
+      <section className="border-b border-border">
+        <div className="container-premium py-8 lg:py-12">
+          <button
+            onClick={() => step === 'payment' ? setStep('address') : navigate('/cart')}
+            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6"
+          >
+            <ArrowLeft className="w-4 h-4" strokeWidth={1.5} />
+            {step === 'payment' ? 'Zurück zur Adresse' : 'Zurück zum Warenkorb'}
+          </button>
+          <span className="inline-block text-[10px] tracking-[0.3em] uppercase text-accent mb-3">Checkout</span>
+          <h1 className="font-display text-3xl lg:text-4xl text-foreground mb-4">
+            {step === 'address' ? 'Adresse eingeben' : 'Zahlung'}
+          </h1>
 
           {/* Progress Steps */}
-          <div className="flex items-center gap-4 mb-8">
+          <div className="flex items-center gap-4 mt-4">
             <div className="flex items-center gap-2">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                step === 'address' ? 'bg-primary text-primary-foreground' : 'bg-success text-success-foreground'
+              <div className={`w-8 h-8 flex items-center justify-center text-xs font-medium ${
+                step === 'address' ? 'bg-foreground text-background' : 'bg-accent text-accent-foreground'
               }`}>
-                {step === 'payment' ? <CheckCircle className="w-5 h-5" /> : '1'}
+                {step === 'payment' ? <CheckCircle className="w-4 h-4" /> : '1'}
               </div>
-              <span className={step === 'address' ? 'font-medium' : 'text-muted-foreground'}>
-                Adresse
-              </span>
+              <span className={`text-sm ${step === 'address' ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>Adresse</span>
             </div>
             <div className="flex-1 h-px bg-border" />
             <div className="flex items-center gap-2">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                step === 'payment' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+              <div className={`w-8 h-8 flex items-center justify-center text-xs font-medium ${
+                step === 'payment' ? 'bg-foreground text-background' : 'bg-muted text-muted-foreground'
               }`}>
                 2
               </div>
-              <span className={step === 'payment' ? 'font-medium' : 'text-muted-foreground'}>
-                Zahlung
-              </span>
+              <span className={`text-sm ${step === 'payment' ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>Zahlung</span>
             </div>
           </div>
+        </div>
+      </section>
 
-          <div className="grid lg:grid-cols-3 gap-8">
-            {/* Left Column - Forms */}
+      <section className="section-spacing">
+        <div className="container-premium">
+          <div className="grid lg:grid-cols-3 gap-8 lg:gap-12">
+            {/* Left Column */}
             <div className="lg:col-span-2 space-y-6">
               {step === 'address' ? (
                 <>
-                  {/* Email for Guest Checkout */}
                   {!user && (
-                    <div className="bg-card border rounded-lg p-6">
-                      <h3 className="font-semibold mb-4">Kontakt</h3>
-                      <div>
-                        <label htmlFor="email" className="block text-sm font-medium mb-2">
-                          E-Mail-Adresse *
-                        </label>
-                        <input
-                          type="email"
-                          id="email"
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          placeholder="deine@email.de"
-                          required
-                          className="w-full px-3 py-2 border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary"
-                        />
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Für die Bestellbestätigung und Versandbenachrichtigungen
-                        </p>
-                      </div>
+                    <div className="p-6 border border-border">
+                      <h3 className="text-[10px] tracking-[0.2em] uppercase text-accent mb-4">Kontakt</h3>
+                      <label htmlFor="email" className="block text-sm text-muted-foreground mb-2">E-Mail-Adresse *</label>
+                      <input
+                        type="email" id="email" value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="deine@email.de" required
+                        className="w-full px-4 py-3 bg-background border border-border text-sm focus:outline-none focus:border-accent"
+                      />
                     </div>
                   )}
-
-                  {/* Shipping Address */}
-                  <AddressForm
-                    type="shipping"
-                    onAddressChange={setShippingAddress}
-                    initialAddress={shippingAddress}
-                  />
-
-                  {/* Billing Address */}
-                  <AddressForm
-                    type="billing"
-                    onAddressChange={setBillingAddress}
-                    initialAddress={billingAddress}
-                    useSameAsShipping={useSameAsShipping}
-                    onUseSameAsShippingChange={setUseSameAsShipping}
-                    shippingAddress={shippingAddress}
-                  />
-
-                  {/* Continue Button */}
-                  <Button
-                    className="w-full"
-                    size="lg"
+                  <AddressForm type="shipping" onAddressChange={setShippingAddress} initialAddress={shippingAddress} />
+                  <AddressForm type="billing" onAddressChange={setBillingAddress} initialAddress={billingAddress}
+                    useSameAsShipping={useSameAsShipping} onUseSameAsShippingChange={setUseSameAsShipping} shippingAddress={shippingAddress} />
+                  <button
                     onClick={handleProceedToPayment}
                     disabled={!canProceedToPayment}
+                    className="w-full py-4 bg-foreground text-background text-[11px] tracking-[0.15em] uppercase font-medium hover:bg-foreground/90 transition-colors disabled:opacity-50"
                   >
                     Weiter zur Zahlung
-                  </Button>
-
+                  </button>
                   {!user && (
-                    <p className="text-sm text-center text-muted-foreground">
-                      Als Gast bestellen oder{' '}
-                      <a href="/auth" className="text-primary underline hover:no-underline">
-                        einloggen
-                      </a>{' '}
-                      für schnelleren Checkout
+                    <p className="text-xs text-center text-muted-foreground">
+                      Als Gast bestellen oder <a href="/auth" className="text-accent underline">einloggen</a>
                     </p>
                   )}
                 </>
               ) : (
                 <>
-                  {/* Payment Method Selection */}
-                  <PaymentMethodSelector
-                    value={paymentMethod}
-                    onChange={setPaymentMethod}
-                  />
-
-                  {/* Address Summary */}
+                  <PaymentMethodSelector value={paymentMethod} onChange={setPaymentMethod} />
                   <div className="grid md:grid-cols-2 gap-4">
-                    <div className="p-4 bg-muted/50 rounded-lg">
-                      <h3 className="font-medium mb-2 text-sm text-muted-foreground">Lieferadresse</h3>
+                    <div className="p-5 border border-border">
+                      <h3 className="text-[10px] tracking-[0.1em] uppercase text-muted-foreground mb-3">Lieferadresse</h3>
                       {shippingAddress && (
-                        <div className="text-sm">
+                        <div className="text-sm text-foreground space-y-0.5">
                           <p className="font-medium">{shippingAddress.first_name} {shippingAddress.last_name}</p>
                           <p>{shippingAddress.street}</p>
-                          {shippingAddress.street2 && <p>{shippingAddress.street2}</p>}
                           <p>{shippingAddress.postal_code} {shippingAddress.city}</p>
                         </div>
                       )}
                     </div>
-                    <div className="p-4 bg-muted/50 rounded-lg">
-                      <h3 className="font-medium mb-2 text-sm text-muted-foreground">Rechnungsadresse</h3>
+                    <div className="p-5 border border-border">
+                      <h3 className="text-[10px] tracking-[0.1em] uppercase text-muted-foreground mb-3">Rechnungsadresse</h3>
                       {(useSameAsShipping ? shippingAddress : billingAddress) && (
-                        <div className="text-sm">
+                        <div className="text-sm text-foreground space-y-0.5">
                           {useSameAsShipping && <p className="text-xs text-muted-foreground mb-1">Gleich wie Lieferadresse</p>}
                           <p className="font-medium">
                             {(useSameAsShipping ? shippingAddress : billingAddress)?.first_name}{' '}
@@ -327,49 +233,34 @@ const Checkout = () => {
                       )}
                     </div>
                   </div>
-
-                  {/* Pay Button */}
-                  <Button
-                    className="w-full"
-                    size="lg"
+                  <button
                     onClick={handleCheckout}
                     disabled={loading}
+                    className="w-full py-4 bg-foreground text-background text-[11px] tracking-[0.15em] uppercase font-medium hover:bg-foreground/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                   >
                     {loading ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Wird verarbeitet...
-                      </>
+                      <><Loader2 className="w-4 h-4 animate-spin" /> Wird verarbeitet...</>
                     ) : (
-                      `Jetzt bezahlen - ${grandTotal.toFixed(2)} €`
+                      `Jetzt bezahlen – ${grandTotal.toFixed(2)} €`
                     )}
-                  </Button>
-
+                  </button>
                   <p className="text-xs text-center text-muted-foreground">
-                    Mit dem Klick auf "Jetzt bezahlen" akzeptierst du unsere{' '}
-                    <a href="/terms" className="underline hover:no-underline">AGB</a> und{' '}
-                    <a href="/privacy" className="underline hover:no-underline">Datenschutzerklärung</a>.
+                    Mit dem Klick akzeptierst du unsere <a href="/terms" className="underline">AGB</a> und <a href="/privacy" className="underline">Datenschutzerklärung</a>.
                   </p>
                 </>
               )}
             </div>
 
-            {/* Right Column - Order Summary */}
+            {/* Right Column */}
             <div className="lg:col-span-1">
               <div className="lg:sticky lg:top-24">
-                <OrderSummary
-                  items={items}
-                  subtotal={total}
-                  shippingCost={shippingCost}
-                />
+                <OrderSummary items={items} subtotal={total} shippingCost={shippingCost} />
               </div>
             </div>
           </div>
         </div>
-      </main>
-
-      <Footer />
-    </div>
+      </section>
+    </PremiumPageLayout>
   );
 };
 
