@@ -89,7 +89,8 @@ export default function ProductDetail() {
   const [quantity, setQuantity] = useState(1);
 
   const isExternal = !localProduct && !!externalProduct;
-  const loading = localLoading && extLoading;
+  // Show loading until both lookups are done (or one succeeded)
+  const loading = localProduct ? false : (localLoading || extLoading);
   const product = localProduct || null;
 
   useEffect(() => {
@@ -183,7 +184,7 @@ export default function ProductDetail() {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16">
             {/* Image */}
-            <div className="relative sticky top-24">
+            <div className="relative lg:sticky lg:top-24 lg:self-start">
               <div className="aspect-[3/4] bg-muted overflow-hidden">
                 <img
                   src={externalProduct.image_url || 'https://images.unsplash.com/photo-1541643600914-78b084683601?w=800&h=1000&fit=crop'}
@@ -368,8 +369,8 @@ export default function ProductDetail() {
     );
   }
 
-  // --- NOT FOUND ---
-  if (localError || !product) {
+  // --- NOT FOUND (only when both local AND external failed) ---
+  if (!product && !isExternal) {
     return (
       <PremiumPageLayout>
         <div className="container-premium py-24 text-center">
