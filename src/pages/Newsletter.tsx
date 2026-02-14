@@ -1,17 +1,12 @@
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent } from '@/components/ui/card';
-import { ArrowLeft, Mail, Gift, Bell, CheckCircle } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import Navigation from '@/components/Navigation';
-import { Footer } from '@/components/Footer';
-import { MobileBottomNav } from '@/components/MobileBottomNav';
+import { Mail, Gift, Bell, CheckCircle, ArrowRight } from 'lucide-react';
+import { PremiumPageLayout } from '@/components/premium/PremiumPageLayout';
+import { Breadcrumb } from '@/components/Breadcrumb';
+import { Seo } from '@/components/Seo';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
 export default function Newsletter() {
-  const navigate = useNavigate();
   const { toast } = useToast();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
@@ -64,94 +59,115 @@ export default function Newsletter() {
   };
 
   return (
-    <>
-      <Navigation />
-      <div className="min-h-screen bg-background pb-20 md:pb-0">
-        <div className="container mx-auto px-4 py-8">
-          <div className="max-w-4xl mx-auto">
-            <Button
-              onClick={() => navigate(-1)}
-              variant="outline"
-              className="mb-8"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Zurück
-            </Button>
+    <PremiumPageLayout>
+      <Seo
+        title="Newsletter | ALDENAIR"
+        description="Melden Sie sich für den ALDENAIR Newsletter an und erhalten Sie exklusive Angebote und Parfüm-Tipps."
+        canonicalPath="/newsletter"
+      />
 
-            <div className="mb-12 text-center">
-              <h1 className="text-4xl font-bold mb-4 text-foreground">Newsletter</h1>
-              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-                Bleiben Sie über neue Düfte, exklusive Angebote und Parfüm-Tipps auf dem Laufenden.
-                Melden Sie sich für unseren Newsletter an und erhalten Sie als Dankeschön 10% Rabatt auf Ihre erste Bestellung.
+      {/* Header */}
+      <section className="border-b border-border">
+        <div className="container-premium py-8 lg:py-12">
+          <Breadcrumb className="mb-6" />
+          
+          <span className="inline-block text-[10px] tracking-[0.3em] uppercase text-accent mb-3">
+            Exklusiv
+          </span>
+          <h1 className="font-display text-3xl lg:text-4xl text-foreground mb-4">
+            Newsletter
+          </h1>
+          <p className="text-muted-foreground max-w-xl text-sm lg:text-base leading-relaxed">
+            Bleiben Sie über neue Düfte, exklusive Angebote und Parfüm-Tipps auf dem Laufenden.
+            Erhalten Sie als Dankeschön 10% Rabatt auf Ihre erste Bestellung.
+          </p>
+        </div>
+      </section>
+
+      {/* Form Section */}
+      <section className="section-spacing">
+        <div className="container-premium">
+          <div className="max-w-lg mx-auto">
+            {success ? (
+              <div className="text-center space-y-6 py-8">
+                <div className="w-20 h-20 mx-auto flex items-center justify-center bg-green-500/10">
+                  <CheckCircle className="w-10 h-10 text-green-500" strokeWidth={1.5} />
+                </div>
+                <h2 className="font-display text-2xl text-foreground">Vielen Dank!</h2>
+                <p className="text-muted-foreground text-sm leading-relaxed">
+                  Sie wurden erfolgreich für unseren Newsletter angemeldet.
+                  Prüfen Sie Ihr Postfach für Ihren 10% Rabattcode.
+                </p>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] tracking-[0.15em] uppercase text-muted-foreground">
+                    E-Mail-Adresse
+                  </label>
+                  <input
+                    type="email"
+                    placeholder="ihre@email.de"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    className="flex h-12 w-full bg-transparent text-foreground border border-border px-4 py-3 text-base placeholder:text-muted-foreground focus:outline-none focus:border-foreground transition-colors md:text-sm"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full h-12 inline-flex items-center justify-center gap-2 bg-foreground text-background text-[11px] tracking-[0.15em] uppercase font-medium hover:bg-foreground/90 transition-colors disabled:opacity-50"
+                >
+                  {loading ? 'Wird angemeldet...' : 'Jetzt anmelden'}
+                  <ArrowRight className="w-4 h-4" strokeWidth={1.5} />
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* Benefits */}
+      <section className="section-spacing bg-secondary/30">
+        <div className="container-premium">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+            <div className="p-6 lg:p-8 bg-background border border-border">
+              <div className="w-10 h-10 lg:w-12 lg:h-12 flex items-center justify-center bg-accent/10 mb-4">
+                <Gift className="w-5 h-5 lg:w-6 lg:h-6 text-accent" strokeWidth={1.5} />
+              </div>
+              <h3 className="font-display text-lg text-foreground mb-2">
+                Exklusive Angebote
+              </h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Erhalten Sie Zugang zu exklusiven Rabatten und Angeboten nur für Abonnenten.
               </p>
             </div>
-
-            {success ? (
-              <Card className="max-w-md mx-auto">
-                <CardContent className="p-8 text-center">
-                  <CheckCircle className="w-16 h-16 mx-auto mb-4 text-green-500" />
-                  <h2 className="text-2xl font-bold mb-2">Vielen Dank!</h2>
-                  <p className="text-muted-foreground">
-                    Sie wurden erfolgreich für unseren Newsletter angemeldet.
-                  </p>
-                </CardContent>
-              </Card>
-            ) : (
-              <Card className="max-w-md mx-auto">
-                <CardContent className="p-8">
-                  <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-2">E-Mail-Adresse</label>
-                      <Input
-                        type="email"
-                        placeholder="ihre@email.de"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
-                      />
-                    </div>
-                    <Button type="submit" className="w-full" disabled={loading}>
-                      {loading ? 'Wird angemeldet...' : 'Jetzt anmelden'}
-                    </Button>
-                  </form>
-                </CardContent>
-              </Card>
-            )}
-
-            <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-              <div className="space-y-4">
-                <div className="w-16 h-16 mx-auto rounded-full bg-primary/10 flex items-center justify-center">
-                  <Gift className="w-8 h-8 text-primary" />
-                </div>
-                <h3 className="font-semibold">Exklusive Angebote</h3>
-                <p className="text-sm text-muted-foreground">
-                  Erhalten Sie Zugang zu exklusiven Rabatten und Angeboten nur für Abonnenten.
-                </p>
+            <div className="p-6 lg:p-8 bg-background border border-border">
+              <div className="w-10 h-10 lg:w-12 lg:h-12 flex items-center justify-center bg-accent/10 mb-4">
+                <Bell className="w-5 h-5 lg:w-6 lg:h-6 text-accent" strokeWidth={1.5} />
               </div>
-              <div className="space-y-4">
-                <div className="w-16 h-16 mx-auto rounded-full bg-primary/10 flex items-center justify-center">
-                  <Bell className="w-8 h-8 text-primary" />
-                </div>
-                <h3 className="font-semibold">Neuheiten zuerst</h3>
-                <p className="text-sm text-muted-foreground">
-                  Seien Sie der Erste, der von neuen Düften und Kollektionen erfährt.
-                </p>
+              <h3 className="font-display text-lg text-foreground mb-2">
+                Neuheiten zuerst
+              </h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Seien Sie der Erste, der von neuen Düften und Kollektionen erfährt.
+              </p>
+            </div>
+            <div className="p-6 lg:p-8 bg-background border border-border">
+              <div className="w-10 h-10 lg:w-12 lg:h-12 flex items-center justify-center bg-accent/10 mb-4">
+                <Mail className="w-5 h-5 lg:w-6 lg:h-6 text-accent" strokeWidth={1.5} />
               </div>
-              <div className="space-y-4">
-                <div className="w-16 h-16 mx-auto rounded-full bg-primary/10 flex items-center justify-center">
-                  <Mail className="w-8 h-8 text-primary" />
-                </div>
-                <h3 className="font-semibold">Parfüm-Tipps</h3>
-                <p className="text-sm text-muted-foreground">
-                  Erhalten Sie Expertentipps zur Auswahl und Anwendung von Parfüms.
-                </p>
-              </div>
+              <h3 className="font-display text-lg text-foreground mb-2">
+                Parfüm-Tipps
+              </h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Erhalten Sie Expertentipps zur Auswahl und Anwendung von Parfüms.
+              </p>
             </div>
           </div>
         </div>
-      </div>
-      <Footer />
-      <MobileBottomNav />
-    </>
+      </section>
+    </PremiumPageLayout>
   );
 }

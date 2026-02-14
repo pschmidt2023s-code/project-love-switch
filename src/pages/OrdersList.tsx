@@ -2,12 +2,9 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import Navigation from '@/components/Navigation';
-import { Footer } from '@/components/Footer';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
+import { PremiumPageLayout } from '@/components/premium/PremiumPageLayout';
+import { Breadcrumb } from '@/components/Breadcrumb';
+import { Seo } from '@/components/Seo';
 import { Package, ChevronRight } from 'lucide-react';
 
 interface Order {
@@ -26,11 +23,7 @@ export default function OrdersList() {
 
   useEffect(() => {
     if (authLoading) return;
-
-    if (!user) {
-      navigate('/auth');
-      return;
-    }
+    if (!user) { navigate('/auth'); return; }
 
     (async () => {
       setLoading(true);
@@ -40,90 +33,86 @@ export default function OrdersList() {
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(50);
-
       setOrders(data || []);
       setLoading(false);
     })();
   }, [user, authLoading, navigate]);
 
-  const getStatusBadge = (status: string) => {
-    const statusMap: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
-      pending: { label: 'Ausstehend', variant: 'secondary' },
-      processing: { label: 'In Bearbeitung', variant: 'outline' },
-      paid: { label: 'Bezahlt', variant: 'default' },
-      shipped: { label: 'Versendet', variant: 'default' },
-      delivered: { label: 'Zugestellt', variant: 'default' },
-      cancelled: { label: 'Storniert', variant: 'destructive' },
+  const getStatusLabel = (status: string) => {
+    const map: Record<string, string> = {
+      pending: 'Ausstehend', processing: 'In Bearbeitung', paid: 'Bezahlt',
+      shipped: 'Versendet', delivered: 'Zugestellt', cancelled: 'Storniert', completed: 'Abgeschlossen',
     };
-    const config = statusMap[status] || statusMap.pending;
-    return <Badge variant={config.variant}>{config.label}</Badge>;
+    return map[status] || status;
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <Navigation />
+    <PremiumPageLayout>
+      <Seo title="Meine Bestellungen | ALDENAIR" description="Übersicht Ihrer Bestellungen" canonicalPath="/orders" />
 
-      <main className="flex-1 max-w-4xl mx-auto px-4 py-8 w-full">
-        <header className="mb-8">
-          <h1 className="text-2xl lg:text-3xl font-bold text-foreground">Meine Bestellungen</h1>
-          <p className="text-muted-foreground mt-1">Übersicht Ihrer Bestellungen</p>
-        </header>
+      {/* Header */}
+      <section className="border-b border-border">
+        <div className="container-premium py-8 lg:py-12">
+          <Breadcrumb
+            items={[
+              { label: 'Konto', path: '/account' },
+              { label: 'Bestellungen' }
+            ]}
+            className="mb-6"
+          />
+          <span className="inline-block text-[10px] tracking-[0.3em] uppercase text-accent mb-3">Konto</span>
+          <h1 className="font-display text-3xl lg:text-4xl text-foreground">Meine Bestellungen</h1>
+          <p className="text-muted-foreground text-sm mt-2">Übersicht Ihrer Bestellungen</p>
+        </div>
+      </section>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Bestellungen</CardTitle>
-            <CardDescription>Die letzten Bestellungen in Ihrem Konto</CardDescription>
-          </CardHeader>
-          <CardContent>
+      {/* Orders */}
+      <section className="section-spacing">
+        <div className="container-premium">
+          <div className="max-w-3xl">
             {loading ? (
               <div className="space-y-3">
-                <Skeleton className="h-16" />
-                <Skeleton className="h-16" />
-                <Skeleton className="h-16" />
+                {[1, 2, 3].map(i => <div key={i} className="h-20 bg-muted animate-pulse" />)}
               </div>
             ) : orders.length === 0 ? (
-              <div className="text-center py-10">
-                <Package className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground mb-4">Noch keine Bestellungen</p>
-                <Button asChild>
-                  <Link to="/products">Jetzt einkaufen</Link>
-                </Button>
+              <div className="text-center py-16 border border-border">
+                <Package className="w-12 h-12 text-muted-foreground mx-auto mb-4" strokeWidth={1} />
+                <h2 className="font-display text-xl text-foreground mb-2">Noch keine Bestellungen</h2>
+                <p className="text-sm text-muted-foreground mb-6">Starten Sie Ihre Duftreise</p>
+                <Link to="/products" className="inline-flex items-center px-6 py-3 bg-foreground text-background text-[11px] tracking-[0.15em] uppercase font-medium hover:bg-foreground/90 transition-colors">
+                  Jetzt einkaufen
+                </Link>
               </div>
             ) : (
-              <div className="space-y-4">
-                {orders.map((order) => (
-                  <div
+              <div className="space-y-3">
+                {orders.map(order => (
+                  <Link
                     key={order.id}
-                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                    to={`/orders/${order.id}`}
+                    className="flex items-center justify-between p-5 border border-border hover:border-accent/50 transition-colors group"
                   >
                     <div className="space-y-1">
-                      <p className="font-medium">{order.order_number}</p>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-sm font-medium text-foreground">{order.order_number}</p>
+                      <p className="text-xs text-muted-foreground">
                         {new Date(order.created_at).toLocaleDateString('de-DE', {
-                          day: '2-digit',
-                          month: 'long',
-                          year: 'numeric',
+                          day: '2-digit', month: 'long', year: 'numeric',
                         })}
                       </p>
                     </div>
                     <div className="flex items-center gap-4">
-                      {getStatusBadge(order.status)}
-                      <p className="font-semibold">{Number(order.total).toFixed(2)} €</p>
-                      <Button variant="ghost" size="icon" asChild>
-                        <Link to={`/orders/${order.id}`} aria-label={`Bestellung ${order.order_number} ansehen`}>
-                          <ChevronRight className="w-4 h-4" />
-                        </Link>
-                      </Button>
+                      <span className="text-[10px] tracking-[0.1em] uppercase px-3 py-1 bg-muted text-muted-foreground">
+                        {getStatusLabel(order.status)}
+                      </span>
+                      <span className="text-sm font-medium text-foreground">{Number(order.total).toFixed(2)} €</span>
+                      <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" strokeWidth={1.5} />
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             )}
-          </CardContent>
-        </Card>
-      </main>
-
-      <Footer />
-    </div>
+          </div>
+        </div>
+      </section>
+    </PremiumPageLayout>
   );
 }
