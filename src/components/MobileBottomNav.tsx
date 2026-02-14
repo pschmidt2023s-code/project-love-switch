@@ -4,13 +4,12 @@ import { useCart } from '@/contexts/CartContext';
 import { useFavorites } from '@/hooks/useFavorites';
 import { CartSidebar } from './CartSidebar';
 import { MobileNavItem } from './mobile/MobileNavItem';
-import { useState } from 'react';
+
 
 export function MobileBottomNav() {
   const location = useLocation();
-  const { itemCount } = useCart();
+  const { itemCount, showCartSidebar, setShowCartSidebar } = useCart();
   const { count: favoritesCount } = useFavorites();
-  const [showCart, setShowCart] = useState(false);
 
   // Hide on admin pages
   if (location.pathname.startsWith('/admin')) {
@@ -32,7 +31,7 @@ export function MobileBottomNav() {
             label="Warenkorb"
             isActive={location.pathname === '/cart'}
             badge={itemCount}
-            onClick={() => setShowCart(true)}
+            onClick={() => setShowCartSidebar(true)}
           />
           <MobileNavItem
             icon={Heart}
@@ -50,7 +49,7 @@ export function MobileBottomNav() {
         </div>
       </nav>
 
-      <CartSidebar open={showCart} onOpenChange={setShowCart} />
+      <CartSidebar open={showCartSidebar} onOpenChange={setShowCartSidebar} />
 
       {/* Spacer for bottom nav */}
       <div className="lg:hidden h-16" />

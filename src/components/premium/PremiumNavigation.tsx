@@ -10,10 +10,10 @@ import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 
 export function PremiumNavigation() {
   const { user, signOut } = useAuth();
-  const { itemCount } = useCart();
+  const { itemCount, showCartSidebar, setShowCartSidebar } = useCart();
   const location = useLocation();
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [showCart, setShowCart] = useState(false);
+  const showCart = showCartSidebar;
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -224,7 +224,7 @@ export function PremiumNavigation() {
 
               {/* Cart */}
               <button
-                onClick={() => setShowCart(true)}
+                onClick={() => setShowCartSidebar(true)}
                 className={`nav-icon relative flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 hover:opacity-70 ${transitionClass}`}
                 aria-label="Warenkorb"
               >
@@ -374,7 +374,7 @@ export function PremiumNavigation() {
         )}
       </header>
 
-      <CartSidebar open={showCart} onOpenChange={setShowCart} />
+      <CartSidebar open={showCart} onOpenChange={setShowCartSidebar} />
     </>
   );
 }

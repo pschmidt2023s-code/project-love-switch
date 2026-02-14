@@ -12,10 +12,9 @@ import { SearchWithSuggestions } from './SearchWithSuggestions';
 
 const Navigation = () => {
   const { user, signOut } = useAuth();
-  const { itemCount } = useCart();
+  const { itemCount, showCartSidebar, setShowCartSidebar } = useCart();
   const location = useLocation();
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [showCart, setShowCart] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -173,7 +172,7 @@ const Navigation = () => {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => setShowCart(true)}
+                onClick={() => setShowCartSidebar(true)}
                 className="relative"
               >
                 <ShoppingCart className="w-5 h-5" />
@@ -266,7 +265,7 @@ const Navigation = () => {
         )}
       </nav>
 
-      <CartSidebar open={showCart} onOpenChange={setShowCart} />
+      <CartSidebar open={showCartSidebar} onOpenChange={setShowCartSidebar} />
     </>
   );
 };

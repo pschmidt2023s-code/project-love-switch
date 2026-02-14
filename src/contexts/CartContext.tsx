@@ -19,6 +19,8 @@ interface CartContextType {
   itemCount: number;
   total: number;
   loading: boolean;
+  showCartSidebar: boolean;
+  setShowCartSidebar: (show: boolean) => void;
   addItem: (item: Omit<CartItem, 'id'>) => Promise<void>;
   updateQuantity: (variantId: string, quantity: number) => Promise<void>;
   removeItem: (variantId: string) => Promise<void>;
@@ -31,6 +33,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const [items, setItems] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const [showCartSidebar, setShowCartSidebar] = useState(false);
 
   // Load cart from database when user logs in
   useEffect(() => {
@@ -120,6 +123,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         }
         await loadCart();
         toast.success('Zum Warenkorb hinzugefügt');
+        setShowCartSidebar(true);
       } catch (error) {
         console.error('Error adding to cart:', error);
         toast.error('Fehler beim Hinzufügen');
@@ -136,6 +140,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         setItems([...items, { ...newItem, id: crypto.randomUUID() }]);
       }
       toast.success('Zum Warenkorb hinzugefügt');
+      setShowCartSidebar(true);
     }
   };
 
@@ -203,7 +208,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
   return (
-    <CartContext.Provider value={{ items, itemCount, total, loading, addItem, updateQuantity, removeItem, clearCart }}>
+    <CartContext.Provider value={{ items, itemCount, total, loading, showCartSidebar, setShowCartSidebar, addItem, updateQuantity, removeItem, clearCart }}>
       {children}
     </CartContext.Provider>
   );
