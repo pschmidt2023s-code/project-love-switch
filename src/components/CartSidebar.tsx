@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { useCart } from '@/contexts/CartContext';
 import { useNavigate } from 'react-router-dom';
-import { ShoppingBag, Minus, Plus, Trash2, Truck, Zap } from 'lucide-react';
+import { ShoppingBag, Minus, Plus, Trash2, Truck } from 'lucide-react';
 
 interface CartSidebarProps {
   open: boolean;
@@ -22,11 +22,6 @@ export function CartSidebar({ open, onOpenChange }: CartSidebarProps) {
   const handleCheckout = () => {
     onOpenChange(false);
     navigate('/checkout');
-  };
-
-  const handleExpressCheckout = () => {
-    onOpenChange(false);
-    navigate('/express-checkout');
   };
 
   return (
@@ -151,14 +146,6 @@ export function CartSidebar({ open, onOpenChange }: CartSidebarProps) {
                     onClick={handleCheckout}
                   >
                     Zur Kasse gehen
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="w-full gap-2"
-                    onClick={handleExpressCheckout}
-                  >
-                    <Zap className="w-4 h-4" />
-                    Express Checkout
                   </Button>
                 </div>
               </div>

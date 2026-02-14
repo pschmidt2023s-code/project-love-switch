@@ -3,7 +3,7 @@ import { useCart } from '@/contexts/CartContext';
 import { PremiumPageLayout } from '@/components/premium/PremiumPageLayout';
 import { Breadcrumb } from '@/components/Breadcrumb';
 import { Seo } from '@/components/Seo';
-import { Minus, Plus, Trash2, ShoppingBag, ArrowRight, Zap, Shield, Truck } from 'lucide-react';
+import { Minus, Plus, Trash2, ShoppingBag, ArrowRight, Shield, Truck } from 'lucide-react';
 
 export default function CartPage() {
   const { items, itemCount, total, updateQuantity, removeItem, loading } = useCart();
@@ -159,16 +159,8 @@ export default function CartPage() {
 
                 {/* CTA */}
                 <Link
-                  to="/express-checkout"
-                  className="flex items-center justify-center gap-2 w-full py-4 bg-foreground text-background text-[11px] tracking-[0.15em] uppercase font-medium hover:bg-foreground/90 transition-colors"
-                >
-                  <Zap className="w-4 h-4" strokeWidth={1.5} />
-                  Express Checkout
-                </Link>
-
-                <Link
                   to="/checkout"
-                  className="flex items-center justify-center gap-2 w-full py-4 border border-border text-foreground text-[11px] tracking-[0.15em] uppercase font-medium hover:bg-muted transition-colors"
+                  className="flex items-center justify-center gap-2 w-full py-4 bg-foreground text-background text-[11px] tracking-[0.15em] uppercase font-medium hover:bg-foreground/90 transition-colors"
                 >
                   Zur Kasse
                   <ArrowRight className="w-4 h-4" strokeWidth={1.5} />
