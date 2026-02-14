@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Mail, Clock, ArrowRight, Send } from 'lucide-react';
+import { Mail, Clock, Send, ArrowRight, MapPin } from 'lucide-react';
 import { PremiumPageLayout } from '@/components/premium/PremiumPageLayout';
 import { Seo } from '@/components/Seo';
 import { useToast } from '@/hooks/use-toast';
@@ -84,111 +84,115 @@ export default function Contact() {
         canonicalPath="/contact"
       />
 
-      {/* Split layout: large text left, form right */}
+      {/* Hero - Full width editorial */}
+      <section className="py-20 lg:py-32 border-b border-border">
+        <div className="container-premium">
+          <div className="max-w-3xl">
+            <span className="inline-block text-[10px] tracking-[0.3em] uppercase text-accent mb-6">
+              Kontakt
+            </span>
+            <h1 className="font-display text-5xl sm:text-6xl lg:text-7xl text-foreground leading-[0.95] mb-8">
+              Wir sind
+              <br />
+              für Sie da.
+            </h1>
+            <p className="text-muted-foreground max-w-lg text-sm leading-relaxed">
+              Haben Sie Fragen zu unseren Düften, Ihrer Bestellung oder möchten eine persönliche Beratung? 
+              Wir freuen uns auf Ihre Nachricht.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Contact Info Tiles */}
+      <section className="py-12 lg:py-16 border-b border-border">
+        <div className="container-premium">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            <div className="p-6 lg:p-8 border border-border">
+              <Mail className="w-5 h-5 text-accent mb-4" strokeWidth={1.5} />
+              <p className="text-[10px] tracking-[0.15em] uppercase text-muted-foreground mb-1">E-Mail</p>
+              <p className="text-sm text-foreground">support@aldenairperfumes.de</p>
+            </div>
+            <div className="p-6 lg:p-8 border border-border">
+              <Clock className="w-5 h-5 text-accent mb-4" strokeWidth={1.5} />
+              <p className="text-[10px] tracking-[0.15em] uppercase text-muted-foreground mb-1">Erreichbarkeit</p>
+              <p className="text-sm text-foreground">Mo–Fr, 9:00–18:00 Uhr</p>
+            </div>
+            <div className="p-6 lg:p-8 border border-border">
+              <Send className="w-5 h-5 text-accent mb-4" strokeWidth={1.5} />
+              <p className="text-[10px] tracking-[0.15em] uppercase text-muted-foreground mb-1">Antwortzeit</p>
+              <p className="text-sm text-foreground">Innerhalb von 24 Stunden</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Form Section - Full width, clean */}
       <section className="py-16 lg:py-24">
         <div className="container-premium">
-          <div className="grid lg:grid-cols-12 gap-12 lg:gap-20">
-            {/* Left: Large typography + contact info */}
-            <div className="lg:col-span-5 lg:sticky lg:top-28 lg:self-start">
-              <span className="inline-block text-[10px] tracking-[0.3em] uppercase text-accent mb-6">
-                Kontakt
-              </span>
-              <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl text-foreground leading-[0.95] mb-8">
-                Sprechen
-                <br />
-                Sie mit
-                <br />
-                uns.
-              </h1>
-              
-              <div className="space-y-6 pt-8 border-t border-border">
-                <div className="flex items-start gap-4">
-                  <Mail className="w-5 h-5 text-accent mt-0.5" strokeWidth={1.5} />
-                  <div>
-                    <p className="text-[10px] tracking-[0.1em] uppercase text-muted-foreground mb-1">E-Mail</p>
-                    <p className="text-sm text-foreground">support@aldenairperfumes.de</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-4">
-                  <Clock className="w-5 h-5 text-accent mt-0.5" strokeWidth={1.5} />
-                  <div>
-                    <p className="text-[10px] tracking-[0.1em] uppercase text-muted-foreground mb-1">Erreichbarkeit</p>
-                    <p className="text-sm text-foreground">Mo–Fr, 9:00–18:00 Uhr</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-4">
-                  <Send className="w-5 h-5 text-accent mt-0.5" strokeWidth={1.5} />
-                  <div>
-                    <p className="text-[10px] tracking-[0.1em] uppercase text-muted-foreground mb-1">Antwortzeit</p>
-                    <p className="text-sm text-foreground">Innerhalb von 24 Stunden</p>
-                  </div>
-                </div>
-              </div>
+          <div className="max-w-2xl mx-auto">
+            <div className="mb-10">
+              <span className="inline-block text-[10px] tracking-[0.2em] uppercase text-accent mb-3">Nachricht senden</span>
+              <h2 className="font-display text-2xl lg:text-3xl text-foreground">
+                Schreiben Sie uns
+              </h2>
             </div>
 
-            {/* Right: Form */}
-            <div className="lg:col-span-7">
-              <div className="p-8 lg:p-12 border border-border">
-                <h2 className="text-[10px] tracking-[0.2em] uppercase text-accent mb-8">
-                  Nachricht senden
-                </h2>
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  <div className="grid sm:grid-cols-2 gap-4">
-                    <EnhancedInput
-                      label="Name"
-                      type="text"
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      placeholder="Ihr Name"
-                      error={errors.name}
-                      required
-                      autoComplete="name"
-                      autoCapitalize="words"
-                    />
-                    <EnhancedInput
-                      label="E-Mail"
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      placeholder="ihre@email.de"
-                      error={errors.email}
-                      required
-                      autoComplete="email"
-                      inputMode="email"
-                    />
-                  </div>
-                  
-                  <EnhancedInput
-                    label="Betreff"
-                    type="text"
-                    value={formData.subject}
-                    onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                    placeholder="Worum geht es?"
-                    error={errors.subject}
-                    required
-                  />
-                  
-                  <EnhancedTextarea
-                    label="Nachricht"
-                    value={formData.message}
-                    onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                    placeholder="Ihre Nachricht..."
-                    rows={6}
-                    error={errors.message}
-                    required
-                  />
-                  
-                  <button 
-                    type="submit" 
-                    disabled={loading}
-                    className="w-full sm:w-auto inline-flex items-center justify-center px-10 py-4 bg-foreground text-background text-[11px] tracking-[0.15em] uppercase font-medium hover:bg-foreground/90 transition-colors disabled:opacity-50"
-                  >
-                    {loading ? 'Wird gesendet...' : 'Absenden'}
-                    <ArrowRight className="ml-2 w-4 h-4" strokeWidth={1.5} />
-                  </button>
-                </form>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="grid sm:grid-cols-2 gap-4">
+                <EnhancedInput
+                  label="Name"
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  placeholder="Ihr Name"
+                  error={errors.name}
+                  required
+                  autoComplete="name"
+                  autoCapitalize="words"
+                />
+                <EnhancedInput
+                  label="E-Mail"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  placeholder="ihre@email.de"
+                  error={errors.email}
+                  required
+                  autoComplete="email"
+                  inputMode="email"
+                />
               </div>
-            </div>
+              
+              <EnhancedInput
+                label="Betreff"
+                type="text"
+                value={formData.subject}
+                onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
+                placeholder="Worum geht es?"
+                error={errors.subject}
+                required
+              />
+              
+              <EnhancedTextarea
+                label="Nachricht"
+                value={formData.message}
+                onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                placeholder="Ihre Nachricht..."
+                rows={6}
+                error={errors.message}
+                required
+              />
+              
+              <button 
+                type="submit" 
+                disabled={loading}
+                className="w-full sm:w-auto inline-flex items-center justify-center px-10 py-4 bg-foreground text-background text-[11px] tracking-[0.15em] uppercase font-medium hover:bg-foreground/90 transition-colors disabled:opacity-50"
+              >
+                {loading ? 'Wird gesendet...' : 'Absenden'}
+                <ArrowRight className="ml-2 w-4 h-4" strokeWidth={1.5} />
+              </button>
+            </form>
           </div>
         </div>
       </section>

@@ -70,17 +70,17 @@ export default function About() {
         </div>
       </section>
 
-      {/* Stats Bar - horizontal, full-width, contrasting */}
-      <section className="bg-foreground text-background">
+      {/* Stats Bar */}
+      <section className="border-y border-border">
         <div className="container-premium">
           <div className="grid grid-cols-2 lg:grid-cols-4">
             {stats.map((stat, i) => (
               <div
                 key={stat.label}
-                className={`py-8 lg:py-12 text-center ${i > 0 ? 'border-l border-background/10' : ''}`}
+                className={`py-8 lg:py-12 text-center ${i > 0 ? 'border-l border-border' : ''}`}
               >
-                <div className="font-display text-3xl lg:text-4xl mb-1">{stat.value}</div>
-                <div className="text-[10px] tracking-[0.15em] uppercase text-background/60">{stat.label}</div>
+                <div className="font-display text-3xl lg:text-4xl text-foreground mb-1">{stat.value}</div>
+                <div className="text-[10px] tracking-[0.15em] uppercase text-muted-foreground">{stat.label}</div>
               </div>
             ))}
           </div>
