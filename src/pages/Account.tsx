@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import {
-  User, Package, MapPin, LogOut, Edit2, Plus, Trash2, ChevronRight, Award
+  User, Package, MapPin, LogOut, Edit2, Plus, Trash2, ChevronRight, Award, Gift
 } from 'lucide-react';
 import { LoyaltyProgress } from '@/components/LoyaltyProgress';
 
@@ -49,7 +49,7 @@ export default function Account() {
   const { user, signOut, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'profile' | 'orders' | 'addresses' | 'loyalty'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'orders' | 'addresses' | 'loyalty' | 'referral'>('profile');
   const [profile, setProfile] = useState<Profile | null>(null);
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
@@ -117,6 +117,7 @@ export default function Account() {
     { id: 'loyalty' as const, label: 'Treueprogramm', icon: Award },
     { id: 'orders' as const, label: 'Bestellungen', icon: Package },
     { id: 'addresses' as const, label: 'Adressen', icon: MapPin },
+    { id: 'referral' as const, label: 'Freunde werben', icon: Gift },
   ];
 
   if (loading || authLoading) {
@@ -336,6 +337,29 @@ export default function Account() {
                     ))}
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* Referral Tab */}
+            {activeTab === 'referral' && (
+              <div className="space-y-6">
+                <h2 className="text-[10px] tracking-[0.2em] uppercase text-accent">Freunde werben</h2>
+                <div className="text-center py-12 border border-border space-y-4">
+                  <Gift className="w-12 h-12 text-muted-foreground mx-auto" strokeWidth={1} />
+                  <div>
+                    <h3 className="font-display text-xl text-foreground mb-2">Empfehle ALDENAIR weiter</h3>
+                    <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                      Teile deinen persönlichen Empfehlungscode mit Freunden. Ihr beide erhaltet 10% Rabatt auf eure nächste Bestellung.
+                    </p>
+                  </div>
+                  <Link
+                    to="/referral"
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-foreground text-background text-[11px] tracking-[0.15em] uppercase font-medium hover:bg-foreground/90 transition-colors"
+                  >
+                    Zum Empfehlungsprogramm
+                    <ChevronRight className="w-4 h-4" strokeWidth={1.5} />
+                  </Link>
+                </div>
               </div>
             )}
           </div>
