@@ -158,8 +158,22 @@ export function MusicPlayerProvider({ children }: { children: ReactNode }) {
       // Set source and play - MUST happen synchronously in user gesture
       audio.src = track.audio_url;
       audio.load();
-      audio.play().catch((e) => {
-        console.warn('[MusicPlayer] Play failed:', e.message);
+      
+      // iOS Safari fallback: if unmuted play fails, try muted then unmute
+      audio.play().then(() => {
+        console.log('[MusicPlayer] Play succeeded');
+      }).catch((e) => {
+        console.warn('[MusicPlayer] Play failed, trying muted fallback:', e.message);
+        audio.muted = true;
+        audio.play().then(() => {
+          console.log('[MusicPlayer] Muted play succeeded, unmuting...');
+          // Unmute after a short delay - works on most iOS versions
+          setTimeout(() => {
+            audio.muted = false;
+          }, 100);
+        }).catch((e2) => {
+          console.error('[MusicPlayer] Even muted play failed:', e2.message);
+        });
       });
       
       const currentQueue = state.queue;
