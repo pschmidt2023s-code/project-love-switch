@@ -26,6 +26,8 @@ import { SkipNav } from '@/components/a11y/SkipNav';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
 import { idleScheduler, scheduleAnalytics, scheduleCleanup } from '@/lib/idle-scheduler';
 import { resetCorrelationId } from '@/lib/correlation';
+import { MusicPlayerProvider } from '@/contexts/MusicPlayerContext';
+import { MiniPlayer } from '@/components/music/MiniPlayer';
 
 const ProductDetail = React.lazy(() => import('@/pages/ProductDetail'));
 const Products = React.lazy(() => import('@/pages/Products'));
@@ -60,6 +62,7 @@ const Blog = React.lazy(() => import('@/pages/Blog'));
 const BlogPostPage = React.lazy(() => import('@/pages/BlogPost'));
 const NotFound = React.lazy(() => import('@/pages/NotFound'));
 const Referral = React.lazy(() => import('@/pages/Referral'));
+const Music = React.lazy(() => import('@/pages/Music'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -98,6 +101,7 @@ function App() {
           <TooltipProvider>
             <AuthProvider>
               <CartProvider>
+                <MusicPlayerProvider>
                 <ErrorBoundary>
                   <BrowserRouter>
                     <SkipNav />
@@ -141,10 +145,12 @@ function App() {
                         <Route path="/blog/:slug" element={<Suspense fallback={<LoadingSpinner />}><BlogPostPage /></Suspense>} />
                         <Route path="/manage-subscription" element={<Suspense fallback={<LoadingSpinner />}><ManageSubscription /></Suspense>} />
                         <Route path="/referral" element={<Suspense fallback={<LoadingSpinner />}><Referral /></Suspense>} />
+                        <Route path="/music" element={<Suspense fallback={<LoadingSpinner />}><Music /></Suspense>} />
                         <Route path="*" element={<Suspense fallback={<LoadingSpinner />}><NotFound /></Suspense>} />
                         <Route path="*" element={<Suspense fallback={<LoadingSpinner />}><NotFound /></Suspense>} />
                       </Routes>
                     </div>
+                    <MiniPlayer />
                     <MobileBottomNav />
                     <CookieConsent />
                     <InstallPrompt />
@@ -157,6 +163,7 @@ function App() {
                     <Sonner />
                   </BrowserRouter>
                 </ErrorBoundary>
+                </MusicPlayerProvider>
               </CartProvider>
             </AuthProvider>
           </TooltipProvider>

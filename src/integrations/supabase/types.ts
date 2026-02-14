@@ -958,6 +958,90 @@ export type Database = {
         }
         Relationships: []
       }
+      playlist_tracks: {
+        Row: {
+          created_at: string
+          crossfade_duration: number | null
+          id: string
+          playlist_id: string
+          position: number
+          track_id: string
+          transition_type: string | null
+        }
+        Insert: {
+          created_at?: string
+          crossfade_duration?: number | null
+          id?: string
+          playlist_id: string
+          position?: number
+          track_id: string
+          transition_type?: string | null
+        }
+        Update: {
+          created_at?: string
+          crossfade_duration?: number | null
+          id?: string
+          playlist_id?: string
+          position?: number
+          track_id?: string
+          transition_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "playlist_tracks_playlist_id_fkey"
+            columns: ["playlist_id"]
+            isOneToOne: false
+            referencedRelation: "playlists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "playlist_tracks_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      playlists: {
+        Row: {
+          automix_config: Json | null
+          cover_url: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_automix: boolean | null
+          is_public: boolean | null
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          automix_config?: Json | null
+          cover_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_automix?: boolean | null
+          is_public?: boolean | null
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          automix_config?: Json | null
+          cover_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_automix?: boolean | null
+          is_public?: boolean | null
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       product_variants: {
         Row: {
           ai_description: string | null
@@ -1646,6 +1730,72 @@ export type Database = {
           subject?: string
           updated_at?: string
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      tracks: {
+        Row: {
+          album: string | null
+          artist: string
+          audio_url: string
+          bpm: number | null
+          cover_url: string | null
+          created_at: string
+          duration_seconds: number | null
+          energy: string | null
+          genre: string | null
+          id: string
+          is_active: boolean | null
+          is_external: boolean
+          key_signature: string | null
+          mood: string | null
+          play_count: number | null
+          sort_order: number | null
+          title: string
+          updated_at: string
+          waveform_data: Json | null
+        }
+        Insert: {
+          album?: string | null
+          artist?: string
+          audio_url: string
+          bpm?: number | null
+          cover_url?: string | null
+          created_at?: string
+          duration_seconds?: number | null
+          energy?: string | null
+          genre?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_external?: boolean
+          key_signature?: string | null
+          mood?: string | null
+          play_count?: number | null
+          sort_order?: number | null
+          title: string
+          updated_at?: string
+          waveform_data?: Json | null
+        }
+        Update: {
+          album?: string | null
+          artist?: string
+          audio_url?: string
+          bpm?: number | null
+          cover_url?: string | null
+          created_at?: string
+          duration_seconds?: number | null
+          energy?: string | null
+          genre?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_external?: boolean
+          key_signature?: string | null
+          mood?: string | null
+          play_count?: number | null
+          sort_order?: number | null
+          title?: string
+          updated_at?: string
+          waveform_data?: Json | null
         }
         Relationships: []
       }
