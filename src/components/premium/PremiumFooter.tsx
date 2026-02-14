@@ -59,18 +59,18 @@ export function PremiumFooter() {
   ];
 
   return (
-    <footer className="bg-foreground text-background">
+    <footer className="bg-background text-foreground border-t border-border">
       {/* Main Footer */}
       <div className="container-premium py-12 lg:py-16">
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-8">
           {/* Brand */}
           <div className="col-span-2">
             <Link to="/" className="inline-block mb-5">
-              <span className="font-display text-xl tracking-[0.2em] text-background">
+              <span className="font-display text-xl tracking-[0.2em] text-foreground">
                 ALDENAIR
               </span>
             </Link>
-            <p className="text-background/60 text-sm leading-relaxed max-w-xs mb-6">
+            <p className="text-muted-foreground text-sm leading-relaxed max-w-xs mb-6">
               Deine Premium-Destination für exquisite Parfüms und Düfte. 
               Hochwertige Duftkreationen inspiriert von weltbekannten Luxusmarken.
             </p>
@@ -83,7 +83,7 @@ export function PremiumFooter() {
                   href={social.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-9 h-9 flex items-center justify-center border border-background/20 text-background/60 hover:text-background hover:border-background/50 transition-colors"
+                  className="w-9 h-9 flex items-center justify-center border border-border text-muted-foreground hover:text-foreground hover:border-foreground/50 transition-colors"
                   aria-label={social.label}
                 >
                   <social.icon className="w-4 h-4" />
@@ -94,7 +94,7 @@ export function PremiumFooter() {
 
           {/* Shop Links */}
           <div>
-            <h4 className="text-[10px] tracking-[0.2em] uppercase text-background/40 mb-4">
+            <h4 className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground/60 mb-4">
               Shop
             </h4>
             <nav className="space-y-2.5">
@@ -102,7 +102,7 @@ export function PremiumFooter() {
                 <Link
                   key={link.to}
                   to={link.to}
-                  className="block text-sm text-background/60 hover:text-background transition-colors"
+                  className="block text-sm text-muted-foreground hover:text-foreground transition-colors"
                 >
                   {link.label}
                 </Link>
@@ -112,7 +112,7 @@ export function PremiumFooter() {
 
           {/* Service Links */}
           <div>
-            <h4 className="text-[10px] tracking-[0.2em] uppercase text-background/40 mb-4">
+            <h4 className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground/60 mb-4">
               Service
             </h4>
             <nav className="space-y-2.5">
@@ -120,7 +120,7 @@ export function PremiumFooter() {
                 <Link
                   key={link.to}
                   to={link.to}
-                  className="block text-sm text-background/60 hover:text-background transition-colors"
+                  className="block text-sm text-muted-foreground hover:text-foreground transition-colors"
                 >
                   {link.label}
                 </Link>
@@ -130,7 +130,7 @@ export function PremiumFooter() {
 
           {/* Legal Links */}
           <div>
-            <h4 className="text-[10px] tracking-[0.2em] uppercase text-background/40 mb-4">
+            <h4 className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground/60 mb-4">
               Rechtliches
             </h4>
             <nav className="space-y-2.5">
@@ -138,7 +138,7 @@ export function PremiumFooter() {
                 <Link
                   key={link.to}
                   to={link.to}
-                  className="block text-sm text-background/60 hover:text-background transition-colors"
+                  className="block text-sm text-muted-foreground hover:text-foreground transition-colors"
                 >
                   {link.label}
                 </Link>
@@ -148,25 +148,25 @@ export function PremiumFooter() {
 
           {/* Newsletter */}
           <div>
-            <h4 className="text-[10px] tracking-[0.2em] uppercase text-background/40 mb-4">
+            <h4 className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground/60 mb-4">
               Newsletter
             </h4>
-            <p className="text-sm text-background/60 mb-4">
+            <p className="text-sm text-muted-foreground mb-4">
               Exklusive Angebote und Neuigkeiten.
             </p>
             <Link 
               to="/newsletter"
-              className="inline-flex items-center text-sm text-background hover:text-accent transition-colors"
+              className="inline-flex items-center text-sm text-foreground hover:text-accent transition-colors"
             >
               Jetzt anmelden
               <ArrowUpRight className="ml-1.5 w-3.5 h-3.5" strokeWidth={1.5} />
             </Link>
             
             {/* Contact Email */}
-            <div className="mt-6 pt-4 border-t border-background/10">
+            <div className="mt-6 pt-4 border-t border-border">
               <a 
                 href="mailto:support@aldenairperfumes.de"
-                className="flex items-center gap-2 text-sm text-background/60 hover:text-background transition-colors"
+                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
                 <Mail className="w-3.5 h-3.5" strokeWidth={1.5} />
                 E-Mail senden
@@ -177,13 +177,13 @@ export function PremiumFooter() {
       </div>
 
       {/* Bottom Bar */}
-      <div className="border-t border-background/10">
+      <div className="border-t border-border">
         <div className="container-premium py-5">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-3">
-            <p className="text-xs text-background/40">
+            <p className="text-xs text-muted-foreground">
               © {currentYear} ALDENAIR. Alle Rechte vorbehalten.
             </p>
-            <span className="text-xs text-background/40">
+            <span className="text-xs text-muted-foreground">
               Made with ♥ in Germany
             </span>
           </div>
