@@ -5,6 +5,7 @@ import { useMusicPlayer, Track } from '@/contexts/MusicPlayerContext';
 import { useAdminRole } from '@/hooks/useAdminRole';
 import { PageLayout } from '@/components/PageLayout';
 import { RadioMode } from '@/components/music/RadioMode';
+import { LeakCountdown } from '@/components/music/LeakCountdown';
 import { YouTubePlayer } from '@/components/music/YouTubePlayer';
 import { extractYouTubeId } from '@/lib/radio-sync';
 import { Button } from '@/components/ui/button';
@@ -394,6 +395,11 @@ export default function Music() {
             </Dialog>
           )}
         </div>
+      </div>
+
+      {/* Leak Countdown */}
+      <div className="mb-4">
+        <LeakCountdown />
       </div>
 
       {/* Radio Mode */}
