@@ -131,14 +131,12 @@ export default function Music() {
 
   // Simple: tap track → play it, set full list as queue
   const handleTrackClick = (track: Track) => {
-    player.setQueue(tracks);
-    player.play(track);
+    player.playTrack(track, tracks);
   };
 
   const playAll = () => {
     if (tracks.length > 0) {
-      player.setQueue(tracks);
-      player.play(tracks[0]);
+      player.playTrack(tracks[0], tracks);
     }
   };
 
