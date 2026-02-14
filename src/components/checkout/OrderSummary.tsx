@@ -129,7 +129,7 @@ export function OrderSummary({
         </div>
 
         <p className="text-xs text-muted-foreground text-center">
-          inkl. MwSt., zzgl. eventueller Versandkosten
+          Gemäß § 19 UStG wird keine Umsatzsteuer berechnet.
         </p>
       </CardContent>
     </Card>

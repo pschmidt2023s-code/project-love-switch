@@ -11,6 +11,7 @@ import { Loader2, ArrowLeft, ShoppingBag, CheckCircle, ArrowRight } from 'lucide
 import { AddressForm } from '@/components/checkout/AddressForm';
 import { OrderSummary } from '@/components/checkout/OrderSummary';
 import { PaymentMethodSelector } from '@/components/checkout/PaymentMethodSelector';
+import { CouponInput } from '@/components/checkout/CouponInput';
 
 interface Address {
   id?: string;
@@ -37,9 +38,11 @@ const Checkout = () => {
   const [step, setStep] = useState<'address' | 'payment'>('address');
   const [email, setEmail] = useState(user?.email || '');
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [coupon, setCoupon] = useState<{ code: string; discount_type: string; discount_value: number; discountAmount: number } | null>(null);
 
+  const discount = coupon?.discountAmount ?? 0;
   const shippingCost = total >= 50 ? 0 : 4.95;
-  const grandTotal = total + shippingCost;
+  const grandTotal = total + shippingCost - discount;
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -204,6 +207,7 @@ const Checkout = () => {
                 </>
               ) : (
                 <>
+                  <CouponInput subtotal={total} onApply={setCoupon} appliedCoupon={coupon} />
                   <PaymentMethodSelector value={paymentMethod} onChange={setPaymentMethod} />
                   <div className="grid md:grid-cols-2 gap-4">
                     <div className="p-5 border border-border">
@@ -263,7 +267,7 @@ const Checkout = () => {
             {/* Right Column */}
             <div className="lg:col-span-1">
               <div className="lg:sticky lg:top-24">
-                <OrderSummary items={items} subtotal={total} shippingCost={shippingCost} />
+                <OrderSummary items={items} subtotal={total} shippingCost={shippingCost} discount={discount} discountCode={coupon?.code} />
               </div>
             </div>
           </div>
