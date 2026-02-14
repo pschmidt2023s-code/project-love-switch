@@ -3,9 +3,9 @@ import { Mail } from 'lucide-react';
 
 export function Footer() {
   return (
-    <footer className="bg-muted/50 border-t border-border mt-16">
+    <footer className="bg-muted/50 border-t border-border mt-16" role="contentinfo" aria-label="Fußbereich">
       <div className="container mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8" role="navigation" aria-label="Footer Navigation">
           <div className="space-y-4">
             <span className="text-xl font-bold text-foreground">ALDENAIR</span>
             <p className="text-muted-foreground text-sm leading-relaxed">
