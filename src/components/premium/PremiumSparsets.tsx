@@ -3,7 +3,7 @@ import { ArrowRight, Gift, Sparkles } from 'lucide-react';
 
 export function PremiumSparsets() {
   return (
-    <section className="py-8 lg:py-12 bg-secondary dark:bg-muted/30">
+    <section className="py-8 lg:py-12 bg-background">
       <div className="container-premium">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
           {/* 50ml Sparset */}

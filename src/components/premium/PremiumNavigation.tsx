@@ -127,7 +127,7 @@ export function PremiumNavigation() {
   return (
     <>
       {/* Announcement Bar */}
-      <div className="bg-foreground text-background py-2.5">
+      <div className="bg-black text-white dark:bg-white dark:text-black py-2.5">
         <div className="container-premium">
           <p className="text-center text-[11px] tracking-[0.2em] uppercase font-medium">
             Kostenloser Versand ab 50€ · 14 Tage Rückgabe · Premium Qualität

@@ -41,21 +41,21 @@ export function PremiumNewsletter() {
   };
 
   return (
-    <section className="bg-foreground text-background py-10 lg:py-16">
+    <section className="bg-black text-white py-10 lg:py-16 dark:bg-white dark:text-black">
       <div className="container-premium">
         <div className="max-w-2xl mx-auto text-center">
           {/* Eyebrow */}
-          <span className="inline-block text-[10px] tracking-[0.3em] uppercase text-background/50 mb-3">
+          <span className="inline-block text-[10px] tracking-[0.3em] uppercase text-white/50 dark:text-black/50 mb-3">
             Newsletter
           </span>
           
           {/* Headline */}
-          <h2 className="font-display text-2xl lg:text-3xl text-background mb-3">
+          <h2 className="font-display text-2xl lg:text-3xl text-white dark:text-black mb-3">
             Bleibe auf dem Laufenden
           </h2>
           
           {/* Description */}
-          <p className="text-sm text-background/70 mb-6 max-w-md mx-auto">
+          <p className="text-sm text-white/70 dark:text-black/70 mb-6 max-w-md mx-auto">
             Melde dich für unseren Newsletter an und erhalte exklusive Angebote 
             und Neuigkeiten direkt in dein Postfach.
           </p>
@@ -67,7 +67,7 @@ export function PremiumNewsletter() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Deine E-Mail-Adresse"
-              className="flex-1 px-5 py-4 bg-background/10 border border-background/20 text-background placeholder:text-background/50 text-sm focus:outline-none focus:border-background/50 transition-colors"
+              className="flex-1 px-5 py-4 bg-white/10 dark:bg-black/10 border border-white/20 dark:border-black/20 text-white dark:text-black placeholder:text-white/50 dark:placeholder:text-black/50 text-sm focus:outline-none focus:border-white/50 dark:focus:border-black/50 transition-colors"
             />
             <button
               type="submit"
@@ -87,9 +87,9 @@ export function PremiumNewsletter() {
               onChange={(e) => setPrivacyAccepted(e.target.checked)}
               className="mt-0.5 w-4 h-4 accent-accent flex-shrink-0"
             />
-            <span className="text-[11px] text-background/50 leading-relaxed text-left">
+            <span className="text-[11px] text-white/50 dark:text-black/50 leading-relaxed text-left">
               Ich bin mit dem Erhalt des Newsletters einverstanden und habe die{' '}
-              <Link to="/privacy" className="underline hover:text-background/70">
+              <Link to="/privacy" className="underline hover:text-white/70 dark:hover:text-black/70">
                 Datenschutzerklärung
               </Link>{' '}gelesen. *
             </span>

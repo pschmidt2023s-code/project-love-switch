@@ -132,7 +132,7 @@ export function CookieConsent() {
               </div>
 
               <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                <div className="flex items-center justify-between p-4 border border-border">
                   <div>
                     <Label className="font-medium">Notwendige Cookies</Label>
                     <p className="text-sm text-muted-foreground">
@@ -142,7 +142,7 @@ export function CookieConsent() {
                   <Switch checked disabled />
                 </div>
 
-                <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                <div className="flex items-center justify-between p-4 border border-border">
                   <div>
                     <Label className="font-medium">Analyse-Cookies</Label>
                     <p className="text-sm text-muted-foreground">
@@ -157,7 +157,7 @@ export function CookieConsent() {
                   />
                 </div>
 
-                <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                <div className="flex items-center justify-between p-4 border border-border">
                   <div>
                     <Label className="font-medium">Marketing-Cookies</Label>
                     <p className="text-sm text-muted-foreground">
