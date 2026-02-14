@@ -33,6 +33,7 @@ const ShipmentTrackingManagement = lazy(() => import('@/components/admin/Shipmen
 const AbandonedCartManagement = lazy(() => import('@/components/admin/AbandonedCartManagement'));
 const CLVDashboard = lazy(() => import('@/components/admin/CLVDashboard'));
 const GDPRExport = lazy(() => import('@/components/admin/GDPRExport'));
+const VIPManagement = lazy(() => import('@/components/admin/VIPManagement'));
 
 function AdminContentLoader() {
   return (
@@ -151,6 +152,8 @@ export default function Admin() {
           return <CLVDashboard />;
         case 'gdpr-export':
           return <GDPRExport />;
+        case 'vip':
+          return <VIPManagement />;
         default:
           return <AdminDashboardContent />;
       }
