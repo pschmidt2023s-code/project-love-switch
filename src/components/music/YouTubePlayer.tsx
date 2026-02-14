@@ -1,7 +1,7 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 
 interface YouTubePlayerProps {
-  videoId: string;
+  videoId: string | null;
   isPlaying: boolean;
   volume: number; // 0-1
   isMuted: boolean;
@@ -50,6 +50,8 @@ export function YouTubePlayer({
   const containerRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<any>(null);
   const timerRef = useRef<number>(0);
+  const [playerReady, setPlayerReady] = useState(false);
+  const currentVideoRef = useRef<string | null>(null);
 
   const startTimeUpdates = useCallback(() => {
     if (timerRef.current) cancelAnimationFrame(timerRef.current);
@@ -69,6 +71,7 @@ export function YouTubePlayer({
     }
   }, []);
 
+  // Create player once on mount - always keep it alive
   useEffect(() => {
     let destroyed = false;
 
@@ -76,37 +79,42 @@ export function YouTubePlayer({
       if (destroyed || !containerRef.current) return;
 
       playerRef.current = new window.YT.Player(containerRef.current, {
-        videoId,
+        width: 320,
+        height: 180,
         playerVars: {
-          autoplay: isPlaying ? 1 : 0,
           controls: 0,
           disablekb: 1,
           fs: 0,
           modestbranding: 1,
-          start: Math.floor(startAt),
           playsinline: 1,
           rel: 0,
           showinfo: 0,
+          origin: window.location.origin,
         },
         events: {
-          onReady: (e: any) => {
-            e.target.setVolume(volume * 100);
-            if (isMuted) e.target.mute();
-            if (startAt > 0) e.target.seekTo(startAt, true);
-            onDuration?.(e.target.getDuration());
-            onReady?.();
-            if (isPlaying) startTimeUpdates();
+          onReady: () => {
+            console.log('[YouTubePlayer] Player shell READY');
+            setPlayerReady(true);
           },
           onStateChange: (e: any) => {
+            console.log('[YouTubePlayer] State:', e.data);
             onStateChange?.(e.data);
-            if (e.data === window.YT.PlayerState.ENDED) {
+            if (e.data === window.YT.PlayerState.PLAYING) {
+              // Unmute after playback actually starts (bypasses autoplay restriction)
+              if (!isMuted) {
+                e.target.unMute();
+                e.target.setVolume(volume * 100);
+              }
+              startTimeUpdates();
+            } else if (e.data === window.YT.PlayerState.ENDED) {
               stopTimeUpdates();
               onEnded?.();
-            } else if (e.data === window.YT.PlayerState.PLAYING) {
-              startTimeUpdates();
             } else {
               stopTimeUpdates();
             }
+          },
+          onError: (e: any) => {
+            console.error('[YouTubePlayer] Error:', e.data);
           },
         },
       });
@@ -118,34 +126,59 @@ export function YouTubePlayer({
       playerRef.current?.destroy?.();
       playerRef.current = null;
     };
-  }, [videoId]); // Only recreate on videoId change
+  }, []); // Never recreate
+
+  // Load video when videoId changes (this is called synchronously from user gesture via React state)
+  useEffect(() => {
+    if (!playerReady || !playerRef.current) return;
+
+    if (videoId && videoId !== currentVideoRef.current) {
+      console.log('[YouTubePlayer] Loading video:', videoId);
+      currentVideoRef.current = videoId;
+      // Start muted to bypass autoplay restriction, unmute in onStateChange PLAYING
+      playerRef.current.mute();
+      playerRef.current.loadVideoById({
+        videoId,
+        startSeconds: startAt,
+      });
+      onReady?.();
+    } else if (!videoId && currentVideoRef.current) {
+      currentVideoRef.current = null;
+      playerRef.current.stopVideo();
+      stopTimeUpdates();
+    }
+  }, [videoId, playerReady]);
 
   // Sync play/pause
   useEffect(() => {
-    if (!playerRef.current?.getPlayerState) return;
-    if (isPlaying) {
+    if (!playerReady || !playerRef.current?.getPlayerState) return;
+    if (!videoId) return;
+    
+    const state = playerRef.current.getPlayerState();
+    if (isPlaying && state !== 1 && state !== 3) {
       playerRef.current.playVideo();
-    } else {
+    } else if (!isPlaying && (state === 1 || state === 3)) {
       playerRef.current.pauseVideo();
     }
-  }, [isPlaying]);
+  }, [isPlaying, playerReady]);
 
   // Sync volume
   useEffect(() => {
-    playerRef.current?.setVolume?.(volume * 100);
-  }, [volume]);
+    if (playerReady) playerRef.current?.setVolume?.(volume * 100);
+  }, [volume, playerReady]);
 
   // Sync mute
   useEffect(() => {
+    if (!playerReady) return;
     if (isMuted) playerRef.current?.mute?.();
     else playerRef.current?.unMute?.();
-  }, [isMuted]);
+  }, [isMuted, playerReady]);
 
   return (
     <div
       ref={containerRef}
-      className="absolute w-0 h-0 overflow-hidden pointer-events-none"
-      aria-hidden="true"
+      className="w-full aspect-video rounded-lg overflow-hidden bg-black"
+      style={{ maxWidth: 480 }}
     />
   );
 }
