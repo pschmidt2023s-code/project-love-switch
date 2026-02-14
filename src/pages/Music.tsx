@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
 import { 
   Play, Pause, SkipForward, SkipBack, Volume2, VolumeX, 
@@ -17,6 +18,7 @@ import {
   ListMusic, Clock, Disc3
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { convertWavToMp3, isWavFile } from '@/lib/audio-converter';
 
 function formatTime(s: number) {
   const m = Math.floor(s / 60);
@@ -35,6 +37,7 @@ export default function Music() {
     audioFile: null as File | null,
     coverFile: null as File | null,
   });
+  const [convertProgress, setConvertProgress] = useState<number | null>(null);
 
   const { data: tracks = [], isLoading } = useQuery({
     queryKey: ['tracks'],
@@ -54,9 +57,25 @@ export default function Music() {
     mutationFn: async () => {
       if (!uploadForm.audioFile) throw new Error('Keine Audio-Datei');
       
-      const file = uploadForm.audioFile;
-      const ext = file.name.split('.').pop()?.toLowerCase() || 'wav';
-      const contentType = ext === 'wav' ? 'audio/wav' : ext === 'mp3' ? 'audio/mpeg' : file.type || 'application/octet-stream';
+      let file = uploadForm.audioFile;
+      
+      // Convert WAV to MP3 automatically
+      if (isWavFile(file)) {
+        toast.info('WAV wird zu MP3 konvertiert...');
+        setConvertProgress(0);
+        try {
+          file = await convertWavToMp3(file, (p) => setConvertProgress(p));
+          toast.success('Konvertierung abgeschlossen!');
+        } catch (e) {
+          console.error('Conversion failed:', e);
+          toast.warning('Konvertierung fehlgeschlagen, WAV wird direkt hochgeladen');
+        } finally {
+          setConvertProgress(null);
+        }
+      }
+      
+      const ext = file.name.split('.').pop()?.toLowerCase() || 'mp3';
+      const contentType = ext === 'wav' ? 'audio/wav' : 'audio/mpeg';
       const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
       const path = `tracks/${Date.now()}-${safeName}`;
       
@@ -166,12 +185,18 @@ export default function Music() {
                     <Label>Cover Bild (optional)</Label>
                     <Input type="file" accept="image/*" onChange={e => setUploadForm(f => ({ ...f, coverFile: e.target.files?.[0] || null }))} />
                   </div>
+                  {convertProgress !== null && (
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">Konvertiere WAV → MP3...</Label>
+                      <Progress value={convertProgress} className="h-2" />
+                    </div>
+                  )}
                   <Button 
                     className="w-full" 
                     onClick={() => uploadMutation.mutate()}
-                    disabled={uploadMutation.isPending || !uploadForm.title || !uploadForm.audioFile}
+                    disabled={uploadMutation.isPending || !uploadForm.title || !uploadForm.audioFile || convertProgress !== null}
                   >
-                    {uploadMutation.isPending ? 'Lädt hoch...' : 'Track speichern'}
+                    {convertProgress !== null ? 'Konvertiert...' : uploadMutation.isPending ? 'Lädt hoch...' : 'Track speichern'}
                   </Button>
                 </div>
               </DialogContent>
