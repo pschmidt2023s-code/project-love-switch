@@ -58,7 +58,9 @@ export default function Music() {
   });
 
   const publicTracks = allTracks.filter(t => !t.is_hidden);
+  // Non-admins never see hidden/leak tracks in the list
   const displayTracks = isAdmin ? allTracks : publicTracks;
+  // Only public tracks for playback queue (leaks only via radio schedule)
   const tracks = publicTracks;
 
   const resetForm = () => {
@@ -381,7 +383,9 @@ export default function Music() {
               <button
                 key={track.id}
                 onClick={() => {
-                  player.setQueue(isAdmin ? allTracks : publicTracks);
+                  // Leak tracks should not be manually playable - only via radio schedule
+                  if (isHidden && !isAdmin) return;
+                  player.setQueue(isHidden ? [track] : publicTracks);
                   player.play(track);
                 }}
                 className={cn(

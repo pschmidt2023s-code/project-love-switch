@@ -21,6 +21,8 @@ export function RadioMode() {
   const [radioActive, setRadioActive] = useState(false);
   const [ytVideoId, setYtVideoId] = useState<string | null>(null);
   const [currentRadioTrack, setCurrentRadioTrack] = useState<Track | null>(null);
+  // Track which leak tracks have already been played this session (one-time only)
+  const [playedLeaks, setPlayedLeaks] = useState<Set<string>>(new Set());
 
   // Fetch radio config
   const { data: radioConfig } = useQuery({
@@ -95,22 +97,40 @@ export function RadioMode() {
     if (!radioActive || !radioConfig?.is_live || tracks.length === 0) return;
 
     const tick = () => {
-      let track: (Track & { youtube_url?: string }) | null = null;
+      let track: (Track & { youtube_url?: string; is_hidden?: boolean }) | null = null;
+      let isFromSchedule = false;
 
       // Check scheduled tracks first (if mode is 'scheduled' or 'hybrid')
       if (radioConfig.mode !== 'rotation') {
         const scheduled = getScheduledTrack(schedule, tracks);
-        if (scheduled) track = scheduled as Track & { youtube_url?: string };
+        if (scheduled) {
+          track = scheduled as Track & { youtube_url?: string; is_hidden?: boolean };
+          isFromSchedule = true;
+        }
       }
 
-      // Fallback to rotation
+      // If the scheduled track is a leak that was already played, skip it
+      if (track && (track as any).is_hidden && playedLeaks.has(track.id)) {
+        track = null;
+        isFromSchedule = false;
+      }
+
+      // Fallback to rotation (only non-hidden tracks)
       if (!track) {
-        const state = calculateRadioState(tracks, radioConfig.loop_start_epoch);
-        if (state) track = state.currentTrack as Track & { youtube_url?: string };
+        const nonHiddenTracks = tracks.filter(t => !(t as any).is_hidden);
+        if (nonHiddenTracks.length > 0) {
+          const state = calculateRadioState(nonHiddenTracks, radioConfig.loop_start_epoch);
+          if (state) track = state.currentTrack as Track & { youtube_url?: string };
+        }
       }
 
       if (!track) return;
       setCurrentRadioTrack(track);
+
+      // Mark leak as played after first play
+      if (isFromSchedule && (track as any).is_hidden && !playedLeaks.has(track.id)) {
+        setPlayedLeaks(prev => new Set(prev).add(track!.id));
+      }
 
       const ytId = track.youtube_url ? extractYouTubeId(track.youtube_url) : null;
       if (ytId) {
@@ -119,10 +139,13 @@ export function RadioMode() {
       } else {
         setYtVideoId(null);
         if (player.currentTrack?.id !== track.id) {
-          player.setQueue(tracks);
+          player.setQueue(tracks.filter(t => !(t as any).is_hidden));
           player.play(track);
-          const state = calculateRadioState(tracks, radioConfig.loop_start_epoch);
-          if (state) setTimeout(() => player.seek(state.positionInTrack), 200);
+          const nonHiddenTracks = tracks.filter(t => !(t as any).is_hidden);
+          const state = calculateRadioState(nonHiddenTracks, radioConfig.loop_start_epoch);
+          if (state && !(track as any).is_hidden) {
+            setTimeout(() => player.seek(state.positionInTrack), 200);
+          }
         }
       }
     };
@@ -130,7 +153,7 @@ export function RadioMode() {
     tick();
     const interval = setInterval(tick, 5000);
     return () => clearInterval(interval);
-  }, [radioActive, radioConfig, tracks, schedule]);
+  }, [radioActive, radioConfig, tracks, schedule, playedLeaks]);
 
   const isLive = radioConfig?.is_live ?? false;
 
