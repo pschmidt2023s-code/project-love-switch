@@ -38,3 +38,6 @@ verify_jwt = false
 
 [functions.automix]
 verify_jwt = false
+
+[functions.youtube-resolve]
+verify_jwt = false
