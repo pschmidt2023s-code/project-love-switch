@@ -141,8 +141,7 @@ export function RadioMode() {
       setYtVideoId(null);
       const alreadyPlaying = player.currentTrack?.id === track.id && player.isPlaying;
       if (!alreadyPlaying) {
-        player.setQueue(nonHiddenTracks.length > 0 ? nonHiddenTracks : [track]);
-        player.play(track);
+        player.playTrack(track, nonHiddenTracks.length > 0 ? nonHiddenTracks : [track]);
         if (!isFromSchedule && nonHiddenTracks.length > 0) {
           const state = calculateRadioState(nonHiddenTracks, radioConfig.loop_start_epoch);
           if (state) {
@@ -209,8 +208,7 @@ export function RadioMode() {
                     }
                   }
                   if (track) {
-                    player.setQueue(nonHidden.length > 0 ? nonHidden : [track]);
-                    player.play(track);
+                    player.playTrack(track, nonHidden.length > 0 ? nonHidden : [track]);
                   }
                 } else {
                   setRadioActive(false);
