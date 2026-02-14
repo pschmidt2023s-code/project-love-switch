@@ -5,7 +5,6 @@ import { PremiumHero } from '@/components/premium/PremiumHero';
 import { PremiumFeatures } from '@/components/premium/PremiumFeatures';
 import { PremiumSparsets } from '@/components/premium/PremiumSparsets';
 import { PremiumProductGrid } from '@/components/premium/PremiumProductGrid';
-// ExternalProductsSection removed - Bestseller now uses external API directly
 import { PremiumNewsletter } from '@/components/premium/PremiumNewsletter';
 import { PremiumFooter } from '@/components/premium/PremiumFooter';
 import { OrganizationSchema, WebsiteSchema } from '@/components/StructuredData';
@@ -14,6 +13,7 @@ import { Seo } from '@/components/Seo';
 import { ProductComparison } from '@/components/ProductComparison';
 import { MobileBottomNav } from '@/components/MobileBottomNav';
 import { ProductRecommendations } from '@/components/ai/ProductRecommendations';
+import { PromoBanner } from '@/components/PromoBanner';
 
 export default function Index() {
   return (
@@ -26,7 +26,7 @@ export default function Index() {
       <OrganizationSchema />
       <WebsiteSchema />
       <LocalBusinessSchema />
-      
+      <PromoBanner />
       <PremiumNavigation />
 
       <main id="main-content" role="main" aria-label="Hauptinhalt">

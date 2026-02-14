@@ -17,6 +17,7 @@ import { TouchOptimizations } from '@/components/mobile/TouchOptimizations';
 import { CookieConsent } from '@/components/CookieConsent';
 import { InstallPrompt } from '@/components/pwa/InstallPrompt';
 import { OfflineIndicator } from '@/components/pwa/OfflineIndicator';
+import { ChatWidget } from '@/components/ChatWidget';
 
 import { PushNotificationPrompt } from '@/components/PushNotificationPrompt';
 
@@ -49,6 +50,8 @@ const MyReturns = React.lazy(() => import('@/pages/MyReturns'));
 const ExpressCheckout = React.lazy(() => import('@/pages/ExpressCheckout'));
 const ManageSubscription = React.lazy(() => import('@/pages/ManageSubscription'));
 const BankTransferSuccess = React.lazy(() => import('@/pages/BankTransferSuccess'));
+const Blog = React.lazy(() => import('@/pages/Blog'));
+const BlogPostPage = React.lazy(() => import('@/pages/BlogPost'));
 const NotFound = React.lazy(() => import('@/pages/NotFound'));
 
 const queryClient = new QueryClient({
@@ -111,6 +114,8 @@ function App() {
                         <Route path="/orders" element={<Suspense fallback={<LoadingSpinner />}><OrdersList /></Suspense>} />
                         <Route path="/orders/:id" element={<Suspense fallback={<LoadingSpinner />}><Orders /></Suspense>} />
                         <Route path="/my-returns" element={<Suspense fallback={<LoadingSpinner />}><MyReturns /></Suspense>} />
+                        <Route path="/blog" element={<Suspense fallback={<LoadingSpinner />}><Blog /></Suspense>} />
+                        <Route path="/blog/:slug" element={<Suspense fallback={<LoadingSpinner />}><BlogPostPage /></Suspense>} />
                         <Route path="/manage-subscription" element={<Suspense fallback={<LoadingSpinner />}><ManageSubscription /></Suspense>} />
                         <Route path="*" element={<Suspense fallback={<LoadingSpinner />}><NotFound /></Suspense>} />
                         <Route path="*" element={<Suspense fallback={<LoadingSpinner />}><NotFound /></Suspense>} />
@@ -120,7 +125,7 @@ function App() {
                     <CookieConsent />
                     <InstallPrompt />
                     <OfflineIndicator />
-                    
+                    <ChatWidget />
                     <PushNotificationPrompt />
                     <Toaster />
                     <Sonner />
