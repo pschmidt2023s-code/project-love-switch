@@ -12,12 +12,26 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// Server-side rate limiter
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+function isRateLimited(key: string, maxRequests = 5, windowMs = 3600000): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(key);
+  if (!entry || now > entry.resetAt) {
+    rateLimitMap.set(key, { count: 1, resetAt: now + windowMs });
+    return false;
+  }
+  entry.count++;
+  return entry.count > maxRequests;
+}
+
 interface ContactRequest {
   name: string;
   email: string;
   subject: string;
   message: string;
   userId?: string;
+  _hp?: string; // Honeypot field
 }
 
 serve(async (req) => {
@@ -26,7 +40,32 @@ serve(async (req) => {
   }
 
   try {
-    const { name, email, subject, message, userId }: ContactRequest = await req.json();
+    const { name, email, subject, message, userId, _hp }: ContactRequest = await req.json();
+
+    // Honeypot check - if filled, silently succeed (bot trap)
+    if (_hp && _hp.length > 0) {
+      console.log("[SUBMIT-CONTACT-TICKET] Honeypot triggered, silently dropping");
+      return new Response(
+        JSON.stringify({ success: true, ticketId: "dropped" }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Server-side rate limiting
+    if (isRateLimited(`contact-${email.toLowerCase().trim()}`)) {
+      return new Response(
+        JSON.stringify({ error: "Zu viele Anfragen. Bitte versuchen Sie es später erneut." }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Input length limits
+    if (name.length > 200 || email.length > 255 || subject.length > 500 || message.length > 5000) {
+      return new Response(
+        JSON.stringify({ error: "Eingabe zu lang." }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     // Validate required fields
     if (!name || name.trim().length < 2) {

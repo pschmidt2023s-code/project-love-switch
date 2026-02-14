@@ -10,6 +10,19 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// Server-side rate limiter (in-memory, per-instance)
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+function isRateLimited(key: string, maxRequests = 5, windowMs = 3600000): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(key);
+  if (!entry || now > entry.resetAt) {
+    rateLimitMap.set(key, { count: 1, resetAt: now + windowMs });
+    return false;
+  }
+  entry.count++;
+  return entry.count > maxRequests;
+}
+
 const FOURTEEN_DAYS_MS = 14 * 24 * 60 * 60 * 1000;
 
 interface ReturnRequest {
@@ -32,7 +45,6 @@ serve(async (req) => {
   try {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const body: ReturnRequest = await req.json();
-
     const { orderNumber, firstName, lastName, email, street, postalCode, city, items, reason } = body;
 
     // Validate required fields
@@ -40,6 +52,23 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ error: "Bitte füllen Sie alle Pflichtfelder aus." }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Server-side rate limiting by email
+    if (isRateLimited(`return-${email.toLowerCase().trim()}`, 3, 3600000)) {
+      return new Response(
+        JSON.stringify({ error: "Zu viele Retouren-Anfragen. Bitte versuchen Sie es später erneut." }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Input length validation
+    if (orderNumber.length > 50 || firstName.length > 100 || lastName.length > 100 || 
+        email.length > 255 || reason.length > 2000 || items.length > 2000) {
+      return new Response(
+        JSON.stringify({ error: "Eingabe zu lang." }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 

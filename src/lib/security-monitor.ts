@@ -73,16 +73,39 @@ export class SecurityMonitor {
     }
   }
 
-  // Persist events securely
+  // Persist events to database
   private async persistEvents(events: SecurityEvent[]): Promise<void> {
-    // For production: send to secure logging service
-    // For now: store in sessionStorage as fallback
     try {
-      const existingEvents = JSON.parse(sessionStorage.getItem('security_events') || '[]');
-      const allEvents = [...existingEvents, ...events].slice(-100); // Keep last 100 events
-      sessionStorage.setItem('security_events', JSON.stringify(allEvents));
+      const { supabase } = await import('@/integrations/supabase/client');
+      const rows = events.map(e => ({
+        user_id: e.userId || null,
+        session_id: e.sessionId || null,
+        event_type: e.eventType,
+        severity: e.severity,
+        details: e.details,
+        ip_address: e.ipAddress || null,
+        user_agent: e.userAgent || null,
+      }));
+      
+      const { error } = await supabase.from('audit_logs').insert(rows);
+      if (error) {
+        console.error('Failed to persist audit logs to DB:', error);
+        // Fallback to sessionStorage
+        this.fallbackToStorage(events);
+      }
     } catch (error) {
       console.error('Failed to persist security events:', error);
+      this.fallbackToStorage(events);
+    }
+  }
+
+  private fallbackToStorage(events: SecurityEvent[]): void {
+    try {
+      const existingEvents = JSON.parse(sessionStorage.getItem('security_events') || '[]');
+      const allEvents = [...existingEvents, ...events].slice(-100);
+      sessionStorage.setItem('security_events', JSON.stringify(allEvents));
+    } catch {
+      // Silent fail
     }
   }
 

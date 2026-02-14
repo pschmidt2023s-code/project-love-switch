@@ -21,6 +21,7 @@ import { ChatWidget } from '@/components/ChatWidget';
 import { ReviewPrompt } from '@/components/ReviewPrompt';
 import { PushNotificationPrompt } from '@/components/PushNotificationPrompt';
 import { ScrollToTop } from '@/components/ScrollToTop';
+import { SecurityGuard } from '@/components/SecurityGuard';
 
 const ProductDetail = React.lazy(() => import('@/pages/ProductDetail'));
 const Products = React.lazy(() => import('@/pages/Products'));
@@ -82,6 +83,7 @@ function App() {
               <CartProvider>
                 <ErrorBoundary>
                   <BrowserRouter>
+                    <SecurityGuard />
                     <GlobalGestures />
                     <TouchOptimizations />
                     <ProductComparison />
