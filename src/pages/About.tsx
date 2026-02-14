@@ -1,6 +1,6 @@
-import { Sparkles, Users, Heart, Award } from 'lucide-react';
+import { Sparkles, Users, Heart, Award, ArrowRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { PremiumPageLayout } from '@/components/premium/PremiumPageLayout';
-import { Breadcrumb } from '@/components/Breadcrumb';
 import { Seo } from '@/components/Seo';
 
 const features = [
@@ -33,124 +33,132 @@ const stats = [
   { value: '4.8', label: 'Bewertung' },
 ];
 
+const timeline = [
+  { year: '2020', title: 'Die Gründung', text: 'ALDENAIR wurde mit einer Vision geboren: Luxusdüfte für jeden zugänglich zu machen.' },
+  { year: '2021', title: 'Erster Meilenstein', text: 'Über 1.000 zufriedene Kunden und stetig wachsendes Sortiment.' },
+  { year: '2023', title: 'Premium-Expansion', text: 'Einführung des Sparkits-Systems und personalisierter Duftberatung.' },
+  { year: '2025', title: 'Die Zukunft', text: 'KI-gestützte Duftempfehlungen und internationaler Versand.' },
+];
+
 export default function About() {
   return (
     <PremiumPageLayout>
       <Seo
         title="Über Uns | ALDENAIR"
-        description="Erfahren Sie mehr über ALDENAIR - Ihre Premium-Destination für exquisite Parfüms. Qualität, Leidenschaft und Erfahrung seit 2020."
+        description="Erfahren Sie mehr über ALDENAIR - Ihre Premium-Destination für exquisite Parfüms."
         canonicalPath="/about"
       />
 
-      {/* Hero Section */}
-      <section className="border-b border-border">
-        <div className="container-premium py-8 lg:py-12">
-          <Breadcrumb className="mb-6" />
-          
-          <span className="inline-block text-[10px] tracking-[0.3em] uppercase text-accent mb-3">
-            Über Uns
-          </span>
-          <h1 className="font-display text-3xl lg:text-4xl text-foreground mb-4">
-            Die ALDENAIR Geschichte
-          </h1>
-          <p className="text-muted-foreground max-w-xl text-sm lg:text-base leading-relaxed">
-            Wir sind Ihr Partner für exklusive Düfte - mit Leidenschaft für Qualität 
-            und dem Ziel, Luxusparfüms für jeden zugänglich zu machen.
-          </p>
+      {/* Dramatic Hero - full width, large typography */}
+      <section className="relative py-20 lg:py-32 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-accent/5 to-transparent" />
+        <div className="container-premium relative">
+          <div className="max-w-3xl">
+            <span className="inline-block text-[10px] tracking-[0.3em] uppercase text-accent mb-6">
+              Seit 2020
+            </span>
+            <h1 className="font-display text-4xl sm:text-5xl lg:text-7xl text-foreground leading-[0.95] mb-8">
+              Die Kunst
+              <br />
+              des Duftes
+            </h1>
+            <p className="text-muted-foreground text-base lg:text-lg leading-relaxed max-w-xl">
+              Wir sind Ihr Partner für exklusive Düfte — mit Leidenschaft für Qualität 
+              und dem Ziel, Luxusparfüms für jeden zugänglich zu machen.
+            </p>
+          </div>
         </div>
       </section>
 
-      {/* Features Grid */}
-      <section className="section-spacing">
+      {/* Stats Bar - horizontal, full-width, contrasting */}
+      <section className="bg-foreground text-background">
         <div className="container-premium">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
-            {features.map((feature) => (
-              <div 
-                key={feature.title} 
-                className="p-6 lg:p-8 border border-border bg-card hover:border-accent/50 transition-colors"
+          <div className="grid grid-cols-2 lg:grid-cols-4">
+            {stats.map((stat, i) => (
+              <div
+                key={stat.label}
+                className={`py-8 lg:py-12 text-center ${i > 0 ? 'border-l border-background/10' : ''}`}
               >
-                <div className="w-10 h-10 lg:w-12 lg:h-12 flex items-center justify-center bg-accent/10 mb-4">
-                  <feature.icon className="w-5 h-5 lg:w-6 lg:h-6 text-accent" strokeWidth={1.5} />
-                </div>
-                <h3 className="font-display text-lg text-foreground mb-2">
-                  {feature.title}
-                </h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  {feature.description}
-                </p>
+                <div className="font-display text-3xl lg:text-4xl mb-1">{stat.value}</div>
+                <div className="text-[10px] tracking-[0.15em] uppercase text-background/60">{stat.label}</div>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Story Section */}
-      <section className="section-spacing bg-secondary/30">
+      {/* Values Grid - asymmetric */}
+      <section className="py-16 lg:py-24">
         <div className="container-premium">
-          <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
-            {/* Text */}
-            <div className="space-y-6">
-              <span className="inline-block text-[10px] tracking-[0.3em] uppercase text-accent">
-                Unsere Geschichte
-              </span>
-              <h2 className="font-display text-2xl lg:text-3xl text-foreground">
-                Luxusdüfte für Jeden
-              </h2>
-              <div className="space-y-4 text-muted-foreground text-sm lg:text-base leading-relaxed">
-                <p>
-                  ALDENAIR wurde aus der Überzeugung geboren, dass jeder Mensch
-                  Zugang zu hochwertigen Düften haben sollte - ohne dafür ein Vermögen
-                  ausgeben zu müssen.
-                </p>
-                <p>
-                  Wir haben es uns zur Aufgabe gemacht, Düfte zu kreieren, die von den
-                  bekanntesten Luxusmarken der Welt inspiriert sind. Dabei setzen wir auf
-                  <span className="text-foreground font-medium"> hochwertige Inhaltsstoffe</span> und{' '}
-                  <span className="text-foreground font-medium">faire Preise</span>.
-                </p>
-                <p>
-                  Mit über 500 verschiedenen Düften und mehr als 10.000 zufriedenen
-                  Kunden sind wir stolz darauf, Ihr Vertrauen verdient zu haben.
-                </p>
+          <div className="grid lg:grid-cols-12 gap-6 lg:gap-8">
+            {features.map((feature, i) => (
+              <div
+                key={feature.title}
+                className={`p-8 lg:p-10 border border-border hover:border-accent/50 transition-colors ${
+                  i === 0 ? 'lg:col-span-7' : i === 1 ? 'lg:col-span-5' : i === 2 ? 'lg:col-span-5' : 'lg:col-span-7'
+                }`}
+              >
+                <feature.icon className="w-6 h-6 text-accent mb-6" strokeWidth={1.5} />
+                <h3 className="font-display text-xl lg:text-2xl text-foreground mb-3">{feature.title}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{feature.description}</p>
               </div>
-            </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
-            {/* Stats Grid */}
-            <div className="grid grid-cols-2 gap-4">
-              {stats.map((stat) => (
-                <div
-                  key={stat.label}
-                  className="p-6 lg:p-8 bg-background border border-border text-center"
-                >
-                  <div className="font-display text-3xl lg:text-4xl text-foreground mb-2">
-                    {stat.value}
+      {/* Timeline - editorial */}
+      <section className="py-16 lg:py-24 bg-secondary/30">
+        <div className="container-premium">
+          <div className="grid lg:grid-cols-12 gap-12 lg:gap-16">
+            <div className="lg:col-span-4">
+              <span className="inline-block text-[10px] tracking-[0.3em] uppercase text-accent mb-4">
+                Unsere Reise
+              </span>
+              <h2 className="font-display text-3xl lg:text-4xl text-foreground mb-4">
+                Von der Vision
+                <br />
+                zur Realität
+              </h2>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Jedes Jahr bringt neue Meilensteine — und wir haben noch viel vor.
+              </p>
+            </div>
+            <div className="lg:col-span-8">
+              <div className="space-y-0">
+                {timeline.map((item, i) => (
+                  <div key={item.year} className={`flex gap-6 lg:gap-10 py-6 ${i > 0 ? 'border-t border-border' : ''}`}>
+                    <span className="font-display text-2xl lg:text-3xl text-accent/40 w-20 flex-shrink-0">
+                      {item.year}
+                    </span>
+                    <div>
+                      <h3 className="font-display text-lg text-foreground mb-2">{item.title}</h3>
+                      <p className="text-sm text-muted-foreground leading-relaxed">{item.text}</p>
+                    </div>
                   </div>
-                  <div className="text-[10px] tracking-[0.15em] uppercase text-muted-foreground">
-                    {stat.label}
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Values Section */}
-      <section className="section-spacing">
-        <div className="container-premium">
-          <div className="max-w-2xl mx-auto text-center">
-            <span className="inline-block text-[10px] tracking-[0.3em] uppercase text-accent mb-3">
-              Unsere Werte
-            </span>
-            <h2 className="font-display text-2xl lg:text-3xl text-foreground mb-6">
-              Was uns antreibt
-            </h2>
-            <p className="text-muted-foreground leading-relaxed">
-              Bei ALDENAIR verbinden wir traditionelle Parfümkunst mit modernem Design. 
-              Jeder Duft erzählt eine Geschichte - und wir möchten, dass Sie Ihre eigene 
-              Geschichte mit unseren Kreationen schreiben.
-            </p>
-          </div>
+      {/* CTA - dramatic, full-width */}
+      <section className="py-20 lg:py-28">
+        <div className="container-premium text-center">
+          <h2 className="font-display text-3xl lg:text-5xl text-foreground mb-6">
+            Bereit für Ihren Duft?
+          </h2>
+          <p className="text-muted-foreground mb-8 max-w-md mx-auto">
+            Entdecken Sie unsere Kollektion und finden Sie Ihren perfekten Begleiter.
+          </p>
+          <Link
+            to="/products"
+            className="inline-flex items-center px-8 py-4 bg-foreground text-background text-[11px] tracking-[0.15em] uppercase font-medium hover:bg-foreground/90 transition-colors"
+          >
+            Kollektion entdecken
+            <ArrowRight className="ml-3 w-4 h-4" strokeWidth={1.5} />
+          </Link>
         </div>
       </section>
     </PremiumPageLayout>

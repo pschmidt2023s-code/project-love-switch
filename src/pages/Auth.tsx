@@ -146,31 +146,49 @@ export default function Auth() {
 
   return (
     <PremiumPageLayout>
-    <div className="min-h-[60vh] flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="mb-6">
-          <Button variant="ghost" asChild>
-            <Link to="/" className="gap-2">
-              <ArrowLeft className="w-4 h-4" />
-              Zurück zum Shop
-            </Link>
-          </Button>
-        </div>
-
-        <Card className="shadow-xl border-border/50">
-          <CardHeader className="text-center">
-            <div className="mx-auto w-12 h-12 bg-primary rounded-full flex items-center justify-center mb-4">
-              <Shield className="w-6 h-6 text-primary-foreground" />
+    <div className="grid lg:grid-cols-2 min-h-[70vh]">
+      {/* Left: Brand panel */}
+      <div className="hidden lg:flex flex-col justify-center items-center bg-foreground text-background p-12 lg:p-16">
+        <div className="max-w-sm text-center space-y-6">
+          <h2 className="font-display text-4xl xl:text-5xl leading-[0.95]">ALDENAIR</h2>
+          <p className="text-background/50 text-sm leading-relaxed">
+            Erstellen Sie ein Konto, um exklusive Düfte zu entdecken, 
+            5% Cashback zu sammeln und Ihre Bestellungen zu verwalten.
+          </p>
+          <div className="grid grid-cols-3 gap-4 pt-6 border-t border-background/10">
+            <div className="text-center">
+              <div className="font-display text-xl">5%</div>
+              <div className="text-[9px] tracking-[0.1em] uppercase text-background/40">Cashback</div>
             </div>
-            <CardTitle className="text-2xl font-bold">ALDENAIR</CardTitle>
-            <p className="text-muted-foreground">
-              Melden Sie sich an oder registrieren Sie sich
-            </p>
-          </CardHeader>
-
-          <CardContent className="space-y-6">
+            <div className="text-center">
+              <div className="font-display text-xl">14</div>
+              <div className="text-[9px] tracking-[0.1em] uppercase text-background/40">Tage Rückgabe</div>
+            </div>
+            <div className="text-center">
+              <div className="font-display text-xl">50€</div>
+              <div className="text-[9px] tracking-[0.1em] uppercase text-background/40">Gratis Versand</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      {/* Right: Form */}
+      <div className="flex items-center justify-center p-6 lg:p-12">
+      <div className="w-full max-w-md">
+        <div className="mb-8">
+          <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-8">
+            <ArrowLeft className="w-4 h-4" />
+            Zurück zum Shop
+          </Link>
+          <h1 className="font-display text-3xl text-foreground mb-2">
+            {activeTab === 'signin' ? 'Willkommen zurück' : 'Konto erstellen'}
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            {activeTab === 'signin' ? 'Melden Sie sich mit Ihren Zugangsdaten an.' : 'Erstellen Sie Ihr persönliches ALDENAIR Konto.'}
+          </p>
+        </div>
             <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'signin' | 'signup')}>
-              <TabsList className="grid w-full grid-cols-2">
+              <TabsList className="grid w-full grid-cols-2 mb-6">
                 <TabsTrigger value="signin">Anmelden</TabsTrigger>
                 <TabsTrigger value="signup">Registrieren</TabsTrigger>
               </TabsList>
@@ -325,10 +343,9 @@ export default function Auth() {
               <Link to="/privacy" className="text-primary hover:underline">
                 Datenschutzrichtlinien
               </Link>{' '}
-              zu.
-            </p>
-          </CardContent>
-        </Card>
+               zu.
+             </p>
+      </div>
       </div>
     </div>
     </PremiumPageLayout>

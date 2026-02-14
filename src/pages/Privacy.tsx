@@ -13,39 +13,27 @@ export default function Privacy() {
         canonicalPath="/privacy"
       />
 
-      {/* Header */}
-      <section className="border-b border-border">
-        <div className="container-premium py-8 lg:py-12">
-          <Breadcrumb className="mb-6" />
-          <span className="inline-block text-[10px] tracking-[0.3em] uppercase text-accent mb-3">Rechtliches</span>
-          <h1 className="font-display text-3xl lg:text-4xl text-foreground mb-4">
-            Datenschutzerklärung
-          </h1>
-          <p className="text-muted-foreground max-w-xl text-sm lg:text-base leading-relaxed">
-            Der Schutz Ihrer persönlichen Daten ist uns wichtig. Erfahren Sie,
-            wie wir Ihre Daten gemäß DSGVO verarbeiten und schützen.
-          </p>
-        </div>
-      </section>
-
-      {/* Trust Indicators */}
-      <section className="border-b border-border">
-        <div className="container-premium py-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {[
-              { icon: Shield, label: 'DSGVO-konform' },
-              { icon: Lock, label: 'SSL-verschlüsselt' },
-              { icon: Eye, label: 'Transparente Nutzung' },
-              { icon: FileText, label: 'Ihre Rechte' },
-            ].map(item => (
-              <div key={item.label} className="flex items-center gap-3">
-                <item.icon className="w-4 h-4 text-accent" strokeWidth={1.5} />
-                <span className="text-sm text-muted-foreground">{item.label}</span>
-              </div>
-            ))}
+      {/* Minimal header - document-style */}
+      <section className="py-16 lg:py-24">
+        <div className="container-premium">
+          <div className="max-w-3xl">
+            <div className="flex items-center gap-3 mb-8">
+              <Shield className="w-5 h-5 text-accent" strokeWidth={1.5} />
+              <span className="text-[10px] tracking-[0.3em] uppercase text-accent">DSGVO-konform</span>
+            </div>
+            <h1 className="font-display text-4xl lg:text-5xl text-foreground mb-6">
+              Datenschutz&shy;erklärung
+            </h1>
+            <div className="flex flex-wrap gap-6 text-xs text-muted-foreground">
+              <span className="flex items-center gap-2"><Lock className="w-3.5 h-3.5" /> SSL-verschlüsselt</span>
+              <span className="flex items-center gap-2"><Eye className="w-3.5 h-3.5" /> Transparente Nutzung</span>
+              <span className="flex items-center gap-2"><FileText className="w-3.5 h-3.5" /> Ihre Rechte</span>
+            </div>
           </div>
         </div>
       </section>
+
+      <div className="border-t border-border" />
 
       {/* Content */}
       <section className="section-spacing">
