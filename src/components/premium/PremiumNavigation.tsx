@@ -194,17 +194,17 @@ export function PremiumNavigation() {
 
             {/* Right: Actions - consistent sizing */}
             <div className="flex items-center gap-0 sm:gap-1">
-              {/* Search */}
+              {/* Search - hidden on smallest screens to avoid logo overlap */}
               <button
                 onClick={() => setShowSearch(!showSearch)}
-                className={`nav-icon flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 hover:opacity-70 ${transitionClass}`}
+                className={`nav-icon hidden sm:flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 hover:opacity-70 ${transitionClass}`}
                 aria-label="Suche"
               >
                 <Search className={`w-[18px] h-[18px] ${transitionClass}`} strokeWidth={1.5} />
               </button>
 
-              {/* Dark Mode */}
-              <div className="flex dark-mode-btn">
+              {/* Dark Mode - hidden on mobile */}
+              <div className="hidden sm:flex dark-mode-btn">
                 <DarkModeToggle />
               </div>
 
