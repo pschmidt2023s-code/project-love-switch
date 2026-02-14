@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { Filter, Grid, List, X, Heart, ShoppingBag, Star, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -8,6 +8,8 @@ import { PremiumPageLayout } from '@/components/premium/PremiumPageLayout';
 import { Breadcrumb } from '@/components/Breadcrumb';
 import { Seo } from '@/components/Seo';
 import { toast } from 'sonner';
+import { VirtualProductGrid } from '@/components/VirtualProductGrid';
+import { usePrefetchProduct } from '@/hooks/useQueryCache';
 
 interface ProductVariant {
   id: string;
@@ -40,6 +42,7 @@ interface Product {
 function ProductCard({ product }: { product: Product }) {
   const { addItem } = useCart();
   const { toggleFavorite, isFavorite } = useFavorites();
+  const { prefetchProduct } = usePrefetchProduct();
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -88,7 +91,11 @@ function ProductCard({ product }: { product: Product }) {
   return (
     <article 
       className="group relative"
-      onMouseEnter={() => setIsHovered(true)}
+      onMouseEnter={() => {
+        setIsHovered(true);
+        // Prefetch product data on hover for instant navigation
+        prefetchProduct(product.slug);
+      }}
       onMouseLeave={() => setIsHovered(false)}
     >
       {/* Image Container */}
@@ -477,13 +484,13 @@ export default function Products() {
               </button>
             </div>
           ) : (
-            <div className={`grid gap-6 lg:gap-8 ${
-              viewMode === 'grid' ? 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4' : 'grid-cols-1'
-            }`}>
-              {filteredProducts.map((product) => (
+            <VirtualProductGrid
+              items={filteredProducts}
+              renderItem={(product) => (
                 <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
+              )}
+              className={viewMode === 'list' ? 'grid-cols-1' : ''}
+            />
           )}
         </div>
       </section>

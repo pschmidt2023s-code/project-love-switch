@@ -62,7 +62,13 @@ const queryClient = new QueryClient({
     queries: {
       retry: 1,
       refetchOnWindowFocus: false,
-      staleTime: 5 * 60 * 1000
+      staleTime: 10 * 60 * 1000,   // 10 min stale-while-revalidate
+      gcTime: 30 * 60 * 1000,      // Keep unused cache 30 min
+      refetchOnMount: 'always',     // Revalidate stale data on mount
+      refetchOnReconnect: true,     // Refetch when coming back online
+    },
+    mutations: {
+      retry: 1,
     },
   },
 });

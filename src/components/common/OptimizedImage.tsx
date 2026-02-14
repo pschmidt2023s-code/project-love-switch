@@ -1,10 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { cn } from '@/lib/utils';
-
-interface ImageSize {
-  width: number;
-  descriptor: string;
-}
+import { generateSrcSet, generateSizes, getOptimalQuality } from '@/lib/image-pipeline';
 
 interface OptimizedImageProps {
   src: string;
@@ -21,18 +17,6 @@ interface OptimizedImageProps {
   onLoad?: () => void;
   onError?: () => void;
 }
-
-// Generate srcset for responsive images
-const generateSrcSet = (src: string): string => {
-  // For external URLs or data URLs, return as-is
-  if (src.startsWith('http') || src.startsWith('data:')) {
-    return '';
-  }
-  
-  // For local images, we can't generate different sizes without a CDN
-  // But we can still provide the original for all sizes
-  return '';
-};
 
 // Default responsive sizes
 const DEFAULT_SIZES = '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw';
@@ -57,8 +41,10 @@ export function OptimizedImage({
   const [hasError, setHasError] = useState(false);
   const imgRef = useRef<HTMLDivElement>(null);
 
-  // Generate srcset
+  // Generate responsive srcset and optimal quality via image pipeline
   const srcSet = useMemo(() => generateSrcSet(src), [src]);
+  const responsiveSizes = useMemo(() => sizes || generateSizes('grid-4'), [sizes]);
+  const quality = useMemo(() => getOptimalQuality(), []);
 
   // Intersection Observer for lazy loading
   useEffect(() => {
@@ -144,6 +130,13 @@ export function OptimizedImage({
       {/* Actual Image */}
       {isInView && (
         <picture>
+          {/* AVIF source - best compression */}
+          {src && !src.startsWith('http') && !src.startsWith('data:') && (
+            <source
+              type="image/avif"
+              srcSet={src.replace(/\.(png|jpg|jpeg)$/i, '.avif')}
+            />
+          )}
           {/* WebP source for modern browsers */}
           {src && !src.startsWith('http') && !src.startsWith('data:') && (
             <source
@@ -157,7 +150,8 @@ export function OptimizedImage({
             alt={alt}
             width={width}
             height={height}
-            sizes={sizes}
+            srcSet={srcSet || undefined}
+            sizes={responsiveSizes}
             loading={priority ? 'eager' : 'lazy'}
             decoding={priority ? 'sync' : 'async'}
             fetchPriority={priority ? 'high' : 'auto'}
