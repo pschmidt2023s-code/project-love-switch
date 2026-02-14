@@ -30,14 +30,15 @@ export function ProductCard({
   const discount = originalPrice ? Math.round((1 - price / originalPrice) * 100) : 0;
 
   return (
-    <Card className="group overflow-hidden bg-card border-border/50 hover:shadow-elegant transition-all duration-300 hover:-translate-y-1">
+    <Card className="group overflow-hidden bg-card border-border/50 hover-elevate press-scale" role="article" aria-label={`${name}, ${price.toFixed(2)} Euro`}>
       {/* Image Container */}
       <div className="relative aspect-square overflow-hidden bg-muted/30">
-        <Link to={`/products/${id}`}>
+        <Link to={`/products/${id}`} aria-label={`${name} ansehen`}>
           <img
             src={image}
-            alt={name}
+            alt={`${name} - ${category}`}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            loading="lazy"
           />
         </Link>
         
@@ -59,9 +60,10 @@ export function ProductCard({
         <Button
           variant="secondary"
           size="icon"
-          className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity bg-background/80 backdrop-blur-sm"
+          className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity bg-background/80 backdrop-blur-sm press-scale"
+          aria-label={`${name} zu Favoriten hinzufügen`}
         >
-          <Heart className="w-4 h-4" />
+          <Heart className="w-4 h-4" aria-hidden="true" />
         </Button>
 
         {/* Quick View Button */}
@@ -93,8 +95,8 @@ export function ProductCard({
           
           {/* Rating */}
           {rating > 0 && (
-            <div className="flex items-center gap-1">
-              <Star className="w-4 h-4 fill-primary text-primary" />
+            <div className="flex items-center gap-1" aria-label={`Bewertung: ${rating.toFixed(1)} von 5 Sternen${reviewCount > 0 ? `, ${reviewCount} Bewertungen` : ''}`}>
+              <Star className="w-4 h-4 fill-primary text-primary" aria-hidden="true" />
               <span className="text-sm font-medium">{rating.toFixed(1)}</span>
               {reviewCount > 0 && (
                 <span className="text-xs text-muted-foreground">

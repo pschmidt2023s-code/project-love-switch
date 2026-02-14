@@ -22,6 +22,7 @@ import { ReviewPrompt } from '@/components/ReviewPrompt';
 import { PushNotificationPrompt } from '@/components/PushNotificationPrompt';
 import { ScrollToTop } from '@/components/ScrollToTop';
 import { SecurityGuard } from '@/components/SecurityGuard';
+import { SkipNav } from '@/components/a11y/SkipNav';
 
 const ProductDetail = React.lazy(() => import('@/pages/ProductDetail'));
 const Products = React.lazy(() => import('@/pages/Products'));
@@ -74,8 +75,9 @@ const queryClient = new QueryClient({
 });
 
 const LoadingSpinner = () => (
-  <div className="min-h-screen flex items-center justify-center">
-    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+  <div className="min-h-screen flex items-center justify-center" role="status" aria-label="Seite wird geladen">
+    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" aria-hidden="true"></div>
+    <span className="sr-only">Laden…</span>
   </div>
 );
 
@@ -89,11 +91,12 @@ function App() {
               <CartProvider>
                 <ErrorBoundary>
                   <BrowserRouter>
+                    <SkipNav />
                     <SecurityGuard />
                     <GlobalGestures />
                     <TouchOptimizations />
                     <ProductComparison />
-                    <div className="min-h-screen bg-background">
+                    <div id="main-content" tabIndex={-1} className="min-h-screen bg-background" role="main">
                       <Routes>
                         <Route path="/" element={<Index />} />
                         <Route path="/about" element={<Suspense fallback={<LoadingSpinner />}><About /></Suspense>} />

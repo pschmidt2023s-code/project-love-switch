@@ -91,12 +91,13 @@ const Navigation = () => {
   return (
     <>
       {/* Top Announcement Bar */}
-      <div className="bg-primary text-primary-foreground text-center py-2 text-xs sm:text-sm font-medium">
+      <div className="bg-primary text-primary-foreground text-center py-2 text-xs sm:text-sm font-medium" role="banner" aria-label="Aktuelle Angebote">
         Kostenloser Versand ab 50 EUR | 14 Tage Rückgaberecht
       </div>
 
       {/* Main Navigation */}
       <nav
+        aria-label="Hauptnavigation"
         className={`sticky top-0 z-50 transition-all duration-300 ${
           isScrolled
             ? 'bg-background/95 backdrop-blur-lg shadow-md border-b border-border'
@@ -111,12 +112,15 @@ const Navigation = () => {
                 variant="ghost"
                 size="icon"
                 className="lg:hidden"
+                aria-label={showMobileMenu ? 'Menü schließen' : 'Menü öffnen'}
+                aria-expanded={showMobileMenu}
+                aria-controls="mobile-menu"
                 onClick={() => {
                   setShowMobileMenu(!showMobileMenu);
                   if (!showMobileMenu) setShowSearch(false);
                 }}
               >
-                {showMobileMenu ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                {showMobileMenu ? <X className="w-5 h-5" aria-hidden="true" /> : <Menu className="w-5 h-5" aria-hidden="true" />}
               </Button>
 
               <Link to="/" className="flex items-center">
@@ -147,25 +151,27 @@ const Navigation = () => {
             </div>
 
             {/* Right: Actions */}
-            <div className="flex items-center gap-1 sm:gap-2">
+            <div className="flex items-center gap-1 sm:gap-2" role="toolbar" aria-label="Aktionen">
               <Button
                 variant="ghost"
                 size="icon"
+                aria-label={showSearch ? 'Suche schließen' : 'Suche öffnen'}
+                aria-expanded={showSearch}
                 onClick={() => {
                   setShowSearch(!showSearch);
                   if (!showSearch) setShowMobileMenu(false);
                 }}
               >
-                <Search className="w-5 h-5" />
+                <Search className="w-5 h-5" aria-hidden="true" />
               </Button>
 
               <DarkModeToggle />
 
               {user && <NotificationCenter />}
 
-              <Button variant="ghost" size="icon" asChild className="hidden sm:flex">
+              <Button variant="ghost" size="icon" asChild className="hidden sm:flex" aria-label="Favoriten">
                 <Link to="/favorites">
-                  <Heart className="w-5 h-5" />
+                  <Heart className="w-5 h-5" aria-hidden="true" />
                 </Link>
               </Button>
 
@@ -174,10 +180,11 @@ const Navigation = () => {
                 size="icon"
                 onClick={() => setShowCartSidebar(true)}
                 className="relative"
+                aria-label={`Warenkorb${itemCount > 0 ? `, ${itemCount} Artikel` : ''}`}
               >
-                <ShoppingCart className="w-5 h-5" />
+                <ShoppingCart className="w-5 h-5" aria-hidden="true" />
                 {itemCount > 0 && (
-                  <span className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center bg-primary text-primary-foreground text-xs rounded-full font-bold">
+                  <span className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center bg-primary text-primary-foreground text-xs rounded-full font-bold" aria-hidden="true">
                     {itemCount > 99 ? '99+' : itemCount}
                   </span>
                 )}
@@ -185,11 +192,11 @@ const Navigation = () => {
 
               {user ? (
                 <div className="relative" ref={dropdownRef}>
-                  <Button variant="ghost" size="icon" onClick={() => setShowUserMenu(!showUserMenu)}>
-                    <User className="w-5 h-5" />
+                  <Button variant="ghost" size="icon" onClick={() => setShowUserMenu(!showUserMenu)} aria-label="Benutzerkonto" aria-expanded={showUserMenu} aria-haspopup="true">
+                    <User className="w-5 h-5" aria-hidden="true" />
                   </Button>
                   {showUserMenu && (
-                    <div className="absolute right-0 mt-2 w-56 bg-card border border-border rounded-lg shadow-xl py-2 z-50">
+                    <div className="absolute right-0 mt-2 w-56 bg-card border border-border rounded-lg shadow-xl py-2 z-50" role="menu" aria-label="Benutzermenü">
                       <div className="px-4 py-3 border-b border-border">
                         <p className="text-sm font-semibold text-foreground truncate">{user.email}</p>
                       </div>
@@ -237,7 +244,7 @@ const Navigation = () => {
         {showSearch && <SearchWithSuggestions onClose={() => setShowSearch(false)} />}
 
         {showMobileMenu && (
-          <div className="lg:hidden absolute top-full left-0 right-0 bg-background border-b border-border shadow-xl animate-in slide-in-from-top-2 duration-200">
+          <div id="mobile-menu" className="lg:hidden absolute top-full left-0 right-0 bg-background border-b border-border shadow-xl animate-in slide-in-from-top-2 duration-200" role="navigation" aria-label="Mobile Navigation">
             <div className="px-4 py-4 space-y-1">
               {navLinks.map((link) => (
                 <Link
