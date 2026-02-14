@@ -203,8 +203,8 @@ export function PremiumNavigation() {
                 <Search className={`w-[18px] h-[18px] ${transitionClass}`} strokeWidth={1.5} />
               </button>
 
-              {/* Dark Mode - hidden on small mobile */}
-              <div className="hidden sm:flex dark-mode-btn">
+              {/* Dark Mode */}
+              <div className="flex dark-mode-btn">
                 <DarkModeToggle />
               </div>
 
@@ -353,6 +353,12 @@ export function PremiumNavigation() {
                   </Link>
                 ))}
               </nav>
+
+              {/* Mobile Dark Mode & Language */}
+              <div className="flex items-center gap-4 pt-6 border-t border-border">
+                <DarkModeToggle />
+                <LanguageSwitcher />
+              </div>
               
               {!user && (
                 <div className="pt-8">
