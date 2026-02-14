@@ -1247,6 +1247,41 @@ export type Database = {
         }
         Relationships: []
       }
+      radio_config: {
+        Row: {
+          created_at: string
+          id: string
+          is_live: boolean
+          loop_start_epoch: number
+          playlist_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_live?: boolean
+          loop_start_epoch?: number
+          playlist_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_live?: boolean
+          loop_start_epoch?: number
+          playlist_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "radio_config_playlist_id_fkey"
+            columns: ["playlist_id"]
+            isOneToOne: false
+            referencedRelation: "playlists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       referral_codes: {
         Row: {
           code: string
@@ -1750,10 +1785,13 @@ export type Database = {
           key_signature: string | null
           mood: string | null
           play_count: number | null
+          scheduled_end: string | null
+          scheduled_start: string | null
           sort_order: number | null
           title: string
           updated_at: string
           waveform_data: Json | null
+          youtube_url: string | null
         }
         Insert: {
           album?: string | null
@@ -1771,10 +1809,13 @@ export type Database = {
           key_signature?: string | null
           mood?: string | null
           play_count?: number | null
+          scheduled_end?: string | null
+          scheduled_start?: string | null
           sort_order?: number | null
           title: string
           updated_at?: string
           waveform_data?: Json | null
+          youtube_url?: string | null
         }
         Update: {
           album?: string | null
@@ -1792,10 +1833,13 @@ export type Database = {
           key_signature?: string | null
           mood?: string | null
           play_count?: number | null
+          scheduled_end?: string | null
+          scheduled_start?: string | null
           sort_order?: number | null
           title?: string
           updated_at?: string
           waveform_data?: Json | null
+          youtube_url?: string | null
         }
         Relationships: []
       }
