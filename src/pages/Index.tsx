@@ -5,7 +5,7 @@ import { PremiumHero } from '@/components/premium/PremiumHero';
 import { PremiumFeatures } from '@/components/premium/PremiumFeatures';
 import { PremiumSparsets } from '@/components/premium/PremiumSparsets';
 import { PremiumProductGrid } from '@/components/premium/PremiumProductGrid';
-import { ExternalProductsSection } from '@/components/premium/ExternalProductsSection';
+// ExternalProductsSection removed - Bestseller now uses external API directly
 import { PremiumNewsletter } from '@/components/premium/PremiumNewsletter';
 import { PremiumFooter } from '@/components/premium/PremiumFooter';
 import { OrganizationSchema, WebsiteSchema } from '@/components/StructuredData';
@@ -71,8 +71,7 @@ export default function Index() {
           </div>
         </section>
 
-        {/* External Products from Support Dashboard */}
-        <ExternalProductsSection />
+        {/* Removed duplicate external products section - Bestseller already shows them */}
 
         {/* AI Recommendations Section */}
         <section className="py-8 lg:py-12 bg-secondary/30">
