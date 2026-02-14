@@ -73,12 +73,16 @@ export default function Music() {
       let audioUrl = uploadForm.externalUrl;
       let coverUrl: string | null = null;
 
-      // Upload audio file
+      // Upload audio file (use explicit content type for mobile compatibility)
       if (uploadForm.sourceType === 'file' && uploadForm.audioFile) {
-        const path = `tracks/${Date.now()}-${uploadForm.audioFile.name}`;
+        const file = uploadForm.audioFile;
+        const ext = file.name.split('.').pop()?.toLowerCase() || 'wav';
+        const contentType = ext === 'wav' ? 'audio/wav' : ext === 'mp3' ? 'audio/mpeg' : file.type || 'application/octet-stream';
+        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+        const path = `tracks/${Date.now()}-${safeName}`;
         const { error: uploadError } = await supabase.storage
           .from('audio')
-          .upload(path, uploadForm.audioFile);
+          .upload(path, file, { contentType, upsert: false });
         if (uploadError) throw uploadError;
         const { data: urlData } = supabase.storage.from('audio').getPublicUrl(path);
         audioUrl = urlData.publicUrl;
@@ -239,7 +243,7 @@ export default function Music() {
                   ) : (
                     <div>
                       <Label>Audio Datei * (MP3, WAV)</Label>
-                      <Input type="file" accept="audio/*" onChange={e => setUploadForm(f => ({ ...f, audioFile: e.target.files?.[0] || null }))} />
+                      <Input type="file" accept="audio/wav,audio/mpeg,audio/mp3,audio/*,.wav,.mp3" onChange={e => setUploadForm(f => ({ ...f, audioFile: e.target.files?.[0] || null }))} />
                     </div>
                   )}
 
