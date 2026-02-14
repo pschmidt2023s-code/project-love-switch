@@ -9,10 +9,13 @@ import { PremiumPageLayout } from '@/components/premium/PremiumPageLayout';
 import { ProductReviews } from '@/components/products/ProductReviews';
 import { SubscriptionCard } from '@/components/subscription/SubscriptionCard';
 import { ProductRecommendations } from '@/components/ai/ProductRecommendations';
+import { RecentlyViewed } from '@/components/RecentlyViewed';
+import { StickyAddToCart } from '@/components/StickyAddToCart';
 import { Breadcrumb } from '@/components/Breadcrumb';
 import { Seo } from '@/components/Seo';
 import { ProductSchema, BreadcrumbSchema } from '@/components/seo';
 import { SocialShare } from '@/components/SocialShare';
+import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
 import { toast } from 'sonner';
 
 // Visual pyramid scent layer with staircase widths
@@ -110,6 +113,7 @@ export default function ProductDetail() {
   const { product: localProduct, variants, loading: localLoading, error: localError } = useProduct(slug || '');
   const { product: externalProduct, loading: extLoading, error: extError } = useExternalProduct(slug);
   const { addItem } = useCart();
+  const { addItem: addRecentlyViewed } = useRecentlyViewed();
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
 
@@ -121,6 +125,27 @@ export default function ProductDetail() {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' });
   }, [slug]);
+
+  // Track recently viewed
+  useEffect(() => {
+    if (product && slug) {
+      addRecentlyViewed({
+        id: product.id,
+        slug,
+        name: product.name,
+        image: product.image_url || 'https://images.unsplash.com/photo-1541643600914-78b084683601?w=400&h=500&fit=crop',
+        price: Number(product.base_price),
+      });
+    } else if (externalProduct && slug) {
+      addRecentlyViewed({
+        id: externalProduct.id,
+        slug,
+        name: externalProduct.name,
+        image: externalProduct.image_url || '',
+        price: externalProduct.price,
+      });
+    }
+  }, [product, externalProduct, slug]);
 
   useEffect(() => {
     if (variants.length > 0 && !selectedVariantId) {
@@ -749,12 +774,23 @@ export default function ProductDetail() {
         reviewCount={product.review_count || 0}
       />
 
+      {/* Recently Viewed */}
+      <RecentlyViewed />
+
       {/* Recommendations */}
       <section className="py-8 lg:py-12 border-t border-border">
         <div className="container-premium">
           <ProductRecommendations />
         </div>
       </section>
+
+      {/* Sticky Add to Cart (Mobile) */}
+      <StickyAddToCart
+        productName={product.name}
+        price={selectedVariant ? Number(selectedVariant.price) : Number(product.base_price)}
+        inStock={inStock}
+        onAddToCart={handleAddToCart}
+      />
     </PremiumPageLayout>
   );
 }

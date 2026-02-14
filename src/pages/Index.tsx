@@ -11,6 +11,7 @@ import { LocalBusinessSchema } from '@/components/seo';
 import { Seo } from '@/components/Seo';
 import { ProductComparison } from '@/components/ProductComparison';
 import { ProductRecommendations } from '@/components/ai/ProductRecommendations';
+import { RecentlyViewed } from '@/components/RecentlyViewed';
 import { PromoBanner } from '@/components/PromoBanner';
 
 export default function Index() {
@@ -62,6 +63,9 @@ export default function Index() {
           </div>
         </div>
       </section>
+
+      {/* Recently Viewed */}
+      <RecentlyViewed />
 
       {/* AI Recommendations Section */}
       <section className="py-8 lg:py-12 border-t border-border">

@@ -9,6 +9,8 @@ import {
   ArrowLeft, Package, Truck, CheckCircle2, Clock, XCircle,
   MapPin, CreditCard
 } from 'lucide-react';
+import { OrderStatusTracker } from '@/components/OrderStatusTracker';
+import { ReorderButton } from '@/components/ReorderButton';
 
 interface OrderItem {
   id: string;
@@ -17,6 +19,7 @@ interface OrderItem {
   quantity: number;
   unit_price: number;
   total_price: number;
+  variant_id: string | null;
 }
 
 interface Order {
@@ -156,10 +159,12 @@ export default function Orders() {
                 })}
               </p>
             </div>
-            <div className={`inline-flex items-center gap-2 px-4 py-2 border border-border ${statusConfig.color}`}>
-              <StatusIcon className="w-4 h-4" strokeWidth={1.5} />
-              <span className="text-[11px] tracking-[0.1em] uppercase font-medium">{statusConfig.label}</span>
-            </div>
+            <ReorderButton items={items} />
+          </div>
+
+          {/* Status Tracker */}
+          <div className="mt-8">
+            <OrderStatusTracker status={order.status} />
           </div>
         </div>
       </section>

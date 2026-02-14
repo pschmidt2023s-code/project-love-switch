@@ -18,7 +18,7 @@ import { CookieConsent } from '@/components/CookieConsent';
 import { InstallPrompt } from '@/components/pwa/InstallPrompt';
 import { OfflineIndicator } from '@/components/pwa/OfflineIndicator';
 import { ChatWidget } from '@/components/ChatWidget';
-
+import { ReviewPrompt } from '@/components/ReviewPrompt';
 import { PushNotificationPrompt } from '@/components/PushNotificationPrompt';
 
 const ProductDetail = React.lazy(() => import('@/pages/ProductDetail'));
@@ -126,6 +126,7 @@ function App() {
                     <InstallPrompt />
                     <OfflineIndicator />
                     <ChatWidget />
+                    <ReviewPrompt />
                     <PushNotificationPrompt />
                     <Toaster />
                     <Sonner />
