@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
@@ -10,6 +10,7 @@ import { PremiumPageLayout } from '@/components/premium/PremiumPageLayout';
 import { Breadcrumb } from '@/components/Breadcrumb';
 import { Seo } from '@/components/Seo';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface ReturnResult {
   autoApproved: boolean;
@@ -19,6 +20,7 @@ interface ReturnResult {
 }
 
 export default function Returns() {
+  const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [result, setResult] = useState<ReturnResult | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
@@ -33,6 +35,30 @@ export default function Returns() {
     reason: '',
     items: '',
   });
+
+  // Auto-fill for logged-in users
+  useEffect(() => {
+    if (!user) return;
+
+    const prefill = async () => {
+      const [profileRes, addressRes] = await Promise.all([
+        supabase.from('profiles').select('first_name, last_name, email').eq('id', user.id).single(),
+        supabase.from('addresses').select('*').eq('user_id', user.id).order('is_default', { ascending: false }).limit(1).maybeSingle(),
+      ]);
+
+      setFormData(prev => ({
+        ...prev,
+        firstName: profileRes.data?.first_name || prev.firstName,
+        lastName: profileRes.data?.last_name || prev.lastName,
+        email: profileRes.data?.email || user.email || prev.email,
+        street: addressRes.data?.street || prev.street,
+        postalCode: addressRes.data?.postal_code || prev.postalCode,
+        city: addressRes.data?.city || prev.city,
+      }));
+    };
+
+    prefill();
+  }, [user]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData(prev => ({
@@ -89,10 +115,11 @@ export default function Returns() {
       });
     } catch (err: any) {
       console.error('Return submission error:', err);
-      setFormError(err.message || 'Ein unerwarteter Fehler ist aufgetreten.');
+      const msg = 'Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es erneut.';
+      setFormError(msg);
       toast({
         title: 'Fehler',
-        description: err.message || 'Bitte versuchen Sie es erneut.',
+        description: msg,
         variant: 'destructive',
       });
     } finally {
@@ -104,7 +131,7 @@ export default function Returns() {
     return (
       <PremiumPageLayout>
         <Seo title="Retoure bestätigt | ALDENAIR" description="Ihre Retouren-Anfrage wurde erfolgreich eingereicht." canonicalPath="/returns" />
-        <div className="container mx-auto px-4 lg:px-8 py-24 lg:py-32 flex items-center justify-center min-h-[60vh]">
+        <div className="container-premium py-24 lg:py-32 flex items-center justify-center min-h-[60vh]">
           <div className="max-w-md w-full text-center space-y-8">
             <div className="w-20 h-20 mx-auto flex items-center justify-center border border-border">
               {result.autoApproved ? (
@@ -121,14 +148,14 @@ export default function Returns() {
                 {result.message}
               </p>
               {result.autoApproved && (
-                <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
+                <div className="p-4 bg-green-500/10 border border-green-500/20">
                   <p className="text-sm text-green-700 dark:text-green-400">
                     📧 Ihr kostenloser Retourenschein wird Ihnen innerhalb von 24 Stunden per E-Mail zugesendet.
                   </p>
                 </div>
               )}
               {!result.autoApproved && (
-                <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+                <div className="p-4 bg-amber-500/10 border border-amber-500/20">
                   <p className="text-sm text-amber-700 dark:text-amber-400">
                     ⏳ Ihre Anfrage liegt außerhalb der 14-Tage-Frist ({result.daysSinceOrder} Tage). Unser Team prüft Ihre Anfrage und meldet sich innerhalb von 24 Stunden.
                   </p>
@@ -162,31 +189,33 @@ export default function Returns() {
         canonicalPath="/returns"
       />
 
-      <div className="container mx-auto px-4 lg:px-8">
-        <Breadcrumb />
-
-        {/* Hero Section */}
-        <header className="py-16 lg:py-24 border-b border-border">
-          <p className="text-[10px] tracking-[0.3em] uppercase text-muted-foreground mb-4">
+      {/* Header */}
+      <section className="border-b border-border">
+        <div className="container-premium py-8 lg:py-12">
+          <Breadcrumb className="mb-6" />
+          
+          <span className="inline-block text-[10px] tracking-[0.3em] uppercase text-accent mb-3">
             Kundenservice
-          </p>
-          <h1 className="font-display text-4xl lg:text-5xl text-foreground mb-6">
+          </span>
+          <h1 className="font-display text-3xl lg:text-4xl text-foreground mb-4">
             Retoure & Widerruf
           </h1>
-          <p className="text-lg text-muted-foreground max-w-2xl leading-relaxed">
+          <p className="text-muted-foreground max-w-xl text-sm lg:text-base leading-relaxed">
             Unkompliziert und kundenfreundlich. Erfahren Sie, wie Sie Ihre Bestellung
             zurückgeben können.
           </p>
-        </header>
+        </div>
+      </section>
 
-        {/* Info Cards */}
-        <section className="py-16 lg:py-24 border-b border-border">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="space-y-4">
-              <div className="w-12 h-12 flex items-center justify-center border border-border">
-                <Clock className="w-5 h-5 text-foreground" strokeWidth={1.5} />
+      {/* Info Cards */}
+      <section className="section-spacing border-b border-border">
+        <div className="container-premium">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+            <div className="p-6 lg:p-8 border border-border bg-card hover:border-accent/50 transition-colors">
+              <div className="w-10 h-10 lg:w-12 lg:h-12 flex items-center justify-center bg-accent/10 mb-4">
+                <Clock className="w-5 h-5 lg:w-6 lg:h-6 text-accent" strokeWidth={1.5} />
               </div>
-              <h3 className="font-display text-xl text-foreground">
+              <h3 className="font-display text-lg text-foreground mb-2">
                 14 Tage Widerrufsrecht
               </h3>
               <p className="text-sm text-muted-foreground leading-relaxed">
@@ -194,11 +223,11 @@ export default function Returns() {
               </p>
             </div>
 
-            <div className="space-y-4">
-              <div className="w-12 h-12 flex items-center justify-center border border-border">
-                <RotateCcw className="w-5 h-5 text-foreground" strokeWidth={1.5} />
+            <div className="p-6 lg:p-8 border border-border bg-card hover:border-accent/50 transition-colors">
+              <div className="w-10 h-10 lg:w-12 lg:h-12 flex items-center justify-center bg-accent/10 mb-4">
+                <RotateCcw className="w-5 h-5 lg:w-6 lg:h-6 text-accent" strokeWidth={1.5} />
               </div>
-              <h3 className="font-display text-xl text-foreground">
+              <h3 className="font-display text-lg text-foreground mb-2">
                 Kostenloser Rückversand
               </h3>
               <p className="text-sm text-muted-foreground leading-relaxed">
@@ -206,11 +235,11 @@ export default function Returns() {
               </p>
             </div>
 
-            <div className="space-y-4">
-              <div className="w-12 h-12 flex items-center justify-center border border-border">
-                <FileText className="w-5 h-5 text-foreground" strokeWidth={1.5} />
+            <div className="p-6 lg:p-8 border border-border bg-card hover:border-accent/50 transition-colors">
+              <div className="w-10 h-10 lg:w-12 lg:h-12 flex items-center justify-center bg-accent/10 mb-4">
+                <FileText className="w-5 h-5 lg:w-6 lg:h-6 text-accent" strokeWidth={1.5} />
               </div>
-              <h3 className="font-display text-xl text-foreground">
+              <h3 className="font-display text-lg text-foreground mb-2">
                 Schnelle Erstattung
               </h3>
               <p className="text-sm text-muted-foreground leading-relaxed">
@@ -218,11 +247,16 @@ export default function Returns() {
               </p>
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* Important Notice */}
-        <section className="py-16 lg:py-24 border-b border-border">
+      {/* Important Notice */}
+      <section className="section-spacing border-b border-border">
+        <div className="container-premium">
           <div className="max-w-3xl">
+            <span className="inline-block text-[10px] tracking-[0.2em] uppercase text-accent mb-4">
+              Hinweise
+            </span>
             <h2 className="font-display text-2xl lg:text-3xl text-foreground mb-8">
               Wichtige Hinweise
             </h2>
@@ -244,14 +278,16 @@ export default function Returns() {
               </p>
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* Return Form */}
-        <section className="py-16 lg:py-24">
+      {/* Return Form */}
+      <section className="section-spacing">
+        <div className="container-premium">
           <div className="max-w-2xl">
             <div className="flex items-center gap-4 mb-12">
-              <div className="w-12 h-12 flex items-center justify-center border border-border">
-                <Package className="w-5 h-5 text-foreground" strokeWidth={1.5} />
+              <div className="w-12 h-12 flex items-center justify-center bg-accent/10">
+                <Package className="w-5 h-5 text-accent" strokeWidth={1.5} />
               </div>
               <div>
                 <h2 className="font-display text-2xl lg:text-3xl text-foreground">
@@ -264,7 +300,7 @@ export default function Returns() {
             </div>
 
             {formError && (
-              <div className="mb-8 p-4 bg-destructive/10 border border-destructive/20 rounded-lg flex items-start gap-3">
+              <div className="mb-8 p-4 bg-destructive/10 border border-destructive/20 flex items-start gap-3">
                 <AlertTriangle className="w-5 h-5 text-destructive mt-0.5 flex-shrink-0" />
                 <p className="text-sm text-destructive">{formError}</p>
               </div>
@@ -272,7 +308,7 @@ export default function Returns() {
 
             <form onSubmit={handleSubmit} className="space-y-8">
               <div className="space-y-2">
-                <Label htmlFor="orderNumber" className="text-xs tracking-wider uppercase">
+                <Label htmlFor="orderNumber" className="text-[10px] tracking-[0.15em] uppercase">
                   Bestellnummer *
                 </Label>
                 <Input
@@ -291,7 +327,7 @@ export default function Returns() {
 
               <div className="grid grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="firstName" className="text-xs tracking-wider uppercase">
+                  <Label htmlFor="firstName" className="text-[10px] tracking-[0.15em] uppercase">
                     Vorname *
                   </Label>
                   <Input
@@ -305,7 +341,7 @@ export default function Returns() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="lastName" className="text-xs tracking-wider uppercase">
+                  <Label htmlFor="lastName" className="text-[10px] tracking-[0.15em] uppercase">
                     Nachname *
                   </Label>
                   <Input
@@ -321,7 +357,7 @@ export default function Returns() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-xs tracking-wider uppercase">
+                <Label htmlFor="email" className="text-[10px] tracking-[0.15em] uppercase">
                   E-Mail *
                 </Label>
                 <Input
@@ -337,7 +373,7 @@ export default function Returns() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="street" className="text-xs tracking-wider uppercase">
+                <Label htmlFor="street" className="text-[10px] tracking-[0.15em] uppercase">
                   Straße und Hausnummer *
                 </Label>
                 <Input
@@ -353,7 +389,7 @@ export default function Returns() {
 
               <div className="grid grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="postalCode" className="text-xs tracking-wider uppercase">
+                  <Label htmlFor="postalCode" className="text-[10px] tracking-[0.15em] uppercase">
                     PLZ *
                   </Label>
                   <Input
@@ -367,7 +403,7 @@ export default function Returns() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="city" className="text-xs tracking-wider uppercase">
+                  <Label htmlFor="city" className="text-[10px] tracking-[0.15em] uppercase">
                     Stadt *
                   </Label>
                   <Input
@@ -383,7 +419,7 @@ export default function Returns() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="items" className="text-xs tracking-wider uppercase">
+                <Label htmlFor="items" className="text-[10px] tracking-[0.15em] uppercase">
                   Zu retournierende Artikel *
                 </Label>
                 <Textarea
@@ -398,7 +434,7 @@ export default function Returns() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="reason" className="text-xs tracking-wider uppercase">
+                <Label htmlFor="reason" className="text-[10px] tracking-[0.15em] uppercase">
                   Grund für die Retoure *
                 </Label>
                 <Textarea
@@ -412,7 +448,7 @@ export default function Returns() {
                 />
               </div>
 
-              <div className="p-6 bg-muted/30 border border-border text-sm text-muted-foreground space-y-2">
+              <div className="p-6 bg-secondary/30 border border-border text-sm text-muted-foreground space-y-2">
                 <p>
                   <strong className="text-foreground">Automatische Prüfung:</strong> Wir prüfen
                   Ihre Bestellnummer und ob die 14-Tage-Frist eingehalten wurde.
@@ -441,8 +477,8 @@ export default function Returns() {
               </Button>
             </form>
           </div>
-        </section>
-      </div>
+        </div>
+      </section>
     </PremiumPageLayout>
   );
 }

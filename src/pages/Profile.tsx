@@ -1,19 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import {
-  ArrowLeft, User, MapPin, ShoppingBag, Gift, Shield,
-  ChevronRight, Star, Package, Crown, Loader2
-} from 'lucide-react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import Navigation from '@/components/Navigation';
-import { Footer } from '@/components/Footer';
-import { MobileBottomNav } from '@/components/MobileBottomNav';
-import { api } from '@/lib/api';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { PremiumPageLayout } from '@/components/premium/PremiumPageLayout';
+import { Breadcrumb } from '@/components/Breadcrumb';
+import { Seo } from '@/components/Seo';
 import { AuthModal } from '@/components/AuthModal';
+import { api } from '@/lib/api';
+import {
+  User, MapPin, ShoppingBag, Gift, Shield, ChevronRight, Star, Crown
+} from 'lucide-react';
 
 type ProfileSection = 'menu' | 'profile' | 'addresses' | 'orders' | 'loyalty' | 'security';
 
@@ -34,51 +29,42 @@ export default function Profile() {
 
   useEffect(() => {
     const section = searchParams.get('section') as ProfileSection;
-    if (section) {
-      setActiveSection(section);
-    }
+    if (section) setActiveSection(section);
   }, [searchParams]);
 
   useEffect(() => {
     if (user) {
-      loadProfile();
+      api.profile.get().then(({ data }) => { setProfile(data); setLoading(false); }).catch(() => setLoading(false));
     } else {
       setLoading(false);
     }
   }, [user]);
 
-  const loadProfile = async () => {
-    try {
-      const { data } = await api.profile.get();
-      setProfile(data);
-    } catch (error) {
-      console.error('Error loading profile:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   if (!user) {
     return (
-      <>
-        <Navigation />
-        <div className="min-h-screen bg-background pb-20 md:pb-0">
-          <div className="container mx-auto px-4 py-16 text-center">
-            <User className="w-16 h-16 mx-auto mb-6 text-muted-foreground" />
-            <h1 className="text-2xl font-bold mb-4">Melde dich an</h1>
-            <p className="text-muted-foreground mb-8">
-              Erstelle ein Konto oder melde dich an, um dein Profil zu verwalten.
-            </p>
-            <AuthModal>
-              <Button size="lg">Jetzt anmelden</Button>
-            </AuthModal>
+      <PremiumPageLayout>
+        <Seo title="Profil | ALDENAIR" description="Verwalten Sie Ihr ALDENAIR Profil" canonicalPath="/profile" />
+        <div className="container-premium py-24 text-center">
+          <div className="w-20 h-20 mx-auto flex items-center justify-center border border-border mb-6">
+            <User className="w-10 h-10 text-muted-foreground" strokeWidth={1.5} />
           </div>
+          <h1 className="font-display text-3xl text-foreground mb-4">Melde dich an</h1>
+          <p className="text-muted-foreground text-sm mb-8 max-w-md mx-auto">
+            Erstelle ein Konto oder melde dich an, um dein Profil zu verwalten.
+          </p>
+          <AuthModal>
+            <button className="px-8 py-3 bg-foreground text-background text-[11px] tracking-[0.15em] uppercase font-medium hover:bg-foreground/90 transition-colors">
+              Jetzt anmelden
+            </button>
+          </AuthModal>
         </div>
-        <Footer />
-        <MobileBottomNav />
-      </>
+      </PremiumPageLayout>
     );
   }
+
+  const tier = (profile?.tier as keyof typeof TIER_CONFIG) || 'bronze';
+  const tierConfig = TIER_CONFIG[tier];
+  const TierIcon = tierConfig.icon;
 
   const menuItems = [
     { id: 'profile', label: 'Persönliche Daten', icon: User, description: 'Name, E-Mail und Telefon' },
@@ -88,189 +74,131 @@ export default function Profile() {
     { id: 'security', label: 'Sicherheit', icon: Shield, description: 'Passwort und 2FA' },
   ];
 
-  const tier = (profile?.tier as keyof typeof TIER_CONFIG) || 'bronze';
-  const tierConfig = TIER_CONFIG[tier];
-  const TierIcon = tierConfig.icon;
-
   return (
-    <>
-      <Navigation />
-      <div className="min-h-screen bg-background pb-20 md:pb-0">
-        <div className="container mx-auto px-4 py-8">
-          <div className="max-w-4xl mx-auto">
+    <PremiumPageLayout>
+      <Seo title="Profil | ALDENAIR" description="Verwalten Sie Ihr ALDENAIR Profil" canonicalPath="/profile" />
+
+      <section className="border-b border-border">
+        <div className="container-premium py-8 lg:py-12">
+          <Breadcrumb className="mb-6" />
+          <span className="inline-block text-[10px] tracking-[0.3em] uppercase text-accent mb-3">Profil</span>
+          <h1 className="font-display text-3xl lg:text-4xl text-foreground">Mein Profil</h1>
+        </div>
+      </section>
+
+      <section className="section-spacing">
+        <div className="container-premium">
+          <div className="max-w-2xl mx-auto">
             {activeSection !== 'menu' && (
-              <Button
-                onClick={() => setActiveSection('menu')}
-                variant="outline"
-                className="mb-8"
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Zurück zum Menü
-              </Button>
+              <button onClick={() => setActiveSection('menu')} className="inline-flex items-center gap-2 mb-8 text-sm text-accent hover:underline">
+                ← Zurück zum Menü
+              </button>
             )}
 
             {activeSection === 'menu' && (
-              <>
-                {/* Profile Header */}
-                <Card className="mb-8">
-                  <CardContent className="p-6">
-                    <div className="flex items-center gap-4">
-                      <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-                        <User className="w-8 h-8 text-primary" />
-                      </div>
-                      <div className="flex-1">
-                        <h1 className="text-xl font-bold">
-                          {profile?.first_name ? `${profile.first_name} ${profile.last_name || ''}` : user.email}
-                        </h1>
-                        <p className="text-sm text-muted-foreground">{user.email}</p>
-                        <div className="flex items-center gap-2 mt-2">
-                          <Badge className={tierConfig.color}>
-                            <TierIcon className="w-3 h-3 mr-1" />
-                            {tierConfig.name}
-                          </Badge>
-                          {profile?.payback_balance > 0 && (
-                            <Badge variant="outline">
-                              {profile.payback_balance.toFixed(2)} € Guthaben
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
+              <div className="space-y-6">
+                {/* Profile Header Card */}
+                <div className="p-6 border border-border flex items-center gap-4">
+                  <div className="w-14 h-14 flex items-center justify-center bg-accent/10">
+                    <User className="w-7 h-7 text-accent" strokeWidth={1.5} />
+                  </div>
+                  <div className="flex-1">
+                    <h2 className="font-display text-lg text-foreground">
+                      {profile?.first_name ? `${profile.first_name} ${profile.last_name || ''}` : user.email}
+                    </h2>
+                    <p className="text-xs text-muted-foreground">{user.email}</p>
+                    <div className="flex items-center gap-2 mt-2">
+                      <span className={`inline-flex items-center gap-1 text-[9px] tracking-[0.1em] uppercase px-2 py-1 text-white ${tierConfig.color}`}>
+                        <TierIcon className="w-3 h-3" /> {tierConfig.name}
+                      </span>
+                      {profile?.payback_balance > 0 && (
+                        <span className="text-[9px] tracking-[0.1em] uppercase px-2 py-1 border border-border text-muted-foreground">
+                          {profile.payback_balance.toFixed(2)} € Guthaben
+                        </span>
+                      )}
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
 
                 {/* Menu Items */}
                 <div className="space-y-2">
-                  {menuItems.map((item) => {
+                  {menuItems.map(item => {
                     const Icon = item.icon;
                     return (
-                      <Card
+                      <button
                         key={item.id}
-                        className="cursor-pointer hover:bg-muted/50 transition-colors"
-                        onClick={() => setActiveSection(item.id as ProfileSection)}
+                        onClick={() => item.id === 'orders' ? navigate('/orders') : item.id === 'addresses' ? navigate('/account') : setActiveSection(item.id as ProfileSection)}
+                        className="w-full flex items-center gap-4 p-4 border border-border hover:border-accent/50 transition-colors text-left"
                       >
-                        <CardContent className="p-4">
-                          <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                              <Icon className="w-5 h-5 text-primary" />
-                            </div>
-                            <div className="flex-1">
-                              <h3 className="font-medium">{item.label}</h3>
-                              <p className="text-sm text-muted-foreground">{item.description}</p>
-                            </div>
-                            <ChevronRight className="w-5 h-5 text-muted-foreground" />
-                          </div>
-                        </CardContent>
-                      </Card>
+                        <div className="w-10 h-10 flex items-center justify-center bg-accent/10 flex-shrink-0">
+                          <Icon className="w-5 h-5 text-accent" strokeWidth={1.5} />
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="text-sm font-medium text-foreground">{item.label}</h3>
+                          <p className="text-xs text-muted-foreground">{item.description}</p>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-muted-foreground" strokeWidth={1.5} />
+                      </button>
                     );
                   })}
                 </div>
 
-                {/* Logout Button */}
-                <Button
-                  variant="outline"
-                  className="w-full mt-8"
-                  onClick={() => {
-                    signOut();
-                    navigate('/');
-                  }}
+                <button
+                  onClick={() => { signOut(); navigate('/'); }}
+                  className="w-full py-3 border border-border text-[11px] tracking-[0.15em] uppercase text-foreground hover:bg-muted transition-colors mt-4"
                 >
                   Abmelden
-                </Button>
-              </>
+                </button>
+              </div>
             )}
 
             {activeSection === 'profile' && (
-              <Card>
-                <CardContent className="p-6">
-                  <h2 className="text-xl font-bold mb-6">Persönliche Daten</h2>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="text-sm font-medium">E-Mail</label>
-                      <p className="text-muted-foreground">{user.email}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium">Vorname</label>
-                      <p className="text-muted-foreground">{profile?.first_name || '-'}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium">Nachname</label>
-                      <p className="text-muted-foreground">{profile?.last_name || '-'}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium">Telefon</label>
-                      <p className="text-muted-foreground">{profile?.phone || '-'}</p>
-                    </div>
+              <div className="border border-border p-6 space-y-4">
+                <h2 className="text-[10px] tracking-[0.2em] uppercase text-accent mb-4">Persönliche Daten</h2>
+                {[
+                  { label: 'E-Mail', value: user.email },
+                  { label: 'Vorname', value: profile?.first_name || '-' },
+                  { label: 'Nachname', value: profile?.last_name || '-' },
+                  { label: 'Telefon', value: profile?.phone || '-' },
+                ].map(item => (
+                  <div key={item.label} className="flex justify-between py-3 border-b border-border last:border-0">
+                    <span className="text-sm text-muted-foreground">{item.label}</span>
+                    <span className="text-sm text-foreground font-medium">{item.value}</span>
                   </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {activeSection === 'addresses' && (
-              <Card>
-                <CardContent className="p-6">
-                  <h2 className="text-xl font-bold mb-6">Adressen</h2>
-                  <p className="text-muted-foreground mb-4">Verwalte deine Liefer- und Rechnungsadressen.</p>
-                  <Button onClick={() => navigate('/profile?section=addresses')}>
-                    Adressen verwalten
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
-
-            {activeSection === 'orders' && (
-              <Card>
-                <CardContent className="p-6">
-                  <h2 className="text-xl font-bold mb-6">Bestellungen</h2>
-                  <p className="text-muted-foreground mb-4">Sieh dir deine Bestellhistorie an.</p>
-                  <Button onClick={() => navigate('/orders')}>
-                    Bestellungen ansehen
-                  </Button>
-                </CardContent>
-              </Card>
+                ))}
+              </div>
             )}
 
             {activeSection === 'loyalty' && (
-              <Card>
-                <CardContent className="p-6">
-                  <h2 className="text-xl font-bold mb-6">Treueprogramm</h2>
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-4">
-                      <Badge className={`${tierConfig.color} text-lg px-4 py-2`}>
-                        <TierIcon className="w-5 h-5 mr-2" />
-                        {tierConfig.name}
-                      </Badge>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium">Guthaben</label>
-                      <p className="text-2xl font-bold text-primary">
-                        {(profile?.payback_balance || 0).toFixed(2)} €
-                      </p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium">Gesamtausgaben</label>
-                      <p className="text-muted-foreground">
-                        {(profile?.total_spent || 0).toFixed(2)} €
-                      </p>
-                    </div>
+              <div className="border border-border p-6 space-y-6">
+                <h2 className="text-[10px] tracking-[0.2em] uppercase text-accent">Treueprogramm</h2>
+                <div className="flex items-center gap-4">
+                  <span className={`inline-flex items-center gap-2 text-sm px-4 py-2 text-white ${tierConfig.color}`}>
+                    <TierIcon className="w-5 h-5" /> {tierConfig.name}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-4 bg-secondary/30 border border-border text-center">
+                    <p className="font-display text-2xl text-foreground">{(profile?.payback_balance || 0).toFixed(2)} €</p>
+                    <p className="text-[10px] tracking-[0.1em] uppercase text-muted-foreground mt-1">Guthaben</p>
                   </div>
-                </CardContent>
-              </Card>
+                  <div className="p-4 bg-secondary/30 border border-border text-center">
+                    <p className="font-display text-2xl text-foreground">{(profile?.total_spent || 0).toFixed(2)} €</p>
+                    <p className="text-[10px] tracking-[0.1em] uppercase text-muted-foreground mt-1">Gesamtausgaben</p>
+                  </div>
+                </div>
+              </div>
             )}
 
             {activeSection === 'security' && (
-              <Card>
-                <CardContent className="p-6">
-                  <h2 className="text-xl font-bold mb-6">Sicherheit</h2>
-                  <p className="text-muted-foreground">Sicherheitseinstellungen werden geladen...</p>
-                </CardContent>
-              </Card>
+              <div className="border border-border p-6">
+                <h2 className="text-[10px] tracking-[0.2em] uppercase text-accent mb-4">Sicherheit</h2>
+                <p className="text-sm text-muted-foreground">Sicherheitseinstellungen werden in Kürze verfügbar sein.</p>
+              </div>
             )}
           </div>
         </div>
-      </div>
-      <Footer />
-      <MobileBottomNav />
-    </>
+      </section>
+    </PremiumPageLayout>
   );
 }

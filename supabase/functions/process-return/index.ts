@@ -39,7 +39,7 @@ serve(async (req) => {
     if (!orderNumber || !firstName || !lastName || !email || !reason || !items) {
       return new Response(
         JSON.stringify({ error: "Bitte füllen Sie alle Pflichtfelder aus." }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -55,16 +55,16 @@ serve(async (req) => {
     if (orderError) {
       console.error("[PROCESS-RETURN] DB error:", orderError);
       return new Response(
-        JSON.stringify({ error: "Fehler bei der Bestellnummer-Prüfung." }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: "Fehler bei der Bestellnummer-Prüfung. Bitte versuchen Sie es erneut." }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     if (!order) {
       console.log(`[PROCESS-RETURN] Order not found: ${orderNumber}`);
       return new Response(
-        JSON.stringify({ error: "Die angegebene Bestellnummer wurde nicht gefunden. Bitte überprüfen Sie Ihre Eingabe." }),
-        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: `Die Bestellnummer "${orderNumber}" wurde nicht gefunden. Bitte überprüfen Sie Ihre Eingabe. Die Bestellnummer finden Sie in Ihrer Bestellbestätigung (z.B. ORD-20250101-00001).` }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -96,8 +96,8 @@ serve(async (req) => {
     if (returnError) {
       console.error("[PROCESS-RETURN] Return insert error:", returnError);
       return new Response(
-        JSON.stringify({ error: "Retoure konnte nicht erstellt werden." }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: "Retoure konnte nicht erstellt werden. Bitte versuchen Sie es erneut." }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -194,8 +194,8 @@ serve(async (req) => {
   } catch (error: any) {
     console.error("[PROCESS-RETURN] Unexpected error:", error);
     return new Response(
-      JSON.stringify({ error: error.message || "Unerwarteter Fehler" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify({ error: "Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es erneut." }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });
