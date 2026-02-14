@@ -88,29 +88,48 @@ export function MusicPlayerProvider({ children }: { children: ReactNode }) {
 
     console.log('[MusicPlayer] playTrack:', track.title, 'url:', track.audio_url?.substring(0, 60));
 
-    // CRITICAL: Set src and play SYNCHRONOUSLY within user gesture
+    // Remove any previous canplay listener
+    audio.oncanplay = null;
+
     try {
       audio.src = track.audio_url;
       audio.load();
-      
-      const playPromise = audio.play();
-      if (playPromise) {
-        playPromise.then(() => {
-          console.log('[MusicPlayer] ✅ Play succeeded');
-          setIsPlaying(true);
-        }).catch((err) => {
-          console.warn('[MusicPlayer] Play failed:', err.message, '- trying muted...');
-          audio.muted = true;
-          audio.play().then(() => {
-            console.log('[MusicPlayer] ✅ Muted play succeeded');
+
+      // Try immediate play first (works on desktop & when data is cached)
+      const tryPlay = () => {
+        const playPromise = audio.play();
+        if (playPromise) {
+          playPromise.then(() => {
+            console.log('[MusicPlayer] ✅ Play succeeded');
             setIsPlaying(true);
-            setTimeout(() => { audio.muted = false; }, 300);
-          }).catch((err2) => {
-            console.error('[MusicPlayer] ❌ All play attempts failed:', err2.message);
-            setIsPlaying(false);
+          }).catch((err) => {
+            console.warn('[MusicPlayer] Play failed:', err.message);
+            // On mobile, try muted fallback
+            audio.muted = true;
+            audio.play().then(() => {
+              console.log('[MusicPlayer] ✅ Muted play succeeded');
+              setIsPlaying(true);
+              setTimeout(() => { audio.muted = false; }, 300);
+            }).catch((err2) => {
+              console.error('[MusicPlayer] ❌ All play attempts failed:', err2.message);
+              setIsPlaying(false);
+            });
           });
-        });
-      }
+        }
+      };
+
+      // Attempt immediate play
+      tryPlay();
+
+      // ALSO set up canplay handler as backup - if the browser couldn't play immediately
+      // because data wasn't ready, this fires when enough data is buffered
+      audio.oncanplay = () => {
+        audio.oncanplay = null; // only fire once
+        if (audio.paused && audio.src) {
+          console.log('[MusicPlayer] 🔄 canplay fired, retrying play...');
+          tryPlay();
+        }
+      };
     } catch (e) {
       console.error('[MusicPlayer] ❌ Exception during play:', e);
     }
@@ -220,12 +239,15 @@ export function MusicPlayerProvider({ children }: { children: ReactNode }) {
       {/* Real DOM audio element - critical for iOS/mobile playback */}
       <audio
         ref={audioRef}
-        preload="auto"
+        preload="none"
         playsInline
         onTimeUpdate={handleTimeUpdate}
         onDurationChange={handleDurationChange}
         onEnded={handleEnded}
         onError={handleError}
+        onStalled={() => console.warn('[MusicPlayer] ⚠️ Stalled - network too slow')}
+        onWaiting={() => console.log('[MusicPlayer] ⏳ Waiting for data...')}
+        onCanPlay={() => console.log('[MusicPlayer] ✅ Can play')}
         style={{ position: 'absolute', width: 0, height: 0, opacity: 0 }}
       />
       {children}
