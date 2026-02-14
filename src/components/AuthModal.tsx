@@ -32,7 +32,7 @@ export function AuthModal({ children }: AuthModalProps) {
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const clientId = `auth-signin-${Date.now().toString(36)}`;
+    const clientId = `auth-signin-${email.trim().toLowerCase()}`;
     if (!authRateLimiter.isAllowed(clientId)) {
       toast({
         title: "Zu viele Anmeldeversuche",
@@ -84,7 +84,7 @@ export function AuthModal({ children }: AuthModalProps) {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const clientId = `auth-signup-${Date.now().toString(36)}`;
+    const clientId = `auth-signup-${email.trim().toLowerCase()}`;
     if (!authRateLimiter.isAllowed(clientId)) {
       toast({
         title: "Zu viele Registrierungsversuche",
