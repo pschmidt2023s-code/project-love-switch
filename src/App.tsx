@@ -23,6 +23,9 @@ import { PushNotificationPrompt } from '@/components/PushNotificationPrompt';
 import { ScrollToTop } from '@/components/ScrollToTop';
 import { SecurityGuard } from '@/components/SecurityGuard';
 import { SkipNav } from '@/components/a11y/SkipNav';
+import { useScrollRestore } from '@/hooks/useScrollRestore';
+import { idleScheduler, scheduleAnalytics, scheduleCleanup } from '@/lib/idle-scheduler';
+import { resetCorrelationId } from '@/lib/correlation';
 
 const ProductDetail = React.lazy(() => import('@/pages/ProductDetail'));
 const Products = React.lazy(() => import('@/pages/Products'));
@@ -81,6 +84,12 @@ const LoadingSpinner = () => (
   </div>
 );
 
+// Scroll position restore handler
+function ScrollRestoreHandler() {
+  useScrollRestore();
+  return null;
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -96,6 +105,7 @@ function App() {
                     <GlobalGestures />
                     <TouchOptimizations />
                     <ProductComparison />
+                    <ScrollRestoreHandler />
                     <div id="main-content" tabIndex={-1} className="min-h-screen bg-background" role="main">
                       <Routes>
                         <Route path="/" element={<Index />} />

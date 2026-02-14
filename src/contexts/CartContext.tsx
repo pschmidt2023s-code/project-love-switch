@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthContext';
 import { toast } from 'sonner';
@@ -35,49 +35,30 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(false);
   const [showCartSidebar, setShowCartSidebar] = useState(false);
 
-  // Load cart from database when user logs in
   useEffect(() => {
     if (user) {
       loadCart();
     } else {
-      // Load from localStorage for guests
       const savedCart = localStorage.getItem('cart');
       if (savedCart) {
-        setItems(JSON.parse(savedCart));
+        try { setItems(JSON.parse(savedCart)); } catch { setItems([]); }
       }
     }
   }, [user]);
 
-  // Save to localStorage for guests
   useEffect(() => {
     if (!user) {
       localStorage.setItem('cart', JSON.stringify(items));
     }
   }, [items, user]);
 
-  const loadCart = async () => {
+  const loadCart = useCallback(async () => {
     if (!user) return;
-    
     setLoading(true);
     try {
       const { data, error } = await supabase
         .from('cart_items')
-        .select(`
-          id,
-          quantity,
-          variant_id,
-          product_variants (
-            id,
-            size,
-            price,
-            product_id,
-            products (
-              id,
-              name,
-              image_url
-            )
-          )
-        `)
+        .select(`id, quantity, variant_id, product_variants (id, size, price, product_id, products (id, name, image_url))`)
         .eq('user_id', user.id);
 
       if (error) throw error;
@@ -99,10 +80,24 @@ export function CartProvider({ children }: { children: ReactNode }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
   const addItem = async (newItem: Omit<CartItem, 'id'>) => {
     const existingItem = items.find(item => item.variantId === newItem.variantId);
+
+    // Optimistic update
+    const previousItems = [...items];
+    if (existingItem) {
+      setItems(items.map(item =>
+        item.variantId === newItem.variantId
+          ? { ...item, quantity: item.quantity + newItem.quantity }
+          : item
+      ));
+    } else {
+      setItems([...items, { ...newItem, id: crypto.randomUUID() }]);
+    }
+    toast.success('Zum Warenkorb hinzugefügt');
+    setShowCartSidebar(true);
 
     if (user) {
       try {
@@ -115,32 +110,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
         } else {
           await supabase
             .from('cart_items')
-            .insert({
-              user_id: user.id,
-              variant_id: newItem.variantId,
-              quantity: newItem.quantity
-            });
+            .insert({ user_id: user.id, variant_id: newItem.variantId, quantity: newItem.quantity });
         }
+        // Sync with server
         await loadCart();
-        toast.success('Zum Warenkorb hinzugefügt');
-        setShowCartSidebar(true);
       } catch (error) {
+        // Rollback on error
+        setItems(previousItems);
         console.error('Error adding to cart:', error);
         toast.error('Fehler beim Hinzufügen');
       }
-    } else {
-      // Guest cart
-      if (existingItem) {
-        setItems(items.map(item =>
-          item.variantId === newItem.variantId
-            ? { ...item, quantity: item.quantity + newItem.quantity }
-            : item
-        ));
-      } else {
-        setItems([...items, { ...newItem, id: crypto.randomUUID() }]);
-      }
-      toast.success('Zum Warenkorb hinzugefügt');
-      setShowCartSidebar(true);
     }
   };
 
@@ -150,6 +129,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    // Optimistic update
+    const previousItems = [...items];
+    setItems(items.map(item =>
+      item.variantId === variantId ? { ...item, quantity } : item
+    ));
+
     if (user) {
       try {
         await supabase
@@ -157,18 +142,19 @@ export function CartProvider({ children }: { children: ReactNode }) {
           .update({ quantity })
           .eq('user_id', user.id)
           .eq('variant_id', variantId);
-        await loadCart();
       } catch (error) {
+        setItems(previousItems);
         console.error('Error updating quantity:', error);
       }
-    } else {
-      setItems(items.map(item =>
-        item.variantId === variantId ? { ...item, quantity } : item
-      ));
     }
   };
 
   const removeItem = async (variantId: string) => {
+    // Optimistic update
+    const previousItems = [...items];
+    setItems(items.filter(item => item.variantId !== variantId));
+    toast.success('Artikel entfernt');
+
     if (user) {
       try {
         await supabase
@@ -176,30 +162,25 @@ export function CartProvider({ children }: { children: ReactNode }) {
           .delete()
           .eq('user_id', user.id)
           .eq('variant_id', variantId);
-        await loadCart();
-        toast.success('Artikel entfernt');
       } catch (error) {
+        setItems(previousItems);
         console.error('Error removing item:', error);
       }
-    } else {
-      setItems(items.filter(item => item.variantId !== variantId));
-      toast.success('Artikel entfernt');
     }
   };
 
   const clearCart = async () => {
+    const previousItems = [...items];
+    setItems([]);
+
     if (user) {
       try {
-        await supabase
-          .from('cart_items')
-          .delete()
-          .eq('user_id', user.id);
-        setItems([]);
+        await supabase.from('cart_items').delete().eq('user_id', user.id);
       } catch (error) {
+        setItems(previousItems);
         console.error('Error clearing cart:', error);
       }
     } else {
-      setItems([]);
       localStorage.removeItem('cart');
     }
   };
