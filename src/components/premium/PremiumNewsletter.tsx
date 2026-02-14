@@ -41,21 +41,21 @@ export function PremiumNewsletter() {
   };
 
   return (
-    <section className="bg-foreground text-background py-10 lg:py-16">
+    <section className="bg-background text-foreground py-10 lg:py-16 border-t border-border">
       <div className="container-premium">
         <div className="max-w-2xl mx-auto text-center">
           {/* Eyebrow */}
-          <span className="inline-block text-[10px] tracking-[0.3em] uppercase text-background/50 mb-3">
+          <span className="inline-block text-[10px] tracking-[0.3em] uppercase text-muted-foreground mb-3">
             Newsletter
           </span>
           
           {/* Headline */}
-          <h2 className="font-display text-2xl lg:text-3xl text-background mb-3">
+          <h2 className="font-display text-2xl lg:text-3xl text-foreground mb-3">
             Bleibe auf dem Laufenden
           </h2>
           
           {/* Description */}
-          <p className="text-sm text-background/70 mb-6 max-w-md mx-auto">
+          <p className="text-sm text-muted-foreground mb-6 max-w-md mx-auto">
             Melde dich für unseren Newsletter an und erhalte exklusive Angebote 
             und Neuigkeiten direkt in dein Postfach.
           </p>
@@ -67,7 +67,7 @@ export function PremiumNewsletter() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Deine E-Mail-Adresse"
-              className="flex-1 px-5 py-4 bg-background/10 border border-background/20 text-background placeholder:text-background/50 text-sm focus:outline-none focus:border-background/50 transition-colors"
+              className="flex-1 px-5 py-4 bg-transparent border border-border text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:border-foreground/50 transition-colors"
             />
             <button
               type="submit"
@@ -87,9 +87,9 @@ export function PremiumNewsletter() {
               onChange={(e) => setPrivacyAccepted(e.target.checked)}
               className="mt-0.5 w-4 h-4 accent-accent flex-shrink-0"
             />
-            <span className="text-[11px] text-background/50 leading-relaxed text-left">
+            <span className="text-[11px] text-muted-foreground leading-relaxed text-left">
               Ich bin mit dem Erhalt des Newsletters einverstanden und habe die{' '}
-              <Link to="/privacy" className="underline hover:text-background/70">
+              <Link to="/privacy" className="underline hover:text-foreground">
                 Datenschutzerklärung
               </Link>{' '}gelesen. *
             </span>
