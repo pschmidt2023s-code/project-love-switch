@@ -1253,6 +1253,7 @@ export type Database = {
           id: string
           is_live: boolean
           loop_start_epoch: number
+          mode: string
           playlist_id: string | null
           updated_at: string
         }
@@ -1261,6 +1262,7 @@ export type Database = {
           id?: string
           is_live?: boolean
           loop_start_epoch?: number
+          mode?: string
           playlist_id?: string | null
           updated_at?: string
         }
@@ -1269,6 +1271,7 @@ export type Database = {
           id?: string
           is_live?: boolean
           loop_start_epoch?: number
+          mode?: string
           playlist_id?: string | null
           updated_at?: string
         }
@@ -1278,6 +1281,50 @@ export type Database = {
             columns: ["playlist_id"]
             isOneToOne: false
             referencedRelation: "playlists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      radio_schedule: {
+        Row: {
+          created_at: string
+          day_of_week: number | null
+          end_time: string
+          id: string
+          is_active: boolean
+          priority: number
+          start_time: string
+          track_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          day_of_week?: number | null
+          end_time: string
+          id?: string
+          is_active?: boolean
+          priority?: number
+          start_time: string
+          track_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          day_of_week?: number | null
+          end_time?: string
+          id?: string
+          is_active?: boolean
+          priority?: number
+          start_time?: string
+          track_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "radio_schedule_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks"
             referencedColumns: ["id"]
           },
         ]
