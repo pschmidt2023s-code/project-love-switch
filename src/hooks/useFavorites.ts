@@ -51,6 +51,15 @@ export function useFavorites() {
       return false;
     }
 
+    // Optimistic update
+    const optimisticItem: FavoriteItem = {
+      id: crypto.randomUUID(),
+      product_id: productId,
+      created_at: new Date().toISOString(),
+    };
+    const previousFavorites = [...favorites];
+    setFavorites([...favorites, optimisticItem]);
+
     try {
       const { error } = await supabase
         .from('wishlist')
@@ -58,6 +67,7 @@ export function useFavorites() {
 
       if (error) throw error;
 
+      // Sync with server
       await loadFavorites();
       toast({
         title: 'Favorit hinzugefügt',
@@ -65,6 +75,8 @@ export function useFavorites() {
       });
       return true;
     } catch (error) {
+      // Rollback
+      setFavorites(previousFavorites);
       console.error('Error adding favorite:', error);
       toast({
         title: 'Fehler',
@@ -73,10 +85,14 @@ export function useFavorites() {
       });
       return false;
     }
-  }, [user, loadFavorites, toast]);
+  }, [user, favorites, loadFavorites, toast]);
 
   const removeFromFavorites = useCallback(async (productId: string) => {
     if (!user) return false;
+
+    // Optimistic update
+    const previousFavorites = [...favorites];
+    setFavorites(favorites.filter(f => f.product_id !== productId));
 
     try {
       const { error } = await supabase
@@ -87,17 +103,18 @@ export function useFavorites() {
 
       if (error) throw error;
 
-      await loadFavorites();
       toast({
         title: 'Favorit entfernt',
         description: 'Das Produkt wurde aus deinen Favoriten entfernt.',
       });
       return true;
     } catch (error) {
+      // Rollback
+      setFavorites(previousFavorites);
       console.error('Error removing favorite:', error);
       return false;
     }
-  }, [user, loadFavorites, toast]);
+  }, [user, favorites, loadFavorites, toast]);
 
   const isFavorite = useCallback((productId: string) => {
     return favorites.some(f => f.product_id === productId);

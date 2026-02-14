@@ -12,8 +12,20 @@ export const CSP_DIRECTIVES = {
   'frame-src': "'self' https://js.stripe.com https://checkout.stripe.com",
   'object-src': "'none'",
   'base-uri': "'self'",
-  'form-action': "'self'"
+  'form-action': "'self'",
+  'connect-src': "'self' https://*.supabase.co https://js.stripe.com https://api-m.paypal.com",
 };
+
+// CORS Whitelist - allowed origins for API requests
+export const CORS_ALLOWED_ORIGINS = [
+  'https://sweet-code-shift.lovable.app',
+  'https://id-preview--0f05d7ff-3aba-4284-855a-1b1053ef7a3e.lovable.app',
+];
+
+export function isAllowedOrigin(origin: string | null): boolean {
+  if (!origin) return false;
+  return CORS_ALLOWED_ORIGINS.some(allowed => origin === allowed || origin.endsWith('.lovable.app'));
+}
 
 // Generate CSP header string
 export const generateCSPHeader = (): string => {

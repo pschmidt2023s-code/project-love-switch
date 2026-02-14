@@ -27,6 +27,11 @@ serve(async (req) => {
     
     const requestBody = await req.json();
     const { items, payment_method, user_id: bodyUserId, origin: bodyOrigin } = requestBody;
+    // Idempotency key support
+    const idempotencyKey = req.headers.get('x-idempotency-key') || requestBody.idempotency_key || null;
+    if (idempotencyKey) {
+      logStep("Idempotency key received", { key: idempotencyKey });
+    }
     // Support both 'email' and 'bodyEmail' field names for backwards compatibility
     const bodyEmail = requestBody.email || requestBody.bodyEmail || null;
     const origin = req.headers.get("origin") || bodyOrigin || "https://sweet-code-shift.lovable.app";
