@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Heart, ShoppingBag, Truck, Shield, Plus, Minus, Star, RotateCcw, Sparkles, Leaf, ArrowLeft, Clock, Wind, Droplet, Anchor } from 'lucide-react';
+import { DeliveryEstimate } from '@/components/DeliveryEstimate';
 import { motion } from 'framer-motion';
 import { SwipeGallery } from '@/components/SwipeGallery';
 import { useCart } from '@/contexts/CartContext';
@@ -352,12 +353,11 @@ export default function ProductDetail() {
                 </button>
               </div>
 
+              {/* Delivery Estimate */}
+              <DeliveryEstimate inStock={inStock} />
+
               {/* Trust Icons Row */}
-              <div className="flex items-center gap-6 pt-2">
-                <div className="flex items-center gap-1.5 text-muted-foreground">
-                  <Truck className="w-3.5 h-3.5" strokeWidth={1.5} />
-                  <span className="text-[10px]">Gratis ab 50€</span>
-                </div>
+              <div className="flex items-center gap-6 pt-1">
                 <div className="flex items-center gap-1.5 text-muted-foreground">
                   <Shield className="w-3.5 h-3.5" strokeWidth={1.5} />
                   <span className="text-[10px]">Sichere Zahlung</span>
@@ -672,21 +672,20 @@ export default function ProductDetail() {
               />
             )}
 
-            {/* Trust Icons - inline */}
-            <div className="flex items-center gap-6 pt-2">
-              <div className="flex items-center gap-1.5 text-muted-foreground">
-                <Truck className="w-3.5 h-3.5" strokeWidth={1.5} />
-                <span className="text-[10px]">Gratis ab 50€</span>
+              {/* Delivery Estimate */}
+              <DeliveryEstimate inStock={inStock} />
+
+              {/* Trust Icons - inline */}
+              <div className="flex items-center gap-6 pt-1">
+                <div className="flex items-center gap-1.5 text-muted-foreground">
+                  <Shield className="w-3.5 h-3.5" strokeWidth={1.5} />
+                  <span className="text-[10px]">Sichere Zahlung</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-muted-foreground">
+                  <RotateCcw className="w-3.5 h-3.5" strokeWidth={1.5} />
+                  <span className="text-[10px]">14 Tage Rückgabe</span>
+                </div>
               </div>
-              <div className="flex items-center gap-1.5 text-muted-foreground">
-                <Shield className="w-3.5 h-3.5" strokeWidth={1.5} />
-                <span className="text-[10px]">Sichere Zahlung</span>
-              </div>
-              <div className="flex items-center gap-1.5 text-muted-foreground">
-                <RotateCcw className="w-3.5 h-3.5" strokeWidth={1.5} />
-                <span className="text-[10px]">14 Tage Rückgabe</span>
-              </div>
-            </div>
 
             <div className="h-px bg-border" />
 
