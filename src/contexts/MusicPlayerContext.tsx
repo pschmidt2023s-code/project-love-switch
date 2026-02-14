@@ -121,19 +121,7 @@ export function MusicPlayerProvider({ children }: { children: ReactNode }) {
       const track = state.queue[queueIndex];
       setState(s => ({ ...s, currentTrack: track, currentTime: 0 }));
       
-      // Skip HTMLAudioElement for YouTube tracks - handled by YouTubePlayer component
-      if (track.youtube_url) {
-        // Pause any playing HTML audio first
-        if (audioRef.current) {
-          audioRef.current.pause();
-          audioRef.current.src = '';
-        }
-        setState(s => ({ ...s, isPlaying: true }));
-        console.log('[MusicPlayer] YouTube track selected:', track.title, track.youtube_url);
-        return;
-      }
-      
-      if (audioRef.current) {
+      if (audioRef.current && track.audio_url) {
         audioRef.current.src = track.audio_url;
         audioRef.current.volume = state.volume;
         audioRef.current.play().catch((e) => {
@@ -149,7 +137,6 @@ export function MusicPlayerProvider({ children }: { children: ReactNode }) {
       setState(s => {
         const idx = s.queue.findIndex(t => t.id === track.id);
         if (idx >= 0) {
-          // Use setTimeout to let state settle, then set index
           setTimeout(() => setQueueIndex(idx), 0);
           return s;
         } else {
@@ -159,12 +146,8 @@ export function MusicPlayerProvider({ children }: { children: ReactNode }) {
         }
       });
     } else if (audioRef.current && state.currentTrack) {
-      if (state.currentTrack.youtube_url) {
-        setState(s => ({ ...s, isPlaying: true }));
-      } else {
-        audioRef.current.play().catch(() => {});
-        setState(s => ({ ...s, isPlaying: true }));
-      }
+      audioRef.current.play().catch(() => {});
+      setState(s => ({ ...s, isPlaying: true }));
     }
   }, [state.currentTrack]);
 
