@@ -76,6 +76,7 @@ export default function Music() {
     const current = player.currentTrack;
     if (current?.youtube_url) {
       const vid = extractYouTubeId(current.youtube_url);
+      console.log('[Music] Extracted YouTube ID:', vid);
       setYtVideoId(vid);
     } else {
       setYtVideoId(null);
@@ -265,20 +266,10 @@ export default function Music() {
     // Could sync to player state
   };
 
+  
+
   return (
     <PageLayout mainClassName="container mx-auto px-4 py-24 pb-32">
-      {/* Hidden YouTube player for track playback */}
-      {ytVideoId && player.currentTrack && (
-        <YouTubePlayer
-          videoId={ytVideoId}
-          isPlaying={player.isPlaying}
-          volume={player.volume}
-          isMuted={player.isMuted}
-          onTimeUpdate={handleYtTimeUpdate}
-          onEnded={handleYtEnded}
-          onDuration={handleYtDuration}
-        />
-      )}
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
@@ -419,19 +410,33 @@ export default function Music() {
       {/* Now Playing */}
       {player.currentTrack && (
         <div className="mb-8 p-6 rounded-xl bg-card border border-border">
-          <div className="flex items-center gap-6">
-            <div className={cn(
-              "w-24 h-24 rounded-lg bg-muted flex-shrink-0 overflow-hidden",
-              player.isPlaying && "ring-2 ring-accent ring-offset-2 ring-offset-background"
-            )}>
-              {player.currentTrack.cover_url ? (
-                <img src={player.currentTrack.cover_url} alt="" className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <Disc3 className={cn("h-10 w-10 text-muted-foreground", player.isPlaying && "animate-spin")} style={{ animationDuration: '3s' }} />
-                </div>
-              )}
-            </div>
+          <div className="flex flex-col sm:flex-row items-start gap-6">
+            {ytVideoId ? (
+              <div className="w-full sm:w-auto sm:min-w-[320px] max-w-md">
+                <YouTubePlayer
+                  videoId={ytVideoId}
+                  isPlaying={player.isPlaying}
+                  volume={player.volume}
+                  isMuted={player.isMuted}
+                  onTimeUpdate={handleYtTimeUpdate}
+                  onEnded={handleYtEnded}
+                  onDuration={handleYtDuration}
+                />
+              </div>
+            ) : (
+              <div className={cn(
+                "w-24 h-24 rounded-lg bg-muted flex-shrink-0 overflow-hidden",
+                player.isPlaying && "ring-2 ring-accent ring-offset-2 ring-offset-background"
+              )}>
+                {player.currentTrack.cover_url ? (
+                  <img src={player.currentTrack.cover_url} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <Disc3 className={cn("h-10 w-10 text-muted-foreground", player.isPlaying && "animate-spin")} style={{ animationDuration: '3s' }} />
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="flex-1 min-w-0">
               <h2 className="text-xl font-bold truncate">{player.currentTrack.title}</h2>
