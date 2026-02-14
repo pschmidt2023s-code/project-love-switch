@@ -65,30 +65,30 @@ export default function Newsletter() {
         canonicalPath="/newsletter"
       />
 
-      {/* Full-height hero with inverted theme */}
-      <section className="bg-foreground text-background py-20 lg:py-32">
+      {/* Hero */}
+      <section className="py-20 lg:py-32 border-b border-border">
         <div className="container-premium">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
             {/* Left: Content */}
             <div>
               <div className="flex items-center gap-3 mb-8">
                 <Sparkles className="w-5 h-5 text-accent" strokeWidth={1.5} />
-                <span className="text-[10px] tracking-[0.3em] uppercase text-background/60">
+                <span className="text-[10px] tracking-[0.3em] uppercase text-muted-foreground">
                   10% Willkommensrabatt
                 </span>
               </div>
               
-              <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl leading-[0.95] mb-6">
+              <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl text-foreground leading-[0.95] mb-6">
                 Exklusive
                 <br />
                 Düfte.
                 <br />
-                <span className="text-background/40">Direkt in</span>
+                <span className="text-muted-foreground">Direkt in</span>
                 <br />
-                <span className="text-background/40">Ihr Postfach.</span>
+                <span className="text-muted-foreground">Ihr Postfach.</span>
               </h1>
               
-              <p className="text-background/60 text-sm lg:text-base leading-relaxed max-w-md">
+              <p className="text-muted-foreground text-sm lg:text-base leading-relaxed max-w-md">
                 Erfahren Sie als Erster von neuen Düften, 
                 erhalten Sie exklusive Angebote und Parfüm-Expertise.
               </p>
@@ -97,10 +97,10 @@ export default function Newsletter() {
             {/* Right: Form */}
             <div>
               {success ? (
-                <div className="text-center space-y-6 py-12 px-8 border border-background/10">
+                <div className="text-center space-y-6 py-12 px-8 border border-border">
                   <CheckCircle className="w-12 h-12 text-accent mx-auto" strokeWidth={1.5} />
-                  <h2 className="font-display text-2xl">Vielen Dank!</h2>
-                  <p className="text-background/60 text-sm leading-relaxed">
+                  <h2 className="font-display text-2xl text-foreground">Vielen Dank!</h2>
+                  <p className="text-muted-foreground text-sm leading-relaxed">
                     Sie wurden erfolgreich angemeldet.
                     Prüfen Sie Ihr Postfach für Ihren 10% Rabattcode.
                   </p>
@@ -109,7 +109,7 @@ export default function Newsletter() {
                 <div className="space-y-8">
                   <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="space-y-2">
-                      <label className="text-[10px] tracking-[0.15em] uppercase text-background/50">
+                      <label className="text-[10px] tracking-[0.15em] uppercase text-muted-foreground">
                         E-Mail-Adresse
                       </label>
                       <input
@@ -118,19 +118,19 @@ export default function Newsletter() {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         required
-                        className="flex h-14 w-full bg-transparent border border-background/20 px-4 py-3 text-base text-background placeholder:text-background/30 focus:outline-none focus:border-background/60 transition-colors"
+                        className="flex h-14 w-full bg-transparent border border-border px-4 py-3 text-base text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-accent transition-colors"
                       />
                     </div>
                     <button
                       type="submit"
                       disabled={loading}
-                      className="w-full h-14 inline-flex items-center justify-center gap-2 bg-background text-foreground text-[11px] tracking-[0.15em] uppercase font-medium hover:bg-background/90 transition-colors disabled:opacity-50"
+                      className="w-full h-14 inline-flex items-center justify-center gap-2 bg-foreground text-background text-[11px] tracking-[0.15em] uppercase font-medium hover:bg-foreground/90 transition-colors disabled:opacity-50"
                     >
                       {loading ? 'Wird angemeldet...' : 'Jetzt anmelden'}
                       <ArrowRight className="w-4 h-4" strokeWidth={1.5} />
                     </button>
                   </form>
-                  <p className="text-[10px] text-background/30 leading-relaxed">
+                  <p className="text-[10px] text-muted-foreground leading-relaxed">
                     Kein Spam. Maximal 2 E-Mails pro Monat. Jederzeit abbestellbar.
                   </p>
                 </div>
