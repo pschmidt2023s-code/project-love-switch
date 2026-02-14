@@ -71,7 +71,14 @@ export default function BlogPost() {
     );
   }
 
-  // Simple markdown-like rendering
+  // Simple markdown-like rendering (safe, no dangerouslySetInnerHTML)
+  const renderBoldText = (text: string, keyPrefix: string) => {
+    const parts = text.split(/\*\*(.*?)\*\*/g);
+    return parts.map((part, j) =>
+      j % 2 === 1 ? <strong key={`${keyPrefix}-${j}`} className="text-foreground font-medium">{part}</strong> : part
+    );
+  };
+
   const renderContent = (content: string) => {
     return content.split('\n').map((line, i) => {
       if (line.startsWith('### ')) return <h3 key={i} className="text-lg font-display text-foreground mt-8 mb-3">{line.slice(4)}</h3>;
@@ -80,9 +87,7 @@ export default function BlogPost() {
       if (line.startsWith('- ')) return <li key={i} className="ml-4 text-muted-foreground leading-relaxed">{line.slice(2)}</li>;
       if (line.match(/^\d+\.\s/)) return <li key={i} className="ml-4 text-muted-foreground leading-relaxed list-decimal">{line.replace(/^\d+\.\s/, '')}</li>;
       if (line.trim() === '') return <br key={i} />;
-      // Bold text
-      const boldLine = line.replace(/\*\*(.*?)\*\*/g, '<strong class="text-foreground font-medium">$1</strong>');
-      return <p key={i} className="text-sm text-muted-foreground leading-relaxed" dangerouslySetInnerHTML={{ __html: boldLine }} />;
+      return <p key={i} className="text-sm text-muted-foreground leading-relaxed">{renderBoldText(line, `p${i}`)}</p>;
     });
   };
 
