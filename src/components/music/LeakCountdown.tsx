@@ -147,22 +147,17 @@ export function LeakCountdown() {
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            <span className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
               {isLive ? '🔥 Leak ist LIVE' : 'Nächster Leak'}
             </span>
           </div>
-          <p className="font-bold text-lg truncate">{nextLeak.track.title}</p>
-          <p className="text-sm text-muted-foreground">{nextLeak.track.artist}</p>
+          <p className="font-bold text-lg">
+            {isLive ? 'Jetzt reinhören!' : `in ${formatCountdown(nextLeak.startsIn)}`}
+          </p>
         </div>
 
         <div className="text-right flex-shrink-0">
-          <div className={cn(
-            "text-2xl font-mono font-bold tabular-nums",
-            isLive ? "text-destructive" : isImminent ? "text-accent" : "text-foreground"
-          )}>
-            {formatCountdown(nextLeak.startsIn)}
-          </div>
-          <div className="flex items-center gap-1 justify-end text-xs text-muted-foreground mt-1">
+          <div className="flex items-center gap-1 justify-end text-sm text-muted-foreground">
             <Clock className="h-3 w-3" />
             <span>{nextLeak.dayLabel} {nextLeak.timeLabel}</span>
           </div>
