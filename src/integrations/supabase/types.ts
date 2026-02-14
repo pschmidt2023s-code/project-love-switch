@@ -1829,6 +1829,7 @@ export type Database = {
           id: string
           is_active: boolean | null
           is_external: boolean
+          is_hidden: boolean
           key_signature: string | null
           mood: string | null
           play_count: number | null
@@ -1853,6 +1854,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           is_external?: boolean
+          is_hidden?: boolean
           key_signature?: string | null
           mood?: string | null
           play_count?: number | null
@@ -1877,6 +1879,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           is_external?: boolean
+          is_hidden?: boolean
           key_signature?: string | null
           mood?: string | null
           play_count?: number | null

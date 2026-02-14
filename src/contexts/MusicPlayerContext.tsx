@@ -13,6 +13,8 @@ export interface Track {
   is_external: boolean;
   mood?: string;
   energy?: string;
+  youtube_url?: string | null;
+  is_hidden?: boolean;
 }
 
 interface MusicPlayerState {
@@ -118,6 +120,13 @@ export function MusicPlayerProvider({ children }: { children: ReactNode }) {
     if (queueIndex >= 0 && queueIndex < state.queue.length) {
       const track = state.queue[queueIndex];
       setState(s => ({ ...s, currentTrack: track, currentTime: 0 }));
+      
+      // Skip HTMLAudioElement for YouTube tracks - handled by YouTubePlayer component
+      if (track.youtube_url) {
+        setState(s => ({ ...s, isPlaying: true }));
+        return;
+      }
+      
       if (audioRef.current) {
         audioRef.current.src = track.audio_url;
         audioRef.current.volume = state.volume;

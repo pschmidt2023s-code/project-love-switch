@@ -36,9 +36,9 @@ export function RadioMode() {
     },
   });
 
-  // Fetch all tracks
+  // Fetch ALL tracks including hidden (for radio playback of leaks)
   const { data: tracks = [] } = useQuery({
-    queryKey: ['tracks'],
+    queryKey: ['tracks-radio-all'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('tracks')
@@ -46,7 +46,7 @@ export function RadioMode() {
         .eq('is_active', true)
         .order('sort_order', { ascending: true });
       if (error) throw error;
-      return data as (Track & { youtube_url?: string })[];
+      return data as (Track & { youtube_url?: string; is_hidden?: boolean })[];
     },
   });
 
