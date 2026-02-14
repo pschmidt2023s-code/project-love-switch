@@ -9,8 +9,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import {
-  User, Package, MapPin, LogOut, Edit2, Plus, Trash2, ChevronRight
+  User, Package, MapPin, LogOut, Edit2, Plus, Trash2, ChevronRight, Award
 } from 'lucide-react';
+import { LoyaltyProgress } from '@/components/LoyaltyProgress';
 
 interface Profile {
   id: string;
@@ -18,6 +19,9 @@ interface Profile {
   first_name: string | null;
   last_name: string | null;
   phone: string | null;
+  tier: string | null;
+  total_spent: number | null;
+  payback_balance: number | null;
 }
 
 interface Address {
@@ -45,7 +49,7 @@ export default function Account() {
   const { user, signOut, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'profile' | 'orders' | 'addresses'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'orders' | 'addresses' | 'loyalty'>('profile');
   const [profile, setProfile] = useState<Profile | null>(null);
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
@@ -110,6 +114,7 @@ export default function Account() {
 
   const tabs = [
     { id: 'profile' as const, label: 'Profil', icon: User },
+    { id: 'loyalty' as const, label: 'Treueprogramm', icon: Award },
     { id: 'orders' as const, label: 'Bestellungen', icon: Package },
     { id: 'addresses' as const, label: 'Adressen', icon: MapPin },
   ];
@@ -236,6 +241,18 @@ export default function Account() {
                     ))}
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* Loyalty Tab */}
+            {activeTab === 'loyalty' && (
+              <div className="space-y-8">
+                <h2 className="text-[10px] tracking-[0.2em] uppercase text-accent">Treueprogramm</h2>
+                <LoyaltyProgress
+                  tier={profile?.tier || 'bronze'}
+                  totalSpent={Number(profile?.total_spent) || 0}
+                  paybackBalance={Number(profile?.payback_balance) || 0}
+                />
               </div>
             )}
 

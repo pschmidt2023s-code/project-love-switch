@@ -25,6 +25,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
+
+        // Send welcome email on first sign up confirmation
+        if (event === 'SIGNED_IN' && session?.user) {
+          const isNewUser = session.user.created_at && 
+            (Date.now() - new Date(session.user.created_at).getTime()) < 60000; // within 1 minute
+          if (isNewUser) {
+            const meta = session.user.user_metadata;
+            supabase.functions.invoke('send-welcome-email', {
+              body: { 
+                email: session.user.email, 
+                firstName: meta?.first_name || meta?.full_name?.split(' ')[0] || '' 
+              }
+            }).catch(console.error);
+          }
+        }
       }
     );
 
