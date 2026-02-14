@@ -18,35 +18,64 @@ interface ManageSubscriptionRequest {
   email?: string;
 }
 
-// Simple token generation using base64 encoding of subscription ID + timestamp + secret
-function generateToken(subscriptionId: string): string {
-  const secret = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!.slice(0, 32);
-  const timestamp = Date.now();
-  const payload = `${subscriptionId}:${timestamp}:${secret}`;
-  return btoa(payload).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+// HMAC-based token generation using crypto.subtle
+const TOKEN_SECRET_KEY = Deno.env.get("WEBHOOK_SECRET") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!.slice(0, 32);
+
+async function getHmacKey(): Promise<CryptoKey> {
+  const encoder = new TextEncoder();
+  return await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(TOKEN_SECRET_KEY),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign", "verify"]
+  );
 }
 
-function validateToken(token: string, subscriptionId: string): boolean {
+function arrayBufferToHex(buffer: ArrayBuffer): string {
+  return [...new Uint8Array(buffer)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function generateToken(subscriptionId: string): Promise<string> {
+  const timestamp = Date.now().toString();
+  const key = await getHmacKey();
+  const encoder = new TextEncoder();
+  const data = encoder.encode(`${subscriptionId}:${timestamp}`);
+  const signature = await crypto.subtle.sign("HMAC", key, data);
+  const sig = arrayBufferToHex(signature);
+  // Format: timestamp.signature (base64url encoded)
+  return btoa(`${timestamp}:${sig}`).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+}
+
+async function validateToken(token: string, subscriptionId: string): Promise<boolean> {
   try {
     const decoded = atob(token.replace(/-/g, '+').replace(/_/g, '/'));
-    const parts = decoded.split(':');
-    if (parts.length !== 3) return false;
+    const colonIdx = decoded.indexOf(':');
+    if (colonIdx === -1) return false;
     
-    const [tokenSubId, timestampStr, tokenSecret] = parts;
-    const secret = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!.slice(0, 32);
-    
-    // Check subscription ID matches
-    if (tokenSubId !== subscriptionId) return false;
-    
-    // Check secret matches
-    if (tokenSecret !== secret) return false;
+    const timestampStr = decoded.slice(0, colonIdx);
+    const providedSig = decoded.slice(colonIdx + 1);
     
     // Check token is not expired (valid for 30 days)
     const timestamp = parseInt(timestampStr);
+    if (isNaN(timestamp)) return false;
     const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
     if (Date.now() - timestamp > thirtyDaysMs) return false;
     
-    return true;
+    // Verify HMAC signature
+    const key = await getHmacKey();
+    const encoder = new TextEncoder();
+    const data = encoder.encode(`${subscriptionId}:${timestampStr}`);
+    const expectedSig = await crypto.subtle.sign("HMAC", key, data);
+    const expectedHex = arrayBufferToHex(expectedSig);
+    
+    // Constant-time comparison
+    if (providedSig.length !== expectedHex.length) return false;
+    let diff = 0;
+    for (let i = 0; i < providedSig.length; i++) {
+      diff |= providedSig.charCodeAt(i) ^ expectedHex.charCodeAt(i);
+    }
+    return diff === 0;
   } catch {
     return false;
   }
@@ -145,7 +174,7 @@ serve(async (req) => {
         });
       }
 
-      const magicToken = generateToken(subscription.id);
+      const magicToken = await generateToken(subscription.id);
       const baseUrl = req.headers.get("origin") || "https://aldenairperfumes.de";
       const manageUrl = `${baseUrl}/manage-subscription?id=${subscription.id}&token=${magicToken}`;
 
@@ -203,7 +232,7 @@ serve(async (req) => {
     }
 
     // Validate token
-    if (!validateToken(token, subscriptionId)) {
+    if (!(await validateToken(token, subscriptionId))) {
       return new Response(JSON.stringify({ error: "Invalid or expired token" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
