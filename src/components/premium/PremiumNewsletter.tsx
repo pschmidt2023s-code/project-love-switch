@@ -81,12 +81,16 @@ export function PremiumNewsletter() {
           
           {/* Privacy Consent */}
           <label className="flex items-start gap-3 cursor-pointer mt-4 max-w-lg mx-auto">
-            <input
-              type="checkbox"
-              checked={privacyAccepted}
-              onChange={(e) => setPrivacyAccepted(e.target.checked)}
-              className="mt-0.5 w-4 h-4 accent-accent flex-shrink-0"
-            />
+            <span 
+              onClick={() => setPrivacyAccepted(!privacyAccepted)}
+              className={`mt-0.5 w-4 h-4 flex-shrink-0 border rounded-sm flex items-center justify-center cursor-pointer transition-colors ${privacyAccepted ? 'bg-accent border-accent' : 'border-muted-foreground/50 bg-transparent'}`}
+            >
+              {privacyAccepted && (
+                <svg className="w-3 h-3 text-accent-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              )}
+            </span>
             <span className="text-[11px] text-muted-foreground leading-relaxed text-left">
               Ich bin mit dem Erhalt des Newsletters einverstanden und habe die{' '}
               <Link to="/privacy" className="underline hover:text-foreground">
