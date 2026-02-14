@@ -36,6 +36,7 @@ interface ProductVariant {
   original_price: number | null;
   stock: number | null;
   sku: string | null;
+  image: string | null;
 }
 
 interface Category {

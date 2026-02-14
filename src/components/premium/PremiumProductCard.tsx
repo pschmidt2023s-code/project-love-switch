@@ -54,6 +54,8 @@ export function PremiumProductCard({
           alt={name}
           className={`w-full h-full object-cover ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
           loading="lazy"
+          decoding="async"
+          fetchPriority="auto"
           onLoad={() => setImageLoaded(true)}
           animate={{ scale: isHovered ? 1.05 : 1 }}
           transition={{ duration: 0.6, ease: [0.25, 0.1, 0.25, 1] }}

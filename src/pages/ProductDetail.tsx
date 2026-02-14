@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Heart, ShoppingBag, Truck, Shield, Plus, Minus, Star, RotateCcw, Sparkles, Leaf, ArrowLeft, Clock, Wind, Droplet, Anchor } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { SwipeGallery } from '@/components/SwipeGallery';
 import { useCart } from '@/contexts/CartContext';
 import { useProduct } from '@/hooks/useProducts';
 import { useExternalProduct } from '@/hooks/useExternalProducts';
@@ -236,26 +237,24 @@ export default function ProductDetail() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16">
             {/* Image */}
             <div className="relative lg:sticky lg:top-24 lg:self-start">
-              <div className="aspect-[3/4] bg-muted overflow-hidden">
-                <img
-                  src={externalProduct.image_url || 'https://images.unsplash.com/photo-1541643600914-78b084683601?w=800&h=1000&fit=crop'}
-                  alt={externalProduct.name}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <button
-                className="absolute top-4 right-4 w-10 h-10 bg-background/90 backdrop-blur-sm flex items-center justify-center hover:bg-background transition-colors border border-border"
-                aria-label="Zu Favoriten hinzufügen"
+              <SwipeGallery
+                images={[externalProduct.image_url || 'https://images.unsplash.com/photo-1541643600914-78b084683601?w=800&h=1000&fit=crop']}
+                alt={externalProduct.name}
               >
-                <Heart className="w-5 h-5" strokeWidth={1.5} />
-              </button>
-              {!inStock && (
-                <div className="absolute top-4 left-4">
-                  <span className="px-3 py-1.5 bg-foreground text-background text-[10px] tracking-[0.15em] uppercase font-medium">
-                    Ausverkauft
-                  </span>
-                </div>
-              )}
+                <button
+                  className="absolute top-4 right-4 z-10 w-10 h-10 bg-background/90 backdrop-blur-sm flex items-center justify-center hover:bg-background transition-colors border border-border"
+                  aria-label="Zu Favoriten hinzufügen"
+                >
+                  <Heart className="w-5 h-5" strokeWidth={1.5} />
+                </button>
+                {!inStock && (
+                  <div className="absolute top-4 left-4 z-10">
+                    <span className="px-3 py-1.5 bg-foreground text-background text-[10px] tracking-[0.15em] uppercase font-medium">
+                      Ausverkauft
+                    </span>
+                  </div>
+                )}
+              </SwipeGallery>
             </div>
 
             {/* Product Info */}
@@ -493,35 +492,41 @@ export default function ProductDetail() {
         />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16">
-          {/* Product Image - sticky on desktop */}
+          {/* Product Image - sticky on desktop, swipeable gallery */}
           <div className="relative lg:sticky lg:top-24 lg:self-start">
-            <div className="aspect-[3/4] bg-muted overflow-hidden">
-              <img
-                src={product.image_url || 'https://images.unsplash.com/photo-1541643600914-78b084683601?w=800&h=1000&fit=crop'}
-                alt={product.name}
-                className="w-full h-full object-cover"
-              />
-            </div>
-
-            <button
-              className="absolute top-4 right-4 w-10 h-10 bg-background/90 backdrop-blur-sm flex items-center justify-center hover:bg-background transition-colors border border-border"
-              aria-label="Zu Favoriten hinzufügen"
+            <SwipeGallery
+              images={(() => {
+                const imgs: string[] = [];
+                if (product.image_url) imgs.push(product.image_url);
+                // Add variant images as gallery items
+                variants.forEach(v => {
+                  if (v.image && !imgs.includes(v.image)) imgs.push(v.image);
+                });
+                if (imgs.length === 0) imgs.push('https://images.unsplash.com/photo-1541643600914-78b084683601?w=800&h=1000&fit=crop');
+                return imgs;
+              })()}
+              alt={product.name}
             >
-              <Heart className="w-5 h-5" strokeWidth={1.5} />
-            </button>
+              <button
+                className="absolute top-4 right-4 z-10 w-10 h-10 bg-background/90 backdrop-blur-sm flex items-center justify-center hover:bg-background transition-colors border border-border"
+                aria-label="Zu Favoriten hinzufügen"
+              >
+                <Heart className="w-5 h-5" strokeWidth={1.5} />
+              </button>
 
-            <div className="absolute top-4 left-4 flex flex-col gap-2">
-              {discount > 0 && (
-                <span className="px-3 py-1.5 bg-destructive text-destructive-foreground text-[10px] tracking-[0.15em] uppercase font-medium">
-                  -{discount}%
-                </span>
-              )}
-              {!inStock && (
-                <span className="px-3 py-1.5 bg-foreground text-background text-[10px] tracking-[0.15em] uppercase font-medium">
-                  Ausverkauft
-                </span>
-              )}
-            </div>
+              <div className="absolute top-4 left-4 z-10 flex flex-col gap-2">
+                {discount > 0 && (
+                  <span className="px-3 py-1.5 bg-destructive text-destructive-foreground text-[10px] tracking-[0.15em] uppercase font-medium">
+                    -{discount}%
+                  </span>
+                )}
+                {!inStock && (
+                  <span className="px-3 py-1.5 bg-foreground text-background text-[10px] tracking-[0.15em] uppercase font-medium">
+                    Ausverkauft
+                  </span>
+                )}
+              </div>
+            </SwipeGallery>
           </div>
 
           {/* Product Info */}
