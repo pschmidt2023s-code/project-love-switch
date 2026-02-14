@@ -158,7 +158,7 @@ function App() {
                     <ChatWidget />
                     <ReviewPrompt />
                     <PushNotificationPrompt />
-                    <ScrollToTop />
+                    
                     <Toaster />
                     <Sonner />
                   </BrowserRouter>
