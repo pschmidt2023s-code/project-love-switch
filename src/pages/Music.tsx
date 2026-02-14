@@ -5,18 +5,16 @@ import { useMusicPlayer, Track } from '@/contexts/MusicPlayerContext';
 import { useAdminRole } from '@/hooks/useAdminRole';
 import { PageLayout } from '@/components/PageLayout';
 import { RadioMode } from '@/components/music/RadioMode';
-import { LeakCountdown } from '@/components/music/LeakCountdown';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
-import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { 
   Play, Pause, SkipForward, SkipBack, Volume2, VolumeX, 
-  Upload, Plus, Trash2, Sparkles, Music as MusicIcon, 
-  ListMusic, Clock, Disc3, EyeOff, ExternalLink
+  Upload, Trash2, Music as MusicIcon, 
+  ListMusic, Clock, Disc3
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -31,20 +29,14 @@ export default function Music() {
   const { isAdmin } = useAdminRole();
   const player = useMusicPlayer();
   const [showUpload, setShowUpload] = useState(false);
-  const [automixing, setAutomixing] = useState(false);
 
   const [uploadForm, setUploadForm] = useState({
     title: '', artist: 'ALDENAIR',
     audioFile: null as File | null,
     coverFile: null as File | null,
-    externalUrl: '',
-    sourceType: 'file' as 'file' | 'url',
-    isHidden: false,
-    scheduleTime: '',
   });
 
-  // Fetch ALL tracks (admin sees hidden too)
-  const { data: allTracks = [], isLoading } = useQuery({
+  const { data: tracks = [], isLoading } = useQuery({
     queryKey: ['tracks'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -53,44 +45,29 @@ export default function Music() {
         .eq('is_active', true)
         .order('sort_order', { ascending: true });
       if (error) throw error;
-      return data as (Track & { is_hidden?: boolean })[];
+      return data as Track[];
     },
   });
 
-  const publicTracks = allTracks.filter(t => !t.is_hidden);
-  // Non-admins never see hidden/leak tracks in the list
-  const displayTracks = isAdmin ? allTracks : publicTracks;
-  // Only public tracks for playback queue (leaks only via radio schedule)
-  const tracks = publicTracks;
-
-  const resetForm = () => {
-    setUploadForm({ title: '', artist: 'ALDENAIR', audioFile: null, coverFile: null, externalUrl: '', sourceType: 'file', isHidden: false, scheduleTime: '' });
-  };
-
-  // Upload track (file/url) - NO YouTube dependency
+  // Upload track
   const uploadMutation = useMutation({
     mutationFn: async () => {
-      let audioUrl = uploadForm.externalUrl;
+      if (!uploadForm.audioFile) throw new Error('Keine Audio-Datei');
+      
+      const file = uploadForm.audioFile;
+      const ext = file.name.split('.').pop()?.toLowerCase() || 'wav';
+      const contentType = ext === 'wav' ? 'audio/wav' : ext === 'mp3' ? 'audio/mpeg' : file.type || 'application/octet-stream';
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const path = `tracks/${Date.now()}-${safeName}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('audio')
+        .upload(path, file, { contentType, upsert: false });
+      if (uploadError) throw uploadError;
+      const { data: urlData } = supabase.storage.from('audio').getPublicUrl(path);
+      const audioUrl = urlData.publicUrl;
+
       let coverUrl: string | null = null;
-
-      // Upload audio file (use explicit content type for mobile compatibility)
-      if (uploadForm.sourceType === 'file' && uploadForm.audioFile) {
-        const file = uploadForm.audioFile;
-        const ext = file.name.split('.').pop()?.toLowerCase() || 'wav';
-        const contentType = ext === 'wav' ? 'audio/wav' : ext === 'mp3' ? 'audio/mpeg' : file.type || 'application/octet-stream';
-        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-        const path = `tracks/${Date.now()}-${safeName}`;
-        const { error: uploadError } = await supabase.storage
-          .from('audio')
-          .upload(path, file, { contentType, upsert: false });
-        if (uploadError) throw uploadError;
-        const { data: urlData } = supabase.storage.from('audio').getPublicUrl(path);
-        audioUrl = urlData.publicUrl;
-      }
-
-      if (!audioUrl) throw new Error('Keine Audio-URL');
-
-      // Upload cover image if provided
       if (uploadForm.coverFile) {
         const coverPath = `covers/${Date.now()}-${uploadForm.coverFile.name}`;
         const { error: coverError } = await supabase.storage
@@ -101,34 +78,19 @@ export default function Music() {
         coverUrl = coverData.publicUrl;
       }
 
-      const { data: inserted, error } = await supabase.from('tracks').insert({
+      const { error } = await supabase.from('tracks').insert({
         title: uploadForm.title,
         artist: uploadForm.artist,
         audio_url: audioUrl,
         cover_url: coverUrl,
-        is_external: uploadForm.sourceType !== 'file',
-        is_hidden: uploadForm.isHidden,
-        sort_order: allTracks.length,
-      }).select('id').single();
+        sort_order: tracks.length,
+      });
       if (error) throw error;
-
-      // Auto-create schedule entry for leak with time
-      if (uploadForm.isHidden && uploadForm.scheduleTime && inserted) {
-        const [h, m] = uploadForm.scheduleTime.split(':');
-        const endH = parseInt(h) + 1;
-        await supabase.from('radio_schedule').insert({
-          track_id: inserted.id,
-          start_time: uploadForm.scheduleTime,
-          end_time: `${String(endH % 24).padStart(2, '0')}:${m}`,
-          priority: 10,
-          is_active: true,
-        });
-      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tracks'] });
       setShowUpload(false);
-      resetForm();
+      setUploadForm({ title: '', artist: 'ALDENAIR', audioFile: null, coverFile: null });
       toast.success('Track hochgeladen!');
     },
     onError: (e) => {
@@ -148,26 +110,17 @@ export default function Music() {
     },
   });
 
-  // AI Automix
-  const handleAutomix = async () => {
-    if (tracks.length < 2) { toast.error('Mindestens 2 Tracks für Automix nötig'); return; }
-    setAutomixing(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('automix', {
-        body: { tracks: tracks.map(t => ({ id: t.id, title: t.title, bpm: t.bpm, genre: t.genre, mood: t.mood, energy: t.energy })) },
-      });
-      if (error) throw error;
-      if (data?.order) {
-        const reordered = data.order.map((id: string) => tracks.find(t => t.id === id)).filter(Boolean) as Track[];
-        player.setQueue(reordered);
-        toast.success(data.summary || 'Automix erstellt!');
-      }
-    } catch (e: any) { toast.error(e.message || 'Automix fehlgeschlagen'); }
-    finally { setAutomixing(false); }
+  // Simple: tap track → play it, set full list as queue
+  const handleTrackClick = (track: Track) => {
+    player.setQueue(tracks);
+    player.play(track);
   };
 
   const playAll = () => {
-    if (tracks.length > 0) { player.setQueue(tracks); }
+    if (tracks.length > 0) {
+      player.setQueue(tracks);
+      player.play(tracks[0]);
+    }
   };
 
   return (
@@ -185,10 +138,6 @@ export default function Music() {
           <Button onClick={playAll} disabled={tracks.length === 0} className="gap-2">
             <Play className="h-4 w-4" /> Alle abspielen
           </Button>
-          <Button variant="outline" onClick={handleAutomix} disabled={automixing || tracks.length < 2} className="gap-2">
-            <Sparkles className={cn("h-4 w-4", automixing && "animate-spin")} />
-            {automixing ? 'Mixing...' : 'AI Automix'}
-          </Button>
           {isAdmin && (
             <Dialog open={showUpload} onOpenChange={setShowUpload}>
               <DialogTrigger asChild>
@@ -201,31 +150,6 @@ export default function Music() {
                   <DialogTitle>Neuen Track hinzufügen</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4 mt-4">
-                  <div className="flex gap-2">
-                    <Button 
-                      variant={uploadForm.sourceType === 'file' ? 'default' : 'outline'} size="sm"
-                      onClick={() => setUploadForm(f => ({ ...f, sourceType: 'file' }))}
-                    >
-                      <Upload className="h-3 w-3 mr-1" /> Datei
-                    </Button>
-                    <Button 
-                      variant={uploadForm.sourceType === 'url' ? 'default' : 'outline'} size="sm"
-                      onClick={() => setUploadForm(f => ({ ...f, sourceType: 'url' }))}
-                    >
-                      <Plus className="h-3 w-3 mr-1" /> URL
-                    </Button>
-                  </div>
-
-                  {/* Leak toggle */}
-                  <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border border-border">
-                    <EyeOff className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                    <div className="flex-1">
-                      <Label htmlFor="leak-mode" className="text-sm font-medium cursor-pointer">Leak-Modus</Label>
-                      <p className="text-xs text-muted-foreground">Track ist versteckt – nur über Sendeplan spielbar</p>
-                    </div>
-                    <Switch id="leak-mode" checked={uploadForm.isHidden} onCheckedChange={v => setUploadForm(f => ({ ...f, isHidden: v }))} />
-                  </div>
-
                   <div>
                     <Label>Titel *</Label>
                     <Input value={uploadForm.title} onChange={e => setUploadForm(f => ({ ...f, title: e.target.value }))} />
@@ -234,47 +158,20 @@ export default function Music() {
                     <Label>Artist</Label>
                     <Input value={uploadForm.artist} onChange={e => setUploadForm(f => ({ ...f, artist: e.target.value }))} />
                   </div>
-
-                  {uploadForm.sourceType === 'url' ? (
-                    <div>
-                      <Label>Audio URL *</Label>
-                      <Input placeholder="https://..." value={uploadForm.externalUrl} onChange={e => setUploadForm(f => ({ ...f, externalUrl: e.target.value }))} />
-                    </div>
-                  ) : (
-                    <div>
-                      <Label>Audio Datei * (MP3, WAV)</Label>
-                      <Input type="file" accept="audio/wav,audio/mpeg,audio/mp3,audio/*,.wav,.mp3" onChange={e => setUploadForm(f => ({ ...f, audioFile: e.target.files?.[0] || null }))} />
-                    </div>
-                  )}
-
-                  {/* Cover image upload */}
+                  <div>
+                    <Label>Audio Datei * (MP3, WAV)</Label>
+                    <Input type="file" accept="audio/wav,audio/mpeg,audio/mp3,audio/*,.wav,.mp3" onChange={e => setUploadForm(f => ({ ...f, audioFile: e.target.files?.[0] || null }))} />
+                  </div>
                   <div>
                     <Label>Cover Bild (optional)</Label>
                     <Input type="file" accept="image/*" onChange={e => setUploadForm(f => ({ ...f, coverFile: e.target.files?.[0] || null }))} />
-                    <p className="text-xs text-muted-foreground mt-1">JPG/PNG für die Track-Anzeige</p>
                   </div>
-
-                  {/* Schedule time for leak mode */}
-                  {uploadForm.isHidden && (
-                    <div className="p-3 rounded-lg bg-muted/50 border border-border space-y-2">
-                      <Label className="flex items-center gap-2">
-                        <Clock className="h-4 w-4 text-muted-foreground" />
-                        Wann soll der Leak live gehen?
-                      </Label>
-                      <Input type="time" value={uploadForm.scheduleTime} onChange={e => setUploadForm(f => ({ ...f, scheduleTime: e.target.value }))} className="w-40" />
-                      <p className="text-xs text-muted-foreground">
-                        Der Track wird automatisch zur eingestellten Zeit über das Radio abgespielt.
-                        {!uploadForm.scheduleTime && ' (Optional – du kannst den Zeitslot auch später im Sendeplan setzen)'}
-                      </p>
-                    </div>
-                  )}
-
                   <Button 
                     className="w-full" 
                     onClick={() => uploadMutation.mutate()}
-                    disabled={uploadMutation.isPending || !uploadForm.title || (uploadForm.sourceType === 'file' && !uploadForm.audioFile) || (uploadForm.sourceType === 'url' && !uploadForm.externalUrl)}
+                    disabled={uploadMutation.isPending || !uploadForm.title || !uploadForm.audioFile}
                   >
-                    {uploadMutation.isPending ? 'Lädt hoch...' : (uploadForm.isHidden ? '🔒 Als Leak speichern' : 'Track speichern')}
+                    {uploadMutation.isPending ? 'Lädt hoch...' : 'Track speichern'}
                   </Button>
                 </div>
               </DialogContent>
@@ -283,15 +180,12 @@ export default function Music() {
         </div>
       </div>
 
-      {/* Leak Countdown */}
-      <div className="mb-4">
-        <LeakCountdown />
-      </div>
-
-      {/* Radio Mode */}
-      <div className="mb-8">
-        <RadioMode />
-      </div>
+      {/* Radio (optional, collapsed) */}
+      {isAdmin && (
+        <div className="mb-8">
+          <RadioMode />
+        </div>
+      )}
 
       {/* Now Playing */}
       {player.currentTrack && (
@@ -311,14 +205,8 @@ export default function Music() {
             </div>
 
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <h2 className="text-xl font-bold truncate">
-                  {(player.currentTrack as any)?.is_hidden && !isAdmin ? 'Exklusiver Leak' : player.currentTrack.title}
-                </h2>
-              </div>
-              <p className="text-muted-foreground">
-                {(player.currentTrack as any)?.is_hidden && !isAdmin ? 'ALDENAIR Radio' : player.currentTrack.artist}
-              </p>
+              <h2 className="text-xl font-bold truncate">{player.currentTrack.title}</h2>
+              <p className="text-muted-foreground">{player.currentTrack.artist}</p>
               
               <div className="flex items-center gap-3 mt-3">
                 <span className="text-xs text-muted-foreground tabular-nums">{formatTime(player.currentTime)}</span>
@@ -345,12 +233,6 @@ export default function Music() {
                   </Button>
                   <Slider value={[player.isMuted ? 0 : player.volume]} max={1} step={0.01} onValueChange={([v]) => player.setVolume(v)} className="w-24" />
                 </div>
-
-                <div className="hidden sm:flex items-center gap-2 ml-auto">
-                  <Label className="text-xs text-muted-foreground">Crossfade</Label>
-                  <Slider value={[player.crossfadeDuration]} max={10} step={0.5} onValueChange={([v]) => player.setCrossfadeDuration(v)} className="w-20" />
-                  <span className="text-xs text-muted-foreground tabular-nums">{player.crossfadeDuration}s</span>
-                </div>
               </div>
             </div>
           </div>
@@ -364,7 +246,7 @@ export default function Music() {
             <div key={i} className="h-16 rounded-lg bg-muted animate-pulse" />
           ))}
         </div>
-      ) : displayTracks.length === 0 ? (
+      ) : tracks.length === 0 ? (
         <div className="text-center py-20">
           <MusicIcon className="h-16 w-16 mx-auto text-muted-foreground/30 mb-4" />
           <h3 className="text-lg font-medium">Noch keine Tracks</h3>
@@ -379,22 +261,15 @@ export default function Music() {
             <span>Titel</span>
             <span className="w-16 text-right"><Clock className="h-3 w-3 inline" /></span>
           </div>
-          {displayTracks.map((track, idx) => {
+          {tracks.map((track, idx) => {
             const isActive = player.currentTrack?.id === track.id;
-            const isHidden = (track as any).is_hidden;
             return (
               <button
                 key={track.id}
-                onClick={() => {
-                  // Leak tracks should not be manually playable - only via radio schedule
-                  if (isHidden && !isAdmin) return;
-                  player.setQueue(isHidden ? [track] : publicTracks);
-                  player.play(track);
-                }}
+                onClick={() => handleTrackClick(track)}
                 className={cn(
                   "w-full grid grid-cols-[auto_1fr_auto] gap-4 items-center px-4 py-3 rounded-lg text-left transition-colors group",
-                  isActive ? "bg-accent/10 text-accent" : "hover:bg-muted/50",
-                  isHidden && "border border-dashed border-muted-foreground/30"
+                  isActive ? "bg-accent/10 text-accent" : "hover:bg-muted/50"
                 )}
               >
                 <span className="w-8 text-sm tabular-nums text-muted-foreground group-hover:hidden">{idx + 1}</span>
@@ -411,14 +286,10 @@ export default function Music() {
                     )}
                   </div>
                   <div className="min-w-0">
-                    <p className={cn("text-sm font-medium truncate flex items-center gap-1.5", isActive && "text-accent")}>
-                      {isHidden && <EyeOff className="h-3 w-3 text-muted-foreground flex-shrink-0" />}
+                    <p className={cn("text-sm font-medium truncate", isActive && "text-accent")}>
                       {track.title}
                     </p>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {track.artist}
-                      {isHidden && <span className="ml-2 text-[10px] uppercase tracking-wider opacity-60">Leak</span>}
-                    </p>
+                    <p className="text-xs text-muted-foreground truncate">{track.artist}</p>
                   </div>
                 </div>
 
@@ -442,7 +313,7 @@ export default function Music() {
       )}
 
       {/* Queue */}
-      {player.queue.length > 0 && (
+      {player.queue.length > 1 && (
         <div className="mt-10">
           <h3 className="text-lg font-semibold flex items-center gap-2 mb-4">
             <ListMusic className="h-5 w-5" /> Warteschlange
@@ -457,8 +328,8 @@ export default function Music() {
                   isActive ? "bg-accent/10 text-accent" : "text-muted-foreground"
                 )}>
                   <span className="w-6 tabular-nums">{idx + 1}</span>
-                  <span className="flex-1 truncate">{(track as any).is_hidden && !isAdmin ? 'Exklusiver Leak' : track.title}</span>
-                  <span className="text-xs">{(track as any).is_hidden && !isAdmin ? '' : track.artist}</span>
+                  <span className="flex-1 truncate">{track.title}</span>
+                  <span className="text-xs">{track.artist}</span>
                 </div>
               );
             })}
