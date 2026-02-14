@@ -41,3 +41,9 @@ verify_jwt = false
 
 [functions.youtube-resolve]
 verify_jwt = false
+
+[functions.create-vip-checkout]
+verify_jwt = false
+
+[functions.check-vip]
+verify_jwt = false

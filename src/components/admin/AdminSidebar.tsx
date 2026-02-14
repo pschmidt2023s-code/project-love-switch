@@ -32,6 +32,7 @@ import {
   Truck,
   Zap,
   Download,
+  Crown,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdminRole } from '@/hooks/useAdminRole';
@@ -59,6 +60,7 @@ export default function AdminSidebar({ activeTab, onTabChange }: AdminSidebarPro
   const marketingItems = [
     { id: 'coupons', label: 'Rabattcodes', icon: Tag, show: permissions.canManageProducts },
     { id: 'newsletter', label: 'Newsletter', icon: Mail, show: permissions.canManageProducts },
+    { id: 'vip', label: 'VIP-Abos', icon: Crown, show: permissions.canManageProducts },
     { id: 'contest', label: 'Gewinnspiel', icon: Trophy, show: permissions.canManageProducts },
     { id: 'referrals', label: 'Empfehlungen', icon: Gift, show: permissions.canManageProducts },
     { id: 'email-sequences', label: 'E-Mail Flows', icon: Zap, show: permissions.canManageProducts },
