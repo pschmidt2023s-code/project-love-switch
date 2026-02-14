@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Mail, Lock, User, ArrowRight, Shield, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { PremiumPageLayout } from '@/components/premium/PremiumPageLayout';
 import { toast } from 'sonner';
 import { validateEmail, validatePasswordStrength } from '@/lib/validation';
 import { authRateLimiter } from '@/lib/rate-limiter';
@@ -144,7 +145,8 @@ export default function Auth() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-muted flex items-center justify-center p-4">
+    <PremiumPageLayout>
+    <div className="min-h-[60vh] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="mb-6">
           <Button variant="ghost" asChild>
@@ -329,5 +331,6 @@ export default function Auth() {
         </Card>
       </div>
     </div>
+    </PremiumPageLayout>
   );
 }

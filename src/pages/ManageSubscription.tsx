@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
+import { PremiumPageLayout } from '@/components/premium/PremiumPageLayout';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -171,7 +172,8 @@ export default function ManageSubscription() {
   // Show request form if no valid subscription
   if (!subscriptionId || !token || error) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <PremiumPageLayout>
+      <div className="min-h-[60vh] flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
             <div className="w-12 h-12 bg-muted mx-auto mb-4 flex items-center justify-center">
@@ -234,41 +236,47 @@ export default function ManageSubscription() {
           </CardContent>
         </Card>
       </div>
+      </PremiumPageLayout>
     );
   }
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-4 text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">Lade Abo-Details...</p>
+      <PremiumPageLayout>
+        <div className="min-h-[60vh] flex items-center justify-center">
+          <div className="text-center">
+            <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-4 text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">Lade Abo-Details...</p>
+          </div>
         </div>
-      </div>
+      </PremiumPageLayout>
     );
   }
 
   if (!subscription) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <Card className="w-full max-w-md text-center">
-          <CardContent className="pt-8">
-            <AlertTriangle className="w-12 h-12 text-warning mx-auto mb-4" />
-            <h2 className="text-xl font-medium mb-2">Abo nicht gefunden</h2>
-            <p className="text-sm text-muted-foreground mb-6">
-              Das angeforderte Abo konnte nicht gefunden werden.
-            </p>
-            <Link to="/">
-              <Button>Zurück zum Shop</Button>
-            </Link>
-          </CardContent>
-        </Card>
-      </div>
+      <PremiumPageLayout>
+        <div className="min-h-[60vh] flex items-center justify-center p-4">
+          <Card className="w-full max-w-md text-center">
+            <CardContent className="pt-8">
+              <AlertTriangle className="w-12 h-12 text-warning mx-auto mb-4" />
+              <h2 className="text-xl font-medium mb-2">Abo nicht gefunden</h2>
+              <p className="text-sm text-muted-foreground mb-6">
+                Das angeforderte Abo konnte nicht gefunden werden.
+              </p>
+              <Link to="/">
+                <Button>Zurück zum Shop</Button>
+              </Link>
+            </CardContent>
+          </Card>
+        </div>
+      </PremiumPageLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background py-12 px-4">
+    <PremiumPageLayout>
+    <div className="container-premium py-12">
       <div className="max-w-2xl mx-auto">
         {/* Header */}
         <div className="mb-8">
@@ -449,5 +457,6 @@ export default function ManageSubscription() {
         </Card>
       </div>
     </div>
+    </PremiumPageLayout>
   );
 }
