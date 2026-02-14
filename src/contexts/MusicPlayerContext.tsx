@@ -115,10 +115,13 @@ export function MusicPlayerProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  // Update audio src when queue index changes
+  // Update audio src when queue index changes (only for non-gesture triggered changes like next/prev)
   useEffect(() => {
     if (queueIndex >= 0 && queueIndex < state.queue.length) {
       const track = state.queue[queueIndex];
+      const alreadyPlaying = audioRef.current?.src?.includes(track.audio_url?.split('/').pop() || '__none__');
+      if (alreadyPlaying) return; // Already set by direct play()
+      
       setState(s => ({ ...s, currentTrack: track, currentTime: 0 }));
       
       if (audioRef.current && track.audio_url) {
@@ -127,26 +130,43 @@ export function MusicPlayerProvider({ children }: { children: ReactNode }) {
         audioRef.current.play().then(() => {
           setState(s => ({ ...s, isPlaying: true }));
         }).catch((e) => {
-          console.warn('[MusicPlayer] Audio play failed:', e.message);
+          console.warn('[MusicPlayer] Auto-play failed (expected on mobile):', e.message);
           setState(s => ({ ...s, isPlaying: false }));
         });
       }
     }
   }, [queueIndex, state.queue]);
 
+  // Direct play: starts audio SYNCHRONOUSLY to preserve user gesture on mobile
+  const playDirect = useCallback((track: Track, queue: Track[]) => {
+    if (!audioRef.current) return;
+    const audio = audioRef.current;
+    audio.src = track.audio_url;
+    audio.volume = state.volume;
+    console.log('[MusicPlayer] Direct play:', track.title, track.audio_url?.substring(0, 80));
+    audio.play().then(() => {
+      console.log('[MusicPlayer] Play succeeded');
+      setState(s => ({ ...s, isPlaying: true }));
+    }).catch((e) => {
+      console.warn('[MusicPlayer] Play failed:', e.message);
+      setState(s => ({ ...s, isPlaying: false }));
+    });
+    const idx = queue.indexOf(track);
+    setQueueIndex(idx >= 0 ? idx : 0);
+    setState(s => ({ ...s, currentTrack: track, currentTime: 0, queue }));
+  }, [state.volume]);
+
   const play = useCallback((track?: Track) => {
     if (track) {
-      setState(s => {
-        const idx = s.queue.findIndex(t => t.id === track.id);
-        if (idx >= 0) {
-          setTimeout(() => setQueueIndex(idx), 0);
-          return s;
-        } else {
-          const newQueue = [...s.queue, track];
-          setTimeout(() => setQueueIndex(newQueue.length - 1), 0);
-          return { ...s, queue: newQueue };
-        }
-      });
+      // Play directly and synchronously to preserve mobile user gesture
+      const currentQueue = state.queue;
+      const idx = currentQueue.findIndex(t => t.id === track.id);
+      if (idx >= 0) {
+        playDirect(track, currentQueue);
+      } else {
+        const newQueue = [...currentQueue, track];
+        playDirect(track, newQueue);
+      }
     } else if (audioRef.current && state.currentTrack) {
       audioRef.current.play().catch(() => {});
       setState(s => ({ ...s, isPlaying: true }));
