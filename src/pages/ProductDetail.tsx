@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Heart, ShoppingBag, Truck, Shield, Plus, Minus, Star, RotateCcw, Sparkles, Leaf, ArrowLeft } from 'lucide-react';
+import { Heart, ShoppingBag, Truck, Shield, Plus, Minus, Star, RotateCcw, Sparkles, Leaf, ArrowLeft, Clock, Wind, Droplet, Anchor } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { useCart } from '@/contexts/CartContext';
 import { useProduct } from '@/hooks/useProducts';
 import { useExternalProduct } from '@/hooks/useExternalProducts';
@@ -11,9 +12,73 @@ import { ProductRecommendations } from '@/components/ai/ProductRecommendations';
 import { Breadcrumb } from '@/components/Breadcrumb';
 import { Seo } from '@/components/Seo';
 import { ProductSchema, BreadcrumbSchema } from '@/components/seo';
-import { ScentNotesVisualization } from '@/components/features/ScentNotesVisualization';
 import { SocialShare } from '@/components/SocialShare';
 import { toast } from 'sonner';
+
+// Reusable scent layer component
+function ScentLayer({ 
+  label, 
+  sublabel, 
+  notes, 
+  icon: Icon, 
+  accentClass 
+}: { 
+  label: string; 
+  sublabel: string; 
+  notes: string[]; 
+  icon: React.ElementType; 
+  accentClass: string;
+}) {
+  if (!notes || notes.length === 0) return null;
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2.5">
+        <div className={`w-8 h-8 flex items-center justify-center border border-border ${accentClass}`}>
+          <Icon className="w-4 h-4" strokeWidth={1.5} />
+        </div>
+        <div>
+          <p className="text-xs font-medium text-foreground">{label}</p>
+          <p className="text-[10px] text-muted-foreground">{sublabel}</p>
+        </div>
+      </div>
+      <div className="flex flex-wrap gap-1.5 pl-[42px]">
+        {notes.map((note, i) => (
+          <span
+            key={i}
+            className="px-2.5 py-1 bg-muted text-muted-foreground text-[11px] border border-border"
+          >
+            {typeof note === 'string' ? note : (note as any).name || note}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Product info accordion section
+function InfoSection({ title, children, defaultOpen = false }: { title: string; children: React.ReactNode; defaultOpen?: boolean }) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className="border-b border-border">
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between py-4 text-left"
+      >
+        <span className="text-[11px] tracking-[0.15em] uppercase font-medium text-foreground">{title}</span>
+        <Plus className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${open ? 'rotate-45' : ''}`} strokeWidth={1.5} />
+      </button>
+      {open && (
+        <motion.div 
+          initial={{ opacity: 0 }} 
+          animate={{ opacity: 1 }} 
+          className="pb-5"
+        >
+          {children}
+        </motion.div>
+      )}
+    </div>
+  );
+}
 
 export default function ProductDetail() {
   const { slug } = useParams<{ slug: string }>();
@@ -23,7 +88,6 @@ export default function ProductDetail() {
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
 
-  // Determine data source
   const isExternal = !localProduct && !!externalProduct;
   const loading = localLoading && extLoading;
   const product = localProduct || null;
@@ -68,6 +132,7 @@ export default function ProductDetail() {
     toast.success('In den Warenkorb gelegt');
   };
 
+  // Loading state
   if (loading) {
     return (
       <PremiumPageLayout>
@@ -86,12 +151,18 @@ export default function ProductDetail() {
     );
   }
 
-  // External product detail view
+  // --- EXTERNAL PRODUCT ---
   if (isExternal && externalProduct) {
     const inStock = externalProduct.stock > 0;
     const ingredientsList = externalProduct.ingredients
-      ? externalProduct.ingredients.split(',').map(s => s.trim())
+      ? externalProduct.ingredients.split(',').map((s: string) => s.trim())
       : [];
+    
+    const ext = externalProduct as any;
+    const topNotes = ext.top_notes ? (typeof ext.top_notes === 'string' ? ext.top_notes.split(',').map((s: string) => s.trim()) : ext.top_notes) : [];
+    const middleNotes = ext.middle_notes ? (typeof ext.middle_notes === 'string' ? ext.middle_notes.split(',').map((s: string) => s.trim()) : ext.middle_notes) : [];
+    const baseNotes = ext.base_notes ? (typeof ext.base_notes === 'string' ? ext.base_notes.split(',').map((s: string) => s.trim()) : ext.base_notes) : [];
+    const hasNotes = topNotes.length > 0 || middleNotes.length > 0 || baseNotes.length > 0;
 
     return (
       <PremiumPageLayout>
@@ -101,36 +172,34 @@ export default function ProductDetail() {
           canonicalPath={`/products/${slug}`}
         />
 
-        <div className="container-premium py-8 lg:py-12">
+        <div className="container-premium py-6 lg:py-10">
           <Breadcrumb
             items={[
               { label: 'Kollektion', path: '/products' },
               { label: externalProduct.name }
             ]}
-            className="mb-8"
+            className="mb-6"
           />
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16">
-            {/* Product Image */}
-            <div className="relative">
-              <div className="aspect-[3/4] bg-sand dark:bg-muted overflow-hidden">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16">
+            {/* Image */}
+            <div className="relative sticky top-24">
+              <div className="aspect-[3/4] bg-muted overflow-hidden">
                 <img
                   src={externalProduct.image_url || 'https://images.unsplash.com/photo-1541643600914-78b084683601?w=800&h=1000&fit=crop'}
                   alt={externalProduct.name}
                   className="w-full h-full object-cover"
                 />
               </div>
-
               <button
-                className="absolute top-4 right-4 w-10 h-10 bg-background/90 backdrop-blur-sm flex items-center justify-center hover:bg-background transition-colors"
+                className="absolute top-4 right-4 w-10 h-10 bg-background/90 backdrop-blur-sm flex items-center justify-center hover:bg-background transition-colors border border-border"
                 aria-label="Zu Favoriten hinzufügen"
               >
                 <Heart className="w-5 h-5" strokeWidth={1.5} />
               </button>
-
               {!inStock && (
                 <div className="absolute top-4 left-4">
-                  <span className="px-2 py-1 bg-muted text-muted-foreground text-[10px] tracking-[0.1em] uppercase font-medium">
+                  <span className="px-3 py-1.5 bg-foreground text-background text-[10px] tracking-[0.15em] uppercase font-medium">
                     Ausverkauft
                   </span>
                 </div>
@@ -138,64 +207,77 @@ export default function ProductDetail() {
             </div>
 
             {/* Product Info */}
-            <div className="space-y-6">
+            <div className="space-y-5">
+              {/* Brand & Category */}
               <div className="flex items-center gap-2">
-                <span className="text-[10px] tracking-[0.2em] uppercase text-accent font-medium">
-                  ALDENAIR
-                </span>
-                <span className="text-muted-foreground">•</span>
+                <span className="text-[10px] tracking-[0.2em] uppercase text-accent font-medium">ALDENAIR</span>
+                <span className="text-muted-foreground text-xs">·</span>
                 <span className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground">
-                  {externalProduct.category || 'Parfüm'}
+                  {externalProduct.category || 'Eau de Parfum'}
                 </span>
               </div>
 
-              <h1 className="font-display text-3xl lg:text-4xl text-foreground">
+              {/* Name */}
+              <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl text-foreground leading-tight">
                 {externalProduct.name}
               </h1>
 
+              {/* Inspired By */}
               {externalProduct.similar_to && (
-                <div className="flex items-center gap-2 px-4 py-3 bg-accent/10 border border-accent/20">
-                  <Sparkles className="w-4 h-4 text-accent" strokeWidth={1.5} />
-                  <span className="text-sm">
-                    <span className="text-muted-foreground">Inspiriert von</span>{' '}
-                    <span className="font-medium text-foreground">{externalProduct.similar_to}</span>
-                  </span>
+                <div className="flex items-center gap-3 px-4 py-3 bg-accent/5 border border-accent/15">
+                  <Sparkles className="w-4 h-4 text-accent flex-shrink-0" strokeWidth={1.5} />
+                  <div>
+                    <span className="text-[10px] tracking-[0.1em] uppercase text-muted-foreground block">Inspiriert von</span>
+                    <span className="text-sm font-medium text-foreground">{externalProduct.similar_to}</span>
+                  </div>
                 </div>
               )}
 
-              <div className="flex items-baseline gap-3">
-                <span className="text-3xl font-display text-foreground">
+              {/* Price */}
+              <div className="flex items-baseline gap-3 pt-1">
+                <span className="text-2xl sm:text-3xl font-display text-foreground">
                   €{externalProduct.price.toFixed(2)}
                 </span>
               </div>
 
               <div className="h-px bg-border" />
 
-              {/* Stock Info */}
+              {/* Longevity & Sillage Quick Info */}
+              <div className="grid grid-cols-3 gap-3">
+                <div className="flex flex-col items-center py-3 border border-border">
+                  <Clock className="w-4 h-4 text-accent mb-1.5" strokeWidth={1.5} />
+                  <span className="text-[10px] font-medium text-foreground">6-8 Std.</span>
+                  <span className="text-[9px] text-muted-foreground">Haltbarkeit</span>
+                </div>
+                <div className="flex flex-col items-center py-3 border border-border">
+                  <Wind className="w-4 h-4 text-accent mb-1.5" strokeWidth={1.5} />
+                  <span className="text-[10px] font-medium text-foreground">Moderat</span>
+                  <span className="text-[9px] text-muted-foreground">Sillage</span>
+                </div>
+                <div className="flex flex-col items-center py-3 border border-border">
+                  <Droplet className="w-4 h-4 text-accent mb-1.5" strokeWidth={1.5} />
+                  <span className="text-[10px] font-medium text-foreground">50 ml</span>
+                  <span className="text-[9px] text-muted-foreground">Inhalt</span>
+                </div>
+              </div>
+
+              {/* Stock */}
               <div className="flex items-center gap-2">
-                <div className={`w-2 h-2 ${inStock ? 'bg-green-500' : 'bg-destructive'}`} />
-                <span className="text-sm text-muted-foreground">
+                <div className={`w-1.5 h-1.5 ${inStock ? 'bg-green-500' : 'bg-destructive'}`} />
+                <span className="text-xs text-muted-foreground">
                   {inStock ? `${externalProduct.stock} auf Lager` : 'Nicht verfügbar'}
                 </span>
               </div>
 
               {/* Quantity */}
               <div>
-                <label className="block text-[10px] tracking-[0.15em] uppercase text-muted-foreground mb-3">
-                  Menge
-                </label>
+                <label className="block text-[10px] tracking-[0.15em] uppercase text-muted-foreground mb-2">Menge</label>
                 <div className="flex items-center border border-border w-fit">
-                  <button
-                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="w-10 h-10 flex items-center justify-center text-foreground hover:bg-muted transition-colors"
-                  >
+                  <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="w-10 h-10 flex items-center justify-center text-foreground hover:bg-muted transition-colors">
                     <Minus className="w-4 h-4" strokeWidth={1.5} />
                   </button>
                   <span className="w-12 text-center text-sm font-medium">{quantity}</span>
-                  <button
-                    onClick={() => setQuantity(Math.min(externalProduct.stock, quantity + 1))}
-                    className="w-10 h-10 flex items-center justify-center text-foreground hover:bg-muted transition-colors"
-                  >
+                  <button onClick={() => setQuantity(Math.min(externalProduct.stock, quantity + 1))} className="w-10 h-10 flex items-center justify-center text-foreground hover:bg-muted transition-colors">
                     <Plus className="w-4 h-4" strokeWidth={1.5} />
                   </button>
                 </div>
@@ -219,6 +301,58 @@ export default function ProductDetail() {
                 </button>
               </div>
 
+              {/* Trust Icons Row */}
+              <div className="flex items-center gap-6 pt-2">
+                <div className="flex items-center gap-1.5 text-muted-foreground">
+                  <Truck className="w-3.5 h-3.5" strokeWidth={1.5} />
+                  <span className="text-[10px]">Gratis ab 50€</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-muted-foreground">
+                  <Shield className="w-3.5 h-3.5" strokeWidth={1.5} />
+                  <span className="text-[10px]">Sichere Zahlung</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-muted-foreground">
+                  <RotateCcw className="w-3.5 h-3.5" strokeWidth={1.5} />
+                  <span className="text-[10px]">14 Tage Rückgabe</span>
+                </div>
+              </div>
+
+              <div className="h-px bg-border" />
+
+              {/* Accordion Sections */}
+              {/* Scent Pyramid */}
+              {hasNotes && (
+                <InfoSection title="Duftpyramide" defaultOpen={true}>
+                  <div className="space-y-5">
+                    <ScentLayer label="Kopfnote" sublabel="Erster Eindruck · 0-30 Min" notes={topNotes} icon={Droplet} accentClass="text-amber-500 dark:text-amber-400" />
+                    <ScentLayer label="Herznote" sublabel="Charakter · 30 Min - 3 Std" notes={middleNotes} icon={Heart} accentClass="text-rose-500 dark:text-rose-400" />
+                    <ScentLayer label="Basisnote" sublabel="Fondation · 3+ Stunden" notes={baseNotes} icon={Anchor} accentClass="text-stone-500 dark:text-stone-400" />
+                  </div>
+                </InfoSection>
+              )}
+
+              {/* Description */}
+              {externalProduct.description && (
+                <InfoSection title="Beschreibung" defaultOpen={true}>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    {externalProduct.description}
+                  </p>
+                </InfoSection>
+              )}
+
+              {/* Ingredients */}
+              {ingredientsList.length > 0 && (
+                <InfoSection title="Inhaltsstoffe">
+                  <div className="flex flex-wrap gap-1.5">
+                    {ingredientsList.map((ingredient: string, i: number) => (
+                      <span key={i} className="px-2.5 py-1 bg-muted text-muted-foreground text-[11px] border border-border">
+                        {ingredient}
+                      </span>
+                    ))}
+                  </div>
+                </InfoSection>
+              )}
+
               {/* Social Share */}
               <div className="pt-2">
                 <SocialShare
@@ -227,54 +361,6 @@ export default function ProductDetail() {
                   description={externalProduct.description || ''}
                 />
               </div>
-
-              {/* Trust Badges */}
-              <div className="grid grid-cols-3 gap-4 pt-4">
-                <div className="text-center py-4 border border-border">
-                  <Truck className="w-5 h-5 text-accent mx-auto mb-2" strokeWidth={1.5} />
-                  <span className="text-[10px] text-muted-foreground block">Gratis ab 50€</span>
-                </div>
-                <div className="text-center py-4 border border-border">
-                  <Shield className="w-5 h-5 text-accent mx-auto mb-2" strokeWidth={1.5} />
-                  <span className="text-[10px] text-muted-foreground block">Sichere Zahlung</span>
-                </div>
-                <div className="text-center py-4 border border-border">
-                  <RotateCcw className="w-5 h-5 text-accent mx-auto mb-2" strokeWidth={1.5} />
-                  <span className="text-[10px] text-muted-foreground block">14 Tage Rückgabe</span>
-                </div>
-              </div>
-
-              {/* Description */}
-              {externalProduct.description && (
-                <div className="pt-6 border-t border-border">
-                  <h3 className="text-[10px] tracking-[0.15em] uppercase text-muted-foreground mb-4">
-                    Beschreibung
-                  </h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    {externalProduct.description}
-                  </p>
-                </div>
-              )}
-
-              {/* Ingredients */}
-              {ingredientsList.length > 0 && (
-                <div className="pt-6 border-t border-border">
-                  <h3 className="text-[10px] tracking-[0.15em] uppercase text-muted-foreground mb-4 flex items-center gap-2">
-                    <Leaf className="w-4 h-4" strokeWidth={1.5} />
-                    Inhaltsstoffe
-                  </h3>
-                  <div className="flex flex-wrap gap-2">
-                    {ingredientsList.map((ingredient, i) => (
-                      <span
-                        key={i}
-                        className="px-3 py-1.5 bg-muted text-muted-foreground text-xs"
-                      >
-                        {ingredient}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </div>
@@ -282,7 +368,7 @@ export default function ProductDetail() {
     );
   }
 
-  // Not found
+  // --- NOT FOUND ---
   if (localError || !product) {
     return (
       <PremiumPageLayout>
@@ -291,12 +377,8 @@ export default function ProductDetail() {
             <div className="w-16 h-16 mx-auto bg-muted flex items-center justify-center">
               <ShoppingBag className="w-8 h-8 text-muted-foreground" strokeWidth={1} />
             </div>
-            <h1 className="font-display text-2xl text-foreground">
-              Produkt nicht gefunden
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              Das gewünschte Produkt ist leider nicht verfügbar.
-            </p>
+            <h1 className="font-display text-2xl text-foreground">Produkt nicht gefunden</h1>
+            <p className="text-sm text-muted-foreground">Das gewünschte Produkt ist leider nicht verfügbar.</p>
             <Link
               to="/products"
               className="inline-flex items-center gap-2 px-6 py-3 bg-foreground text-background text-[11px] tracking-[0.15em] uppercase font-medium hover:bg-foreground/90 transition-colors"
@@ -310,12 +392,17 @@ export default function ProductDetail() {
     );
   }
 
-  // Local product detail (existing logic)
+  // --- LOCAL PRODUCT ---
   const discount = selectedVariant?.original_price
     ? Math.round((1 - Number(selectedVariant.price) / Number(selectedVariant.original_price)) * 100)
     : 0;
   const rating = product.rating ? Number(product.rating) : null;
   const inStock = selectedVariant?.stock === null || (selectedVariant?.stock ?? 0) > 0;
+
+  const topNotes = product.top_notes || [];
+  const middleNotes = product.middle_notes || [];
+  const baseNotes = product.base_notes || [];
+  const hasNotes = topNotes.length > 0 || middleNotes.length > 0 || baseNotes.length > 0;
 
   return (
     <PremiumPageLayout>
@@ -348,19 +435,19 @@ export default function ProductDetail() {
         ]}
       />
 
-      <div className="container-premium py-8 lg:py-12">
+      <div className="container-premium py-6 lg:py-10">
         <Breadcrumb
           items={[
             { label: 'Kollektion', path: '/products' },
             { label: product.name }
           ]}
-          className="mb-8"
+          className="mb-6"
         />
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16">
-          {/* Product Image */}
-          <div className="relative">
-            <div className="aspect-[3/4] bg-sand dark:bg-muted overflow-hidden">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16">
+          {/* Product Image - sticky on desktop */}
+          <div className="relative lg:sticky lg:top-24 lg:self-start">
+            <div className="aspect-[3/4] bg-muted overflow-hidden">
               <img
                 src={product.image_url || 'https://images.unsplash.com/photo-1541643600914-78b084683601?w=800&h=1000&fit=crop'}
                 alt={product.name}
@@ -369,7 +456,7 @@ export default function ProductDetail() {
             </div>
 
             <button
-              className="absolute top-4 right-4 w-10 h-10 bg-background/90 backdrop-blur-sm flex items-center justify-center hover:bg-background transition-colors"
+              className="absolute top-4 right-4 w-10 h-10 bg-background/90 backdrop-blur-sm flex items-center justify-center hover:bg-background transition-colors border border-border"
               aria-label="Zu Favoriten hinzufügen"
             >
               <Heart className="w-5 h-5" strokeWidth={1.5} />
@@ -377,12 +464,12 @@ export default function ProductDetail() {
 
             <div className="absolute top-4 left-4 flex flex-col gap-2">
               {discount > 0 && (
-                <span className="px-2 py-1 bg-destructive text-destructive-foreground text-[10px] tracking-[0.1em] uppercase font-medium">
-                  -{discount}% Sale
+                <span className="px-3 py-1.5 bg-destructive text-destructive-foreground text-[10px] tracking-[0.15em] uppercase font-medium">
+                  -{discount}%
                 </span>
               )}
               {!inStock && (
-                <span className="px-2 py-1 bg-muted text-muted-foreground text-[10px] tracking-[0.1em] uppercase font-medium">
+                <span className="px-3 py-1.5 bg-foreground text-background text-[10px] tracking-[0.15em] uppercase font-medium">
                   Ausverkauft
                 </span>
               )}
@@ -390,53 +477,56 @@ export default function ProductDetail() {
           </div>
 
           {/* Product Info */}
-          <div className="space-y-6">
+          <div className="space-y-5">
+            {/* Brand & Category */}
             <div className="flex items-center gap-2">
-              <span className="text-[10px] tracking-[0.2em] uppercase text-accent font-medium">
-                ALDENAIR
-              </span>
-              <span className="text-muted-foreground">•</span>
+              <span className="text-[10px] tracking-[0.2em] uppercase text-accent font-medium">ALDENAIR</span>
+              <span className="text-muted-foreground text-xs">·</span>
               <span className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground">
-                {(product as any).categories?.name || 'Parfüm'}
+                {(product as any).categories?.name || 'Eau de Parfum'}
               </span>
             </div>
 
-            <h1 className="font-display text-3xl lg:text-4xl text-foreground">
+            {/* Name */}
+            <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl text-foreground leading-tight">
               {product.name}
             </h1>
 
+            {/* Inspired By Badge */}
             {product.inspired_by && (
-              <div className="flex items-center gap-2 px-4 py-3 bg-accent/10 border border-accent/20">
-                <Sparkles className="w-4 h-4 text-accent" strokeWidth={1.5} />
-                <span className="text-sm">
-                  <span className="text-muted-foreground">Inspiriert von</span>{' '}
-                  <span className="font-medium text-foreground">{product.inspired_by}</span>
-                </span>
+              <div className="flex items-center gap-3 px-4 py-3 bg-accent/5 border border-accent/15">
+                <Sparkles className="w-4 h-4 text-accent flex-shrink-0" strokeWidth={1.5} />
+                <div>
+                  <span className="text-[10px] tracking-[0.1em] uppercase text-muted-foreground block">Inspiriert von</span>
+                  <span className="text-sm font-medium text-foreground">{product.inspired_by}</span>
+                </div>
               </div>
             )}
 
+            {/* Rating */}
             {rating && rating > 0 && (
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-0.5">
                   {[...Array(5)].map((_, i) => (
                     <Star
                       key={i}
-                      className={`w-4 h-4 ${i < Math.floor(rating) ? 'fill-accent text-accent' : 'text-muted'}`}
+                      className={`w-3.5 h-3.5 ${i < Math.floor(rating) ? 'fill-accent text-accent' : 'text-border'}`}
                     />
                   ))}
                 </div>
-                <span className="text-sm text-muted-foreground">
-                  {rating.toFixed(1)} ({product.review_count || 0} Bewertungen)
+                <span className="text-xs text-muted-foreground">
+                  {rating.toFixed(1)} ({product.review_count || 0})
                 </span>
               </div>
             )}
 
-            <div className="flex items-baseline gap-3">
-              <span className="text-3xl font-display text-foreground">
+            {/* Price */}
+            <div className="flex items-baseline gap-3 pt-1">
+              <span className="text-2xl sm:text-3xl font-display text-foreground">
                 €{selectedVariant ? Number(selectedVariant.price).toFixed(2) : '0.00'}
               </span>
               {selectedVariant?.original_price && (
-                <span className="text-lg text-muted-foreground line-through">
+                <span className="text-base text-muted-foreground line-through">
                   €{Number(selectedVariant.original_price).toFixed(2)}
                 </span>
               )}
@@ -444,11 +534,29 @@ export default function ProductDetail() {
 
             <div className="h-px bg-border" />
 
+            {/* Longevity & Sillage & Size Quick Info */}
+            <div className="grid grid-cols-3 gap-3">
+              <div className="flex flex-col items-center py-3 border border-border">
+                <Clock className="w-4 h-4 text-accent mb-1.5" strokeWidth={1.5} />
+                <span className="text-[10px] font-medium text-foreground">6-8 Std.</span>
+                <span className="text-[9px] text-muted-foreground">Haltbarkeit</span>
+              </div>
+              <div className="flex flex-col items-center py-3 border border-border">
+                <Wind className="w-4 h-4 text-accent mb-1.5" strokeWidth={1.5} />
+                <span className="text-[10px] font-medium text-foreground">Moderat</span>
+                <span className="text-[9px] text-muted-foreground">Sillage</span>
+              </div>
+              <div className="flex flex-col items-center py-3 border border-border">
+                <Droplet className="w-4 h-4 text-accent mb-1.5" strokeWidth={1.5} />
+                <span className="text-[10px] font-medium text-foreground">{selectedVariant?.size || '50 ml'}</span>
+                <span className="text-[9px] text-muted-foreground">Inhalt</span>
+              </div>
+            </div>
+
+            {/* Variant Selector */}
             {variants.length > 1 && (
               <div>
-                <label className="block text-[10px] tracking-[0.15em] uppercase text-muted-foreground mb-3">
-                  Größe wählen
-                </label>
+                <label className="block text-[10px] tracking-[0.15em] uppercase text-muted-foreground mb-2">Größe wählen</label>
                 <div className="flex flex-wrap gap-2">
                   {variants.map((variant) => (
                     <button
@@ -470,27 +578,21 @@ export default function ProductDetail() {
               </div>
             )}
 
+            {/* Quantity */}
             <div>
-              <label className="block text-[10px] tracking-[0.15em] uppercase text-muted-foreground mb-3">
-                Menge
-              </label>
+              <label className="block text-[10px] tracking-[0.15em] uppercase text-muted-foreground mb-2">Menge</label>
               <div className="flex items-center border border-border w-fit">
-                <button
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="w-10 h-10 flex items-center justify-center text-foreground hover:bg-muted transition-colors"
-                >
+                <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="w-10 h-10 flex items-center justify-center text-foreground hover:bg-muted transition-colors">
                   <Minus className="w-4 h-4" strokeWidth={1.5} />
                 </button>
                 <span className="w-12 text-center text-sm font-medium">{quantity}</span>
-                <button
-                  onClick={() => setQuantity(quantity + 1)}
-                  className="w-10 h-10 flex items-center justify-center text-foreground hover:bg-muted transition-colors"
-                >
+                <button onClick={() => setQuantity(quantity + 1)} className="w-10 h-10 flex items-center justify-center text-foreground hover:bg-muted transition-colors">
                   <Plus className="w-4 h-4" strokeWidth={1.5} />
                 </button>
               </div>
             </div>
 
+            {/* Add to Cart */}
             <div className="flex gap-3">
               <button
                 onClick={handleAddToCart}
@@ -508,6 +610,86 @@ export default function ProductDetail() {
               </button>
             </div>
 
+            {/* Trust Icons - inline */}
+            <div className="flex items-center gap-6 pt-2">
+              <div className="flex items-center gap-1.5 text-muted-foreground">
+                <Truck className="w-3.5 h-3.5" strokeWidth={1.5} />
+                <span className="text-[10px]">Gratis ab 50€</span>
+              </div>
+              <div className="flex items-center gap-1.5 text-muted-foreground">
+                <Shield className="w-3.5 h-3.5" strokeWidth={1.5} />
+                <span className="text-[10px]">Sichere Zahlung</span>
+              </div>
+              <div className="flex items-center gap-1.5 text-muted-foreground">
+                <RotateCcw className="w-3.5 h-3.5" strokeWidth={1.5} />
+                <span className="text-[10px]">14 Tage Rückgabe</span>
+              </div>
+            </div>
+
+            <div className="h-px bg-border" />
+
+            {/* Accordion Info Sections */}
+            {/* Scent Pyramid */}
+            {hasNotes && (
+              <InfoSection title="Duftpyramide" defaultOpen={true}>
+                <div className="space-y-5">
+                  <ScentLayer label="Kopfnote" sublabel="Erster Eindruck · 0-30 Min" notes={topNotes} icon={Droplet} accentClass="text-amber-500 dark:text-amber-400" />
+                  <ScentLayer label="Herznote" sublabel="Charakter · 30 Min - 3 Std" notes={middleNotes} icon={Heart} accentClass="text-rose-500 dark:text-rose-400" />
+                  <ScentLayer label="Basisnote" sublabel="Fondation · 3+ Stunden" notes={baseNotes} icon={Anchor} accentClass="text-stone-500 dark:text-stone-400" />
+                </div>
+              </InfoSection>
+            )}
+
+            {/* Description */}
+            {(product.ai_description || product.description) && (
+              <InfoSection title="Beschreibung" defaultOpen={true}>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {product.ai_description || product.description}
+                </p>
+              </InfoSection>
+            )}
+
+            {/* Ingredients */}
+            {product.ingredients && product.ingredients.length > 0 && (
+              <InfoSection title="Inhaltsstoffe">
+                <div className="flex flex-wrap gap-1.5">
+                  {product.ingredients.map((ingredient, i) => (
+                    <span key={i} className="px-2.5 py-1 bg-muted text-muted-foreground text-[11px] border border-border">
+                      {ingredient}
+                    </span>
+                  ))}
+                </div>
+              </InfoSection>
+            )}
+
+            {/* Seasons & Occasions */}
+            {(product.seasons?.length || product.occasions?.length) && (
+              <InfoSection title="Empfohlen für">
+                <div className="space-y-3">
+                  {product.seasons && product.seasons.length > 0 && (
+                    <div>
+                      <span className="text-[10px] tracking-[0.1em] uppercase text-muted-foreground block mb-2">Jahreszeit</span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {product.seasons.map((s, i) => (
+                          <span key={i} className="px-2.5 py-1 bg-muted text-muted-foreground text-[11px] border border-border">{s}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {product.occasions && product.occasions.length > 0 && (
+                    <div>
+                      <span className="text-[10px] tracking-[0.1em] uppercase text-muted-foreground block mb-2">Anlass</span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {product.occasions.map((o, i) => (
+                          <span key={i} className="px-2.5 py-1 bg-muted text-muted-foreground text-[11px] border border-border">{o}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </InfoSection>
+            )}
+
             {/* Social Share */}
             <div className="pt-2">
               <SocialShare
@@ -516,63 +698,18 @@ export default function ProductDetail() {
                 description={product.description || ''}
               />
             </div>
-
-            <div className="grid grid-cols-3 gap-4 pt-4">
-              <div className="text-center py-4 border border-border">
-                <Truck className="w-5 h-5 text-accent mx-auto mb-2" strokeWidth={1.5} />
-                <span className="text-[10px] text-muted-foreground block">Gratis ab 50€</span>
-              </div>
-              <div className="text-center py-4 border border-border">
-                <Shield className="w-5 h-5 text-accent mx-auto mb-2" strokeWidth={1.5} />
-                <span className="text-[10px] text-muted-foreground block">Sichere Zahlung</span>
-              </div>
-              <div className="text-center py-4 border border-border">
-                <RotateCcw className="w-5 h-5 text-accent mx-auto mb-2" strokeWidth={1.5} />
-                <span className="text-[10px] text-muted-foreground block">14 Tage Rückgabe</span>
-              </div>
-            </div>
-
-            {(product.ai_description || product.description) && (
-              <div className="pt-6 border-t border-border">
-                <h3 className="text-[10px] tracking-[0.15em] uppercase text-muted-foreground mb-4">
-                  Beschreibung
-                </h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  {product.ai_description || product.description}
-                </p>
-              </div>
-            )}
-
-            {(product.top_notes?.length || product.middle_notes?.length || product.base_notes?.length) && (
-              <div className="pt-6 border-t border-border">
-                <h3 className="text-[10px] tracking-[0.15em] uppercase text-muted-foreground mb-6 flex items-center gap-2">
-                  <Leaf className="w-4 h-4" strokeWidth={1.5} />
-                  Duftpyramide
-                </h3>
-                <ScentNotesVisualization
-                  topNotes={product.top_notes || []}
-                  middleNotes={product.middle_notes || []}
-                  baseNotes={product.base_notes || []}
-                />
-              </div>
-            )}
           </div>
         </div>
       </div>
 
+      {/* Subscription */}
       {selectedVariant && (
         <section className="py-8 lg:py-12 border-t border-border">
           <div className="container-premium">
             <div className="text-center mb-8">
-              <span className="inline-block text-[10px] tracking-[0.3em] uppercase text-accent mb-2">
-                Spar-Abo
-              </span>
-              <h2 className="font-display text-2xl lg:text-3xl text-foreground mb-2">
-                Regelmäßig liefern lassen
-              </h2>
-              <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                Spare bis zu 15% mit unserem flexiblen Abo-Modell
-              </p>
+              <span className="inline-block text-[10px] tracking-[0.3em] uppercase text-accent mb-2">Spar-Abo</span>
+              <h2 className="font-display text-2xl lg:text-3xl text-foreground mb-2">Regelmäßig liefern lassen</h2>
+              <p className="text-sm text-muted-foreground max-w-md mx-auto">Spare bis zu 15% mit unserem flexiblen Abo-Modell</p>
             </div>
             <div className="max-w-2xl mx-auto">
               <SubscriptionCard
@@ -586,6 +723,7 @@ export default function ProductDetail() {
         </section>
       )}
 
+      {/* Reviews */}
       <ProductReviews
         productId={product.id}
         productName={product.name}
@@ -593,6 +731,7 @@ export default function ProductDetail() {
         reviewCount={product.review_count || 0}
       />
 
+      {/* Recommendations */}
       <section className="py-8 lg:py-12 border-t border-border">
         <div className="container-premium">
           <ProductRecommendations />
