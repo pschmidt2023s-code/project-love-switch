@@ -60,6 +60,7 @@ const Blog = React.lazy(() => import('@/pages/Blog'));
 const BlogPostPage = React.lazy(() => import('@/pages/BlogPost'));
 const NotFound = React.lazy(() => import('@/pages/NotFound'));
 const Referral = React.lazy(() => import('@/pages/Referral'));
+const Story = React.lazy(() => import('@/pages/Story'));
 
 
 const queryClient = new QueryClient({
@@ -143,6 +144,7 @@ function App() {
                         <Route path="/blog/:slug" element={<Suspense fallback={<LoadingSpinner />}><BlogPostPage /></Suspense>} />
                         <Route path="/manage-subscription" element={<Suspense fallback={<LoadingSpinner />}><ManageSubscription /></Suspense>} />
                         <Route path="/referral" element={<Suspense fallback={<LoadingSpinner />}><Referral /></Suspense>} />
+                        <Route path="/story" element={<Suspense fallback={<LoadingSpinner />}><Story /></Suspense>} />
                         
                         <Route path="*" element={<Suspense fallback={<LoadingSpinner />}><NotFound /></Suspense>} />
                         <Route path="*" element={<Suspense fallback={<LoadingSpinner />}><NotFound /></Suspense>} />
