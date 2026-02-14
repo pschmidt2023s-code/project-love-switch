@@ -26,6 +26,7 @@ export default function Contact() {
     message: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [privacyAccepted, setPrivacyAccepted] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -184,9 +185,22 @@ export default function Contact() {
                 required
               />
               
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={privacyAccepted}
+                  onChange={(e) => setPrivacyAccepted(e.target.checked)}
+                  className="mt-1 w-4 h-4 accent-accent flex-shrink-0"
+                  required
+                />
+                <span className="text-xs text-muted-foreground leading-relaxed">
+                  Ich habe die <a href="/privacy" className="text-accent underline" target="_blank" rel="noopener noreferrer">Datenschutzerklärung</a> gelesen und bin mit der Verarbeitung meiner Daten zur Bearbeitung meiner Anfrage einverstanden. *
+                </span>
+              </label>
+
               <button 
                 type="submit" 
-                disabled={loading}
+                disabled={loading || !privacyAccepted}
                 className="w-full sm:w-auto inline-flex items-center justify-center px-10 py-4 bg-foreground text-background text-[11px] tracking-[0.15em] uppercase font-medium hover:bg-foreground/90 transition-colors disabled:opacity-50"
               >
                 {loading ? 'Wird gesendet...' : 'Absenden'}

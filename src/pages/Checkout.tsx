@@ -36,6 +36,7 @@ const Checkout = () => {
   const [useSameAsShipping, setUseSameAsShipping] = useState(true);
   const [step, setStep] = useState<'address' | 'payment'>('address');
   const [email, setEmail] = useState(user?.email || '');
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   const shippingCost = total >= 50 ? 0 : 4.95;
   const grandTotal = total + shippingCost;
@@ -233,20 +234,28 @@ const Checkout = () => {
                       )}
                     </div>
                   </div>
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={acceptedTerms}
+                      onChange={(e) => setAcceptedTerms(e.target.checked)}
+                      className="mt-1 w-4 h-4 accent-accent flex-shrink-0"
+                    />
+                    <span className="text-xs text-muted-foreground leading-relaxed">
+                      Ich habe die <a href="/terms" className="text-accent underline" target="_blank" rel="noopener noreferrer">AGB</a>, die <a href="/privacy" className="text-accent underline" target="_blank" rel="noopener noreferrer">Datenschutzerklärung</a> und die <a href="/returns" className="text-accent underline" target="_blank" rel="noopener noreferrer">Widerrufsbelehrung</a> gelesen und akzeptiere diese. *
+                    </span>
+                  </label>
                   <button
                     onClick={handleCheckout}
-                    disabled={loading}
+                    disabled={loading || !acceptedTerms}
                     className="w-full py-4 bg-foreground text-background text-[11px] tracking-[0.15em] uppercase font-medium hover:bg-foreground/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                   >
                     {loading ? (
                       <><Loader2 className="w-4 h-4 animate-spin" /> Wird verarbeitet...</>
                     ) : (
-                      `Jetzt bezahlen – ${grandTotal.toFixed(2)} €`
+                      `Kostenpflichtig bestellen – ${grandTotal.toFixed(2)} €`
                     )}
                   </button>
-                  <p className="text-xs text-center text-muted-foreground">
-                    Mit dem Klick akzeptierst du unsere <a href="/terms" className="underline">AGB</a> und <a href="/privacy" className="underline">Datenschutzerklärung</a>.
-                  </p>
                 </>
               )}
             </div>
