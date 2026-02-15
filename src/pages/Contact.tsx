@@ -193,16 +193,23 @@ export default function Contact() {
                 required
               />
               
-              <label className="flex items-start gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={privacyAccepted}
-                  onChange={(e) => setPrivacyAccepted(e.target.checked)}
-                  className="mt-1 w-4 h-4 accent-accent flex-shrink-0"
-                  required
-                />
+              <label className="flex items-start gap-3 cursor-pointer group" onClick={() => setPrivacyAccepted(!privacyAccepted)}>
+                <span
+                  className={`mt-0.5 flex-shrink-0 w-5 h-5 border-2 flex items-center justify-center transition-colors ${
+                    privacyAccepted
+                      ? 'bg-accent border-accent text-accent-foreground'
+                      : 'border-muted-foreground/40 group-hover:border-accent'
+                  }`}
+                >
+                  {privacyAccepted && (
+                    <svg className="w-3 h-3" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="2 6 5 9 10 3" />
+                    </svg>
+                  )}
+                </span>
+                <input type="checkbox" checked={privacyAccepted} onChange={() => {}} className="sr-only" required />
                 <span className="text-xs text-muted-foreground leading-relaxed">
-                  Ich habe die <a href="/privacy" className="text-accent underline" target="_blank" rel="noopener noreferrer">Datenschutzerklärung</a> gelesen und bin mit der Verarbeitung meiner Daten zur Bearbeitung meiner Anfrage einverstanden. *
+                  Ich habe die <a href="/privacy" className="text-accent underline" target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>Datenschutzerklärung</a> gelesen und bin mit der Verarbeitung meiner Daten zur Bearbeitung meiner Anfrage einverstanden. *
                 </span>
               </label>
 
