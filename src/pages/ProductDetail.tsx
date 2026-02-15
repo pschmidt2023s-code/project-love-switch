@@ -16,7 +16,7 @@ import { StickyAddToCart } from '@/components/StickyAddToCart';
 import { Breadcrumb } from '@/components/Breadcrumb';
 import { BackInStockNotify } from '@/components/BackInStockNotify';
 import { Seo } from '@/components/Seo';
-import { ProductSchema, BreadcrumbSchema } from '@/components/seo';
+import { ProductSchema, BreadcrumbSchema, RelatedProducts, ProductFAQ } from '@/components/seo';
 import { SocialShare } from '@/components/SocialShare';
 import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
 import { toast } from 'sonner';
@@ -859,6 +859,12 @@ export default function ProductDetail() {
         averageRating={rating || 4.5}
         reviewCount={product.review_count || 0}
       />
+
+      {/* Product FAQ for SEO */}
+      <ProductFAQ productName={product.name} inspiredBy={product.inspired_by} />
+
+      {/* Related Products - Internal Linking */}
+      <RelatedProducts currentProductId={product.id} gender={product.gender} />
 
       {/* Recently Viewed */}
       <RecentlyViewed />
