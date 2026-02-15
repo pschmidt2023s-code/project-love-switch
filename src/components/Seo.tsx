@@ -1,10 +1,10 @@
 import { useEffect } from "react";
 
-function upsertMeta(name: string, content: string) {
-  let el = document.querySelector(`meta[name="${name}"]`) as HTMLMetaElement | null;
+function upsertMeta(attr: string, key: string, content: string) {
+  let el = document.querySelector(`meta[${attr}="${key}"]`) as HTMLMetaElement | null;
   if (!el) {
     el = document.createElement("meta");
-    el.setAttribute("name", name);
+    el.setAttribute(attr, key);
     document.head.appendChild(el);
   }
   el.setAttribute("content", content);
@@ -24,17 +24,32 @@ export function Seo({
   title,
   description,
   canonicalPath,
+  ogImage,
 }: {
   title: string;
   description: string;
   canonicalPath: string;
+  ogImage?: string;
 }) {
   useEffect(() => {
     document.title = title;
-    upsertMeta("description", description);
-    const canonical = `${window.location.origin}${canonicalPath}`;
+    upsertMeta("name", "description", description);
+    const origin = "https://aldenairperfumes.de";
+    const canonical = `${origin}${canonicalPath}`;
     upsertCanonical(canonical);
-  }, [title, description, canonicalPath]);
+
+    // Open Graph
+    upsertMeta("property", "og:title", title);
+    upsertMeta("property", "og:description", description);
+    upsertMeta("property", "og:url", canonical);
+    if (ogImage) {
+      upsertMeta("property", "og:image", ogImage.startsWith("http") ? ogImage : `${origin}${ogImage}`);
+    }
+
+    // Twitter
+    upsertMeta("name", "twitter:title", title);
+    upsertMeta("name", "twitter:description", description);
+  }, [title, description, canonicalPath, ogImage]);
 
   return null;
 }

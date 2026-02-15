@@ -159,9 +159,10 @@ export default function Story() {
   return (
     <PremiumPageLayout>
       <Seo
-        title="Unsere Geschichte | ALDENAIR"
+        title="Die ALDENAIR Geschichte | Vom Handwerk zum Premium Parfüm"
         description="Erfahre wie ALDENAIR entsteht – von den feinsten Rohstoffen bis zum fertigen Premium-Parfüm. Eine Geschichte voller Leidenschaft und Handwerk."
         canonicalPath="/story"
+        ogImage="/images/aldenair-prestige.png"
       />
 
       <ParallaxHero />

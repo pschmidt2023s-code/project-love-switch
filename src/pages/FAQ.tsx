@@ -76,7 +76,7 @@ export default function FAQ() {
 
   return (
     <PremiumPageLayout>
-      <Seo title="FAQ | ALDENAIR" description="Häufig gestellte Fragen zu Bestellung, Lieferung, Rückgabe und mehr bei ALDENAIR." canonicalPath="/faq" />
+      <Seo title="Häufige Fragen (FAQ) | ALDENAIR Parfüms" description="Antworten auf häufig gestellte Fragen zu ALDENAIR: Lieferung, Rückgabe, Zahlungsmethoden, Parfüm-Qualität und mehr." canonicalPath="/faq" />
       <FAQSchema faqs={allFaqs} />
       <BreadcrumbSchema items={[{ name: 'Startseite', url: 'https://aldenairperfumes.de' }, { name: 'FAQ', url: 'https://aldenairperfumes.de/faq' }]} />
 

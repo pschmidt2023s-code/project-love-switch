@@ -1,18 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
-        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <!-- Homepage -->
   <url>
     <loc>https://aldenairperfumes.de/</loc>
-    <lastmod>2026-01-26</lastmod>
+    <xhtml:link rel="alternate" hreflang="de" href="https://aldenairperfumes.de/" />
+    <lastmod>2026-02-15</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
+    <image:image>
+      <image:loc>https://aldenairperfumes.de/images/aldenair-prestige.png</image:loc>
+      <image:title>ALDENAIR Premium Parfüm Kollektion</image:title>
+      <image:caption>Exklusive Premium Parfüms von ALDENAIR</image:caption>
+    </image:image>
   </url>
   
   <!-- Products Page -->
   <url>
     <loc>https://aldenairperfumes.de/products</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-02-15</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
@@ -20,74 +27,80 @@
   <!-- Individual Products -->
   <url>
     <loc>https://aldenairperfumes.de/products/aldenair-111</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-02-15</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
     <image:image>
       <image:loc>https://aldenairperfumes.de/images/aldenair-111.png</image:loc>
-      <image:title>ALDENAIR 111 - Premium Parfüm</image:title>
+      <image:title>ALDENAIR 111 - Premium Herrenparfüm</image:title>
+      <image:caption>ALDENAIR 111 Eau de Parfum für Herren</image:caption>
     </image:image>
   </url>
   
   <url>
     <loc>https://aldenairperfumes.de/products/aldenair-632</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-02-15</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
     <image:image>
       <image:loc>https://aldenairperfumes.de/images/aldenair-632.png</image:loc>
       <image:title>ALDENAIR 632 - Premium Parfüm</image:title>
+      <image:caption>ALDENAIR 632 Eau de Parfum</image:caption>
     </image:image>
   </url>
   
   <url>
     <loc>https://aldenairperfumes.de/products/aldenair-888</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-02-15</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
     <image:image>
       <image:loc>https://aldenairperfumes.de/images/aldenair-888.png</image:loc>
       <image:title>ALDENAIR 888 - Premium Parfüm</image:title>
+      <image:caption>ALDENAIR 888 Eau de Parfum</image:caption>
     </image:image>
   </url>
   
   <url>
     <loc>https://aldenairperfumes.de/products/aldenair-prestige-collection</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-02-15</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
     <image:image>
       <image:loc>https://aldenairperfumes.de/images/aldenair-prestige.png</image:loc>
       <image:title>ALDENAIR Prestige Collection</image:title>
+      <image:caption>ALDENAIR Prestige Parfüm Kollektion</image:caption>
     </image:image>
   </url>
   
   <url>
     <loc>https://aldenairperfumes.de/products/aldenair-sparkits-collection</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-02-15</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
     <image:image>
       <image:loc>https://aldenairperfumes.de/images/aldenair-sparkits.png</image:loc>
-      <image:title>ALDENAIR Sparkits Collection</image:title>
+      <image:title>ALDENAIR Sparkits - Parfüm Sparsets</image:title>
+      <image:caption>ALDENAIR Sparkits Kollektion zum Sparen</image:caption>
     </image:image>
   </url>
   
   <url>
     <loc>https://aldenairperfumes.de/products/aldenair-testerkits-collection</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-02-15</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
     <image:image>
       <image:loc>https://aldenairperfumes.de/images/aldenair-testerkits.png</image:loc>
-      <image:title>ALDENAIR Testerkits Collection</image:title>
+      <image:title>ALDENAIR Testerkits - Parfüm Proben</image:title>
+      <image:caption>ALDENAIR Testerkits zum Kennenlernen</image:caption>
     </image:image>
   </url>
   
   <!-- Sparkits Page -->
   <url>
     <loc>https://aldenairperfumes.de/sparkits</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-02-15</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -95,23 +108,39 @@
   <!-- Scent Finder -->
   <url>
     <loc>https://aldenairperfumes.de/scent-finder</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-02-15</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+  </url>
+
+  <!-- Story Page -->
+  <url>
+    <loc>https://aldenairperfumes.de/story</loc>
+    <lastmod>2026-02-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
   </url>
   
   <!-- About Page -->
   <url>
     <loc>https://aldenairperfumes.de/about</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-02-15</lastmod>
     <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Blog -->
+  <url>
+    <loc>https://aldenairperfumes.de/blog</loc>
+    <lastmod>2026-02-15</lastmod>
+    <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   
   <!-- Contact Page -->
   <url>
     <loc>https://aldenairperfumes.de/contact</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-02-15</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -119,7 +148,7 @@
   <!-- FAQ Page -->
   <url>
     <loc>https://aldenairperfumes.de/faq</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-02-15</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -127,7 +156,7 @@
   <!-- Newsletter Page -->
   <url>
     <loc>https://aldenairperfumes.de/newsletter</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-02-15</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
@@ -135,15 +164,23 @@
   <!-- Partner Page -->
   <url>
     <loc>https://aldenairperfumes.de/partner</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-02-15</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
+  </url>
+
+  <!-- Referral Page -->
+  <url>
+    <loc>https://aldenairperfumes.de/referral</loc>
+    <lastmod>2026-02-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
   </url>
   
   <!-- Shipping Page -->
   <url>
     <loc>https://aldenairperfumes.de/shipping</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-02-15</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
@@ -151,7 +188,7 @@
   <!-- Returns Page -->
   <url>
     <loc>https://aldenairperfumes.de/returns</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-02-15</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
@@ -159,7 +196,7 @@
   <!-- Privacy Policy -->
   <url>
     <loc>https://aldenairperfumes.de/privacy</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-02-15</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
@@ -167,7 +204,7 @@
   <!-- Terms & Conditions -->
   <url>
     <loc>https://aldenairperfumes.de/terms</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-02-15</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
@@ -175,7 +212,7 @@
   <!-- Imprint -->
   <url>
     <loc>https://aldenairperfumes.de/imprint</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-02-15</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>

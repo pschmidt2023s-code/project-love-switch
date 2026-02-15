@@ -80,8 +80,8 @@ export default function Contact() {
   return (
     <PremiumPageLayout>
       <Seo
-        title="Kontakt | ALDENAIR"
-        description="Kontaktieren Sie ALDENAIR für Fragen zu Produkten, Bestellungen oder allgemeine Anfragen."
+        title="Kontakt | ALDENAIR Parfüms – Kundenservice"
+        description="Kontaktieren Sie ALDENAIR: Fragen zu Parfüms, Bestellungen oder Retouren? Unser Kundenservice antwortet innerhalb von 24 Stunden."
         canonicalPath="/contact"
       />
 

@@ -44,9 +44,10 @@ export default function About() {
   return (
     <PremiumPageLayout>
       <Seo
-        title="Über Uns | ALDENAIR"
-        description="Erfahren Sie mehr über ALDENAIR - Ihre Premium-Destination für exquisite Parfüms."
+        title="Über ALDENAIR | Premium Parfüm Manufaktur seit 2020"
+        description="Lernen Sie ALDENAIR kennen – Ihre Premium-Destination für exquisite Parfüms. Seit 2020 kreieren wir hochwertige Düfte mit Leidenschaft und Qualität."
         canonicalPath="/about"
+        ogImage="/images/aldenair-prestige.png"
       />
 
       {/* Dramatic Hero - full width, large typography */}
