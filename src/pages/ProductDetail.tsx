@@ -245,9 +245,10 @@ export default function ProductDetail() {
     return (
       <PremiumPageLayout>
         <Seo
-          title={`${externalProduct.name} | ALDENAIR`}
-          description={externalProduct.description || `Entdecke ${externalProduct.name} - Premium Parfüm von ALDENAIR`}
+          title={`${externalProduct.name} kaufen | ALDENAIR Premium Parfüm`}
+          description={externalProduct.description || `${externalProduct.name} – Premium Eau de Parfum von ALDENAIR. Jetzt bestellen ✓ Kostenloser Versand ab 50€`}
           canonicalPath={`/products/${slug}`}
+          ogImage={externalProduct.image_url || '/images/aldenair-prestige.png'}
         />
 
         <div className="container-premium py-6 lg:py-10">
@@ -499,9 +500,10 @@ export default function ProductDetail() {
   return (
     <PremiumPageLayout>
       <Seo
-        title={`${product.name} | ALDENAIR`}
-        description={product.description || `Entdecke ${product.name} - Premium Parfüm von ALDENAIR`}
+        title={`${product.name} kaufen | ALDENAIR Premium Parfüm`}
+        description={product.description || `${product.name} – Premium Eau de Parfum von ALDENAIR${product.inspired_by ? `, inspiriert von ${product.inspired_by}` : ''}. Jetzt bestellen ✓ Kostenloser Versand ab 50€`}
         canonicalPath={`/products/${slug}`}
+        ogImage={product.image_url || '/images/aldenair-prestige.png'}
       />
       <ProductSchema
         product={{

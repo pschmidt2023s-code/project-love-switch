@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Mail, Clock, Send, ArrowRight, MapPin } from 'lucide-react';
 import { PremiumPageLayout } from '@/components/premium/PremiumPageLayout';
 import { Seo } from '@/components/Seo';
+import { Breadcrumb } from '@/components/Breadcrumb';
+import { BreadcrumbSchema } from '@/components/seo';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -85,9 +87,15 @@ export default function Contact() {
         canonicalPath="/contact"
       />
 
+      <BreadcrumbSchema items={[
+        { name: 'Startseite', url: 'https://aldenairperfumes.de' },
+        { name: 'Kontakt', url: 'https://aldenairperfumes.de/contact' }
+      ]} />
+
       {/* Hero - Full width editorial */}
       <section className="py-20 lg:py-32 border-b border-border">
         <div className="container-premium">
+          <Breadcrumb items={[{ label: 'Kontakt' }]} className="mb-8" />
           <div className="max-w-3xl">
             <span className="inline-block text-[10px] tracking-[0.3em] uppercase text-accent mb-6">
               Kontakt

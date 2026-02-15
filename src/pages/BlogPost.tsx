@@ -5,6 +5,7 @@ import { PremiumPageLayout } from '@/components/premium/PremiumPageLayout';
 import { Breadcrumb } from '@/components/Breadcrumb';
 import { Seo } from '@/components/Seo';
 import { SocialShare } from '@/components/SocialShare';
+import { BreadcrumbSchema, BlogArticleSchema } from '@/components/seo';
 import { supabase } from '@/integrations/supabase/client';
 
 interface BlogPostFull {
@@ -94,10 +95,17 @@ export default function BlogPost() {
   return (
     <PremiumPageLayout>
       <Seo
-        title={`${post.title} | ALDENAIR Blog`}
-        description={post.excerpt || post.title}
+        title={`${post.title} | ALDENAIR Parfüm Blog`}
+        description={post.excerpt || `${post.title} – Tipps und Guides rund um Premium-Parfüms von ALDENAIR.`}
         canonicalPath={`/blog/${slug}`}
+        ogImage={post.cover_image || '/images/aldenair-prestige.png'}
       />
+      <BreadcrumbSchema items={[
+        { name: 'Startseite', url: 'https://aldenairperfumes.de' },
+        { name: 'Blog', url: 'https://aldenairperfumes.de/blog' },
+        { name: post.title, url: `https://aldenairperfumes.de/blog/${slug}` }
+      ]} />
+      <BlogArticleSchema post={post} slug={slug || ''} />
 
       <div className="container-premium py-8 lg:py-12">
         <Breadcrumb
