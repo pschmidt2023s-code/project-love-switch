@@ -309,9 +309,10 @@ export default function Products() {
   return (
     <PremiumPageLayout>
       <Seo
-        title="Kollektion | ALDENAIR"
-        description="Entdecke unsere exklusive Kollektion hochwertiger Parfüms. Premium-Düfte inspiriert von weltbekannten Luxusmarken."
+        title="Premium Parfüms kaufen | ALDENAIR Kollektion"
+        description="Entdecke exklusive Parfüms von ALDENAIR ✓ Inspiriert von Luxusmarken ✓ Herren, Damen & Unisex ✓ Ab 24,99€ ✓ Kostenloser Versand ab 50€"
         canonicalPath="/products"
+        ogImage="/images/aldenair-prestige.png"
       />
 
       {/* Page Header */}

@@ -27,9 +27,10 @@ export default function Index() {
   return (
     <PremiumPageLayout>
       <Seo 
-        title="ALDENAIR | Premium Parfüms & Exklusive Düfte"
-        description="Entdecken Sie ALDENAIR - Premium Parfüms inspiriert von weltbekannten Marken. Hochwertige Düfte zu fairen Preisen. Kostenloser Versand ab 50€."
+        title="ALDENAIR | Premium Parfüms & Exklusive Düfte kaufen"
+        description="ALDENAIR – Premium Parfüms inspiriert von Luxusmarken ✓ Hochwertige Eau de Parfum ✓ Kostenloser Versand ab 50€ ✓ Herren- & Damendüfte ✓ Sparsets ab 29,99€"
         canonicalPath="/"
+        ogImage="/images/aldenair-prestige.png"
       />
       <OrganizationSchema />
       <WebsiteSchema />

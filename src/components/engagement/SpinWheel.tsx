@@ -117,8 +117,8 @@ export function SpinWheel() {
 
   const segmentAngle = prizes.length > 0 ? 360 / prizes.length : 60;
 
-  // Show trigger button
-  if (hasSpun) return null;
+  // Hide trigger button if already spun (but keep modal open if showing result)
+  if (hasSpun && !isOpen) return null;
 
   const wheelColors = ['hsl(43, 35%, 48%)', 'hsl(0, 0%, 10%)', 'hsl(43, 45%, 65%)', 'hsl(0, 0%, 20%)', 'hsl(35, 25%, 70%)', 'hsl(0, 0%, 30%)'];
 
