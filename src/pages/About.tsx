@@ -2,6 +2,8 @@ import { Sparkles, Users, Heart, Award, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { PremiumPageLayout } from '@/components/premium/PremiumPageLayout';
 import { Seo } from '@/components/Seo';
+import { Breadcrumb } from '@/components/Breadcrumb';
+import { BreadcrumbSchema } from '@/components/seo';
 
 const features = [
   {
@@ -50,10 +52,16 @@ export default function About() {
         ogImage="/images/aldenair-prestige.png"
       />
 
+      <BreadcrumbSchema items={[
+        { name: 'Startseite', url: 'https://aldenairperfumes.de' },
+        { name: 'Über Uns', url: 'https://aldenairperfumes.de/about' }
+      ]} />
+
       {/* Dramatic Hero - full width, large typography */}
       <section className="relative py-20 lg:py-32 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-accent/5 to-transparent" />
         <div className="container-premium relative">
+          <Breadcrumb items={[{ label: 'Über Uns' }]} className="mb-8" />
           <div className="max-w-3xl">
             <span className="inline-block text-[10px] tracking-[0.3em] uppercase text-accent mb-6">
               Seit 2020

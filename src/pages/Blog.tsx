@@ -54,8 +54,8 @@ export default function Blog() {
   return (
     <PremiumPageLayout>
       <Seo
-        title="Blog | ALDENAIR"
-        description="Parfüm-Guides, Duftberatung und Neuigkeiten von ALDENAIR. Entdecke Tipps zur Duftauswahl und Pflege."
+        title="Parfüm Blog & Duftguides | ALDENAIR Journal"
+        description="Entdecke Parfüm-Guides, Duftberatung und Neuigkeiten von ALDENAIR. Tipps zur Duftauswahl, Anwendung und Pflege."
         canonicalPath="/blog"
       />
 

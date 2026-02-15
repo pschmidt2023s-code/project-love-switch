@@ -14,11 +14,14 @@ const staticPages = [
   { path: '/products', priority: '0.9', changefreq: 'daily' },
   { path: '/sparkits', priority: '0.8', changefreq: 'weekly' },
   { path: '/scent-finder', priority: '0.8', changefreq: 'weekly' },
+  { path: '/story', priority: '0.7', changefreq: 'monthly' },
   { path: '/about', priority: '0.7', changefreq: 'monthly' },
+  { path: '/blog', priority: '0.7', changefreq: 'weekly' },
   { path: '/contact', priority: '0.7', changefreq: 'monthly' },
   { path: '/faq', priority: '0.7', changefreq: 'weekly' },
   { path: '/newsletter', priority: '0.6', changefreq: 'monthly' },
   { path: '/partner', priority: '0.6', changefreq: 'monthly' },
+  { path: '/referral', priority: '0.5', changefreq: 'monthly' },
   { path: '/shipping', priority: '0.5', changefreq: 'monthly' },
   { path: '/returns', priority: '0.5', changefreq: 'monthly' },
   { path: '/privacy', priority: '0.3', changefreq: 'yearly' },
@@ -41,7 +44,7 @@ Deno.serve(async (req) => {
     // Fetch all active products
     const { data: products, error } = await supabase
       .from('products')
-      .select('slug, updated_at')
+      .select('slug, updated_at, name, image_url')
       .eq('is_active', true);
 
     if (error) {
@@ -49,18 +52,27 @@ Deno.serve(async (req) => {
       throw error;
     }
 
+    // Fetch published blog posts
+    const { data: blogPosts } = await supabase
+      .from('blog_posts')
+      .select('slug, published_at, title')
+      .eq('is_published', true)
+      .order('published_at', { ascending: false });
+
     const today = new Date().toISOString().split('T')[0];
 
     // Build sitemap XML
     let xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
-        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
 `;
 
     // Add static pages
     for (const page of staticPages) {
       xml += `  <url>
     <loc>${SITE_URL}${page.path}</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="${SITE_URL}${page.path}" />
     <lastmod>${today}</lastmod>
     <changefreq>${page.changefreq}</changefreq>
     <priority>${page.priority}</priority>
@@ -79,7 +91,32 @@ Deno.serve(async (req) => {
     <loc>${SITE_URL}/products/${product.slug}</loc>
     <lastmod>${lastmod}</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.8</priority>`;
+        if (product.image_url) {
+          xml += `
+    <image:image>
+      <image:loc>${product.image_url.startsWith('http') ? product.image_url : SITE_URL + product.image_url}</image:loc>
+      <image:title>${product.name} - ALDENAIR Premium Parfüm</image:title>
+    </image:image>`;
+        }
+        xml += `
+  </url>
+`;
+      }
+    }
+
+    // Add blog post pages
+    if (blogPosts) {
+      for (const post of blogPosts) {
+        const lastmod = post.published_at
+          ? new Date(post.published_at).toISOString().split('T')[0]
+          : today;
+        
+        xml += `  <url>
+    <loc>${SITE_URL}/blog/${post.slug}</loc>
+    <lastmod>${lastmod}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
   </url>
 `;
       }
